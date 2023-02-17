@@ -24,4 +24,6 @@ void Webserver::createSocket( void )
     this->_socket = socket(PF_INET, SOCK_STREAM, 0);
     if (_socket == -1)
         throw std::bad_exception();
+
+    close(this->_socket);
 }
