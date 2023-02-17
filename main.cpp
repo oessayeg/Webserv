@@ -2,8 +2,8 @@
 
 int main( void )
 {
-    Webserver mainServer;
+    Webserver mainServer(80);
 
-    std::cout << mainServer.getSocket() << std::endl;
+    mainServer.createSocket();
     return ( 0 );
 }

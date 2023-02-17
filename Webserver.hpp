@@ -17,6 +17,12 @@ class Webserver
         Webserver( void );
         Webserver( const Webserver &rhs );
         Webserver &operator=( const Webserver &rhs );
+        Webserver( const int port );
         ~Webserver( void );
+        
+        // Getters
         int getSocket( void ) const;
+
+        // Socket handlers
+        void createSocket( void );
 };
