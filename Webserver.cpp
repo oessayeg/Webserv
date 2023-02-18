@@ -92,13 +92,23 @@ void Webserver::acceptConnections( void )
             delete buff;
             throw "Recv function failed";
         }
-        this->handleRequest(std::string(buff));
+        this->handleRequest(buff);
         delete buff;
         close(clientSocket);
     }
 }
 
-void Webserver::handleRequest( const std::string &req )
+void Webserver::handleRequest( char *req )
 {
-	std::cout << "Need to handle request" << std::endl;
+	std::string request(req);
+	std::string requestLine;
+
+	requestLine = request.substr(0, request.find('\r'));
+	this->_request.method = requestLine.substr(0, requestLine.find(' '));
+
+	requestLine.erase(0, this->_request.method.length() + 1);
+	this->_request.file = requestLine.substr(0, requestLine.find(' '));
+	
+	requestLine.erase(0, this->_request.file.length() + 1);
+	this->_request.version = requestLine.substr(0, requestLine.length());
 }
