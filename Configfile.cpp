@@ -54,7 +54,6 @@ void    Configfile::parse_file(std::string &configfile)
     }
 }
 
-
 int                          Configfile::get_size_of_server() const
 {
     return (this->server.size());
@@ -75,7 +74,6 @@ int main(int ac, char *av[])
         infile.open(av[1]);
         configfile = op.readfile(infile);
         op.parse_file(configfile);
-        std::cout<<op.server[2].get_port()<<std::endl;
     }
     catch(const char *str)
     {

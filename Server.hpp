@@ -33,7 +33,9 @@ class Server
         std::vector<std::string>    get_indexes() const;
         std::vector<std::string>    get_accept_list() const;
     /****************************************Function***************************************************/
-        bool is_Number(std::string str);
+        bool                        is_Number(std::string str);
+        bool                        check_validIp(std::string &name);
+        void                        check_valid_numIp(std::string &value);
 
         ~Server();
 };

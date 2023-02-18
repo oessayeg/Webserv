@@ -26,6 +26,7 @@ class Configfile
 
         void        trim_spaces_around(std::string &configfile);
         int         get_size_of_server() const;
+        
 
         std::string         get_port();
         std::string         get_path();
