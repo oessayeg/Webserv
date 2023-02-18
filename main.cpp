@@ -4,7 +4,6 @@ int main( void )
 {
     Webserver mainServer(80);
 
-    mainServer.createSocket();
-    std::cout << mainServer.getSocket() << std::endl;
+    // mainServer.createSocket();
     return ( 0 );
 }

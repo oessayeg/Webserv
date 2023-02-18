@@ -1,17 +1,24 @@
-#include <iostream>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <vector>
-#include <map>
-#include <poll.h>
-#include <sys/select.h>
+#pragma once
 
+#include <sys/select.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <iostream>
+#include <vector>
+#include <poll.h>
+#include <map>
+
+typedef struct sockaddr_in sockadd;
 
 class Webserver
 {
     private :
         int _socket;
         int _port;
+        sockadd *_serverAddress;
+        sockadd *_clientAddress;
+        socklen_t _sockaddLen;
 
     public :
         Webserver( void );
