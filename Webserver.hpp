@@ -19,17 +19,22 @@ class Webserver
         sockadd *_serverAddress;
         sockadd *_clientAddress;
         socklen_t _sockaddLen;
+        size_t _requestLength;
+        std::string _request;
 
     public :
         Webserver( void );
         Webserver( const Webserver &rhs );
         Webserver &operator=( const Webserver &rhs );
-        Webserver( const int port );
+        Webserver( const int port, const size_t reqLen );
         ~Webserver( void );
-        
+
         // Getters
         int getSocket( void ) const;
 
         // Socket handlers
         void createSocket( void );
+        void bindAndListen( void );
+        void acceptConnections( void );
+        void handleRequest( const std::string &request );
 };

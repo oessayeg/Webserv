@@ -2,8 +2,18 @@
 
 int main( void )
 {
-    Webserver mainServer(80);
+    try
+    {
+        Webserver mainServer(80, 4000);
 
-    // mainServer.createSocket();
+        mainServer.createSocket();
+        mainServer.bindAndListen();
+        mainServer.acceptConnections();
+    }
+    catch ( const char *msg )
+    {
+        std::cout << msg << std::endl;
+    }
+
     return ( 0 );
 }
