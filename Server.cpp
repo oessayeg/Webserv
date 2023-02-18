@@ -10,8 +10,7 @@ Server::Server(std::string &block)
 {
     std::stringstream outfile(block);
     std::string line;
-
-    while(getline(outfile, line)) //Should be add error if there valuse after ';' and skip comment
+    while(getline(outfile, line))
         {
             size_t found = line.find_first_not_of(" \t\f\v\n\r{");
             size_t found_t = line.find_last_not_of(" \t\f\v\n\r}");
@@ -29,7 +28,7 @@ Server::Server(std::string &block)
             else if (line.substr(0, 11) == "accept_list")
                 set_accept_list(line.substr(11));
             else if (line.substr(0, 8) == "location")
-            {
+            { 
             }
             else if(line.substr(0,9) == "body_size")
             {
