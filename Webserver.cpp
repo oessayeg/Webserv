@@ -92,13 +92,13 @@ void Webserver::acceptConnections( void )
             delete buff;
             throw "Recv function failed";
         }
-        this->handleRequest(buff);
+        this->handleRequest(buff, clientSocket);
         delete buff;
         close(clientSocket);
     }
 }
 
-void Webserver::handleRequest( char *req )
+void Webserver::handleRequest( char *req, const int clientSock )
 {
 	std::string request(req);
 	std::string requestLine;
@@ -111,4 +111,13 @@ void Webserver::handleRequest( char *req )
 	
 	requestLine.erase(0, this->_request.file.length() + 1);
 	this->_request.version = requestLine.substr(0, requestLine.length());
+
+	std::cout << "clientSock = " << clientSock << std::endl;
+	std::cout << this->_request.method << std::endl;
+	if (!(this->_request.method == "GET" || this->_request.method == "POST"
+		|| this->_request.method == "DELETE"))
+		send(clientSock, "HTTP/1.1 400 Not Found\r\n\r\n<h1>This method is not supported</h1>", 63, 0);
+	else
+		send(clientSock, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome to nginx4.0</h1>", 47, 0);
+
 }

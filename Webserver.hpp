@@ -43,5 +43,5 @@ class Webserver
         void createSocket( void );
         void bindAndListen( void );
         void acceptConnections( void );
-        void handleRequest( char *req );
+        void handleRequest( char *req, const int clientSock );
 };
