@@ -10,6 +10,7 @@ Server::Server(std::string &block)
 {
     std::stringstream outfile(block);
     std::string line;
+    std::string location;
     while(getline(outfile, line))
         {
             size_t found = line.find_first_not_of(" \t\f\v\n\r{");
@@ -25,10 +26,16 @@ Server::Server(std::string &block)
                 set_server_name(line.substr(11));
             else if (line.substr(0, 4) == "root")
                 set_root_path(line.substr(4));
-            else if (line.substr(0, 11) == "accept_list")
-                set_accept_list(line.substr(11));
             else if (line.substr(0, 8) == "location")
-            { 
+            {
+                location = line + "\n";
+                while(getline(outfile, line))
+                {
+                    location += line + "\n";
+                    if (line.find("}") != std::string::npos)
+                        break;
+                }
+                _location.push_back(Location(location));
             }
             else if(line.substr(0,9) == "body_size")
             {
@@ -98,19 +105,6 @@ void    Server::set_server_name(std::string   server_name)
     this->_server_name = server_name.substr(found, found_t - found);
 }
 
-void    Server::set_accept_list(std::string accept_list)
-{
-    size_t found = accept_list.find_first_not_of("  \t\f\v\n\r");
-    size_t found_t = accept_list.find_first_of(";");
-    if (found_t == std::string::npos)
-        throw "'accept_list' value should be end with ';' ";
-    std::string name = accept_list.substr(found, found_t - found);
-    std::stringstream list(name);
-    std::string line;
-    while(getline(list, line, ' '))
-        _accept_list.push_back(line);
-}
-
 void            Server::set_body_size(std::string body_size)//you shuld check if mega or gb ....
 {
     size_t found = body_size.find_first_not_of("  \t\f\v\n\r");
@@ -153,7 +147,7 @@ void             Server::check_valid_numIp(std::string &value)
         throw "Invalid Ip";
     int num = atoi(value.c_str());
     if (num > 255)
-        throw "Your Ip is not in valid Range";
+        throw "Ip is not in valid Range";
 }
 
 std::string     Server::get_port() const
@@ -169,11 +163,6 @@ std::string     Server::get_path() const
 std::vector<std::string>     Server::get_indexes() const
 {
     return (this->_indexes);
-}
-
-std::vector<std::string>     Server::get_accept_list() const
-{
-    return (this->_accept_list);
 }
 
 Server::~Server()
