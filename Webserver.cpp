@@ -84,6 +84,7 @@ void Webserver::acceptConnections( void )
     while (1)
     {
         clientSocket = accept(this->_socket, (struct sockaddr *)this->_clientAddress, &this->_sockaddLen);
+		std::cout << "Client Socket = " << clientSocket << std::endl;
         if (clientSocket == -1)
             throw "Accept function failed";
         buff = new char[this->_requestLength];
@@ -112,12 +113,24 @@ void Webserver::handleRequest( char *req, const int clientSock )
 	requestLine.erase(0, this->_request.file.length() + 1);
 	this->_request.version = requestLine.substr(0, requestLine.length());
 
-	std::cout << "clientSock = " << clientSock << std::endl;
-	std::cout << this->_request.method << std::endl;
 	if (!(this->_request.method == "GET" || this->_request.method == "POST"
 		|| this->_request.method == "DELETE"))
 		send(clientSock, "HTTP/1.1 400 Not Found\r\n\r\n<h1>This method is not supported</h1>", 63, 0);
-	else
-		send(clientSock, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome to nginx4.0</h1>", 47, 0);
+	else if (this->_request.method == "GET" && this->_request.file == "/")
+    {
+		std::string response("HTTP/1.1 200 OK\r\n\r\n" + getIndexFile());
+		send(clientSock, response.c_str(), response.length(), 0);
+    }
+}
 
+std::string Webserver::getIndexFile( void ) const
+{
+    std::ifstream file;
+	std::stringstream s;
+
+	file.open("index.html");
+	if (!file.is_open())
+		throw "File did not open";
+	s << file.rdbuf();
+    return s.str();
 }

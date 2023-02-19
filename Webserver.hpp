@@ -3,8 +3,11 @@
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <iterator>
 #include <unistd.h>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 #include <vector>
 #include <poll.h>
 #include <map>
@@ -44,4 +47,5 @@ class Webserver
         void bindAndListen( void );
         void acceptConnections( void );
         void handleRequest( char *req, const int clientSock );
+        std::string getIndexFile( void ) const;
 };
