@@ -15,8 +15,8 @@ class Configfile
 {
     private :
         std::list<std::string>       list;
-        std::vector<Server>          server;       
     public :
+        std::vector<Server>          server;       
         Configfile();
         std::string readfile(std::ifstream &infle);
         void        parse_file(std::string &config);

@@ -11,6 +11,7 @@ Server::Server(std::string &block)
     std::stringstream outfile(block);
     std::string line;
     std::string location;
+    int count = 0;
     while(getline(outfile, line))
         {
             size_t found = line.find_first_not_of(" \t\f\v\n\r{");
@@ -19,7 +20,12 @@ Server::Server(std::string &block)
                 continue;
             line = line.substr(found, found_t - found + 1);
             if(line.substr(0, 6) == "listen")
+            {
+                count++;
+                if (count == 2)
+                    throw "duplicate 'listen'";
                 set_listen(line.substr(6));
+            }
             else if (line.substr(0, 5) == "index")
                 set_indexes(line.substr(5));
             else if (line.substr(0, 11) == "server_name")
@@ -43,6 +49,7 @@ Server::Server(std::string &block)
             }
             else
                  throw "There Invalid Name";
+                
     }
 }
 

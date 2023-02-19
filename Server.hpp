@@ -16,8 +16,8 @@ class Server
         std::string                 _server_name;
         std::string                 _body_size;
         std::vector<std::string>    _indexes;
-        std::vector<Location>       _location;
     public:
+        std::vector<Location>       _location;
 
         Server();
         Server(std::string &block);

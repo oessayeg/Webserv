@@ -93,7 +93,7 @@ void        Location::set_autoindex_location(std::string index_location)
     else if (name.substr(0, 3) == "off")
         this->_auto_index = false;
     else
-        throw "invalid arg";
+        throw "'autoindex' : invalid arg";
 }
 
 void        Location::set_indexes_location(std::string        indexes_location)
@@ -107,6 +107,11 @@ void        Location::set_indexes_location(std::string        indexes_location)
     std::string       line;
     while(getline(paths, line, ' '))
         this->_indexes_location.push_back(line);
+}
+
+bool    Location::get_autoindex() const
+{
+    return (this->_auto_index);
 }
 
 Location::~Location()
