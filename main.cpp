@@ -8,7 +8,12 @@ int main( void )
 
         mainServer.createSocket();
         mainServer.bindAndListen();
-        mainServer.acceptConnections();
+        while (1)
+        {
+            mainServer.acceptConnections();
+            mainServer.parseRequest();
+            mainServer.processRequest();
+        }
     }
     catch ( const char *msg )
     {
