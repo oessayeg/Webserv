@@ -11,12 +11,13 @@
 #include <poll.h>
 #include <list>
 #include <map>
-
+#include <unordered_map>
 // Server header files
 #include "Webserver.class.hpp"
 
 // Macros
-#define MAX_TO_READ 1000
+#define MIN_TO_READ 1024
+#define MAX_TO_READ 4096
 #define MAX_TO_SEND 30000
 
 // Structs used
@@ -35,4 +36,5 @@ struct clients
 	int bytesRead;
 	int fd;
 	struct sockaddr_in clientStruct;
+	std::unordered_map< std::string, std::string > headers;
 };

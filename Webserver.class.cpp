@@ -108,12 +108,19 @@ void Webserver::readAndRespond( void )
 
 void Webserver::_readRequest( std::list< clients >::iterator client )
 {
-	std::cout << "Should read request from : " << client->fd << std::endl;
-	exit(0);
+	if (client->bytesRead == MAX_TO_READ)
+	{
+		send(client->fd, "HTTP/1.1 400 Bad Request\r\n\r\n<h1>Too long request !</h1>", 56, 0);
+		this->_pendingClients.erase(client);
+		return ;
+	}
+	client->bytesRead += recv(client->fd, client->request + client->bytesRead, 400, 0);
+	client->request[client->bytesRead] = '\0';
 }
 
 void Webserver::_sendResponse( std::list< clients >::iterator client )
 {
 	std::cout << "Should send response to : " << client->fd << std::endl;
-	exit(0);
+	send(client->fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome to Webserv2.0 !</h1>", 52, 0);
+	this->_pendingClients.erase(client);
 }

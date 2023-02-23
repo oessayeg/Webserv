@@ -26,7 +26,7 @@ class Webserver
 		void createSockets( void );
 		void setReadyFds( void );
 		void readAndRespond( void );
-	
+		
 	private :
 		void _readRequest( std::list< clients >::iterator client );
 		void _sendResponse( std::list< clients >::iterator client );
