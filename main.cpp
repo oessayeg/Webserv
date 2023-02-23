@@ -1,27 +1,33 @@
-#include "Server.hpp"
-#include "Configfile.hpp"
-#include "Server.hpp"
+#include "ParseConfigfile/Configfile.hpp"
+
 
 
 int main(int ac, char **av)
 {
-    Configfile op;
-    if (ac != 2)
-    {
-        std::cout<<"invalid arg"<<std::endl;
-        return (0);
-    }
+    std::string file;
     try
     {
-        std::string configfile;
-        std::ifstream infile;
-        infile.open(av[1]);
-        configfile = op.readfile(infile);
-        op.parse_file(configfile);
+        Configfile Config;
+        if (av[1])
+        {
+            file = av[1];
+            Config.check_errors(file);
+            std::ifstream infile;
+            infile.open(av[1]);
+            std::string content = Config.get_contentfile(infile);
+            Config.parse_configfile(content);
+            std::list<Serverblock>      servers;
+            servers = Config.get_serverblocks();
+        }
+
+    }
+    catch(OurException &e)
+    {
+        std::cout<<e.what()<<std::endl;
     }
     catch(const char *str)
     {
-        std::cout <<str << '\n';
+        std::cout<<str<<std::endl;
     }
-
-} 
+    
+}

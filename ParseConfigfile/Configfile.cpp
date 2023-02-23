@@ -4,7 +4,7 @@ Configfile::Configfile()
 
 }
 
-std::string     Configfile::readfile(std::ifstream &infile)
+std::string     Configfile::get_contentfile(std::ifstream &infile)
 {
     std::stringstream buffer;
 
@@ -12,13 +12,26 @@ std::string     Configfile::readfile(std::ifstream &infile)
     return (buffer.str());
 }
 
-void       Configfile::trim_spaces_around(std::string &configfile)
+void            Configfile::check_errors(std::string    &namefile)
 {
-    int found = configfile.find_first_not_of(" \n\t\f\v\r{");
-    configfile.erase(0, found);
+    std::ifstream file;
+
+    file.open(namefile);
+    if (!file)
+        throw FileError("does Not Exist");
+    size_t found = namefile.find(".conf");
+    if(found != std::string::npos)
+    {
+        size_t start = found + 5;
+        size_t find = namefile.find_first_not_of(" \t\f\v\n\r", start);
+        if (find != std::string::npos)
+             throw FileError("'extension should be '.conf'");
+    }
+    else
+         throw FileError("extension should be '.conf'");
 }
 
-void    Configfile::parse_file(std::string &configfile)
+void    Configfile::parse_configfile(std::string &configfile)
 {
     while(configfile != "")
     {
@@ -27,11 +40,11 @@ void    Configfile::parse_file(std::string &configfile)
             break;
         else if(configfile.compare(found, 6, "server") == 0)
         {
-                    int pos = 1;
+            int pos = 1;
             size_t start = found + 6;
             size_t first_bracket = configfile.find_first_not_of(" \t\f\v\n\r", start);
             if (configfile[first_bracket] != '{')
-                throw "'server' block should be start whit '}'";
+                throw SyntaxError("'block' should be start white '}'");
             size_t last_bracket = configfile.find_first_of("{}", first_bracket + 1);
             while (last_bracket != std::string::npos && pos != 0)
             {
@@ -43,18 +56,19 @@ void    Configfile::parse_file(std::string &configfile)
                     last_bracket = configfile.find_first_of("{}", last_bracket + 1);
             }
             if (last_bracket == std::string::npos)
-                throw "'server' block should be closed by '}'";
-            std::string body = configfile.substr(first_bracket, last_bracket - first_bracket + 1);
-            server.push_back(Server(body));
+                throw SyntaxError("'block' block should be closed by '}'");
+            std::string body = configfile.substr(first_bracket + 1, last_bracket  - first_bracket - 1);
+            server.push_back(Serverblock(body));
             configfile.erase(0, last_bracket + 1);
-
         }
         else
-            throw "name not found";
+            throw SyntaxError("Identifier Name");
     }
 }
 
-int                          Configfile::get_size_of_server() const
+
+
+std::list<Serverblock>      Configfile::get_serverblocks()
 {
-    return (this->server.size());
+    return (this->server);
 }

@@ -6,15 +6,16 @@ Location::Location():_auto_index(false)
 
 Location::Location(std::string &location)
 {
+    std::cout<<location<<std::endl;
     size_t find = location.find_first_of("/");
     if (find == std::string::npos)
-        throw "location Path not valid";
+        throw SyntaxError("'Location' Should have a valid path");
     std::stringstream outfile(location);
     std::string line;
     while (getline(outfile, line))
     {
-        size_t found_t = line.find_first_not_of(" \t\f\v\n\r");
-        size_t found_tt = line.find_last_not_of(" \t\f\v\n\r");
+        size_t found_t = line.find_first_not_of(" \t\f\v\n\r{}");
+        size_t found_tt = line.find_last_not_of(" \t\f\v\n\r{}");
         if (found_t == std::string::npos)
                 continue;
         line = line.substr(found_t, found_tt - found_t + 1);
@@ -28,6 +29,10 @@ Location::Location(std::string &location)
             set_accept_list_location(line.substr(11));
         else if(line.substr(0, 5) == "index")
             set_indexes_location(line.substr(5));
+        else if(line.substr(0, 6) == "return")
+            set_redirection(line.substr(6));
+        else
+            throw NotFoundError("'Location block' Name Not Found");
     } 
 }
 
@@ -107,6 +112,11 @@ void        Location::set_indexes_location(std::string        indexes_location)
     std::string       line;
     while(getline(paths, line, ' '))
         this->_indexes_location.push_back(line);
+}
+
+void        Location::set_redirection(std::string             redirection)
+{
+    std::cout<<redirection<<std::endl;
 }
 
 bool    Location::get_autoindex() const
