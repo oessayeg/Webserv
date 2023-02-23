@@ -2,8 +2,10 @@
 
 // Main header files
 #include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 #include <iostream>
+#include <string.h> // To remove after finishing, just for memset
 #include <unistd.h>
 #include <vector>
 #include <poll.h>
@@ -20,16 +22,16 @@
 // Structs used
 struct blocks
 {
-    int port;
-    int ip;
-    std::vector < std::string > index;
-    std::string root;
+	int port;
+	int ip;
+	std::vector < std::string > index;
+	std::string root;
 };
 
 struct clients
 {
-    char response[MAX_TO_READ];
-    char request[MAX_TO_SEND];
-    int bytesRead;
-    int fd;
+	char response[MAX_TO_READ];
+	char request[MAX_TO_SEND];
+	int bytesRead;
+	int fd;
 };
