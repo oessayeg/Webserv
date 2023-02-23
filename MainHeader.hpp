@@ -17,7 +17,7 @@
 
 // Macros
 #define MAX_TO_READ 1000
-#define MAX_TO_SEND 10000
+#define MAX_TO_SEND 30000
 
 // Structs used
 struct blocks
@@ -34,4 +34,5 @@ struct clients
 	char request[MAX_TO_SEND];
 	int bytesRead;
 	int fd;
+	struct sockaddr_in clientStruct;
 };

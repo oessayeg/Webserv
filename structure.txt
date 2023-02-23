@@ -1,37 +1,37 @@
 struct serverBlock
 {
-    -> port;
-    -> ip;
-    -> index;
-    -> root;
-    -> location;
+	-> port;
+	-> ip;
+	-> index;
+	-> root;
+	-> location;
 }
 
 
 int main( int argc, char **argv )
 {
-    try
-    {
-        Config parsingObj;
-        webServer mainServer;
-        std::list< serverBlock > serverBlocks;
+	try
+	{
+		Config parsingObj;
+		webServer mainServer;
+		std::list< serverBlock > serverBlocks;
 
-        parsingObj.checkForErrors();
-        parsingObj.parse(argv[1]);
-        serverBlocks = serverBlocks.getBlocks();
+		parsingObj.checkForErrors();
+		parsingObj.parse(argv[1]);
+		serverBlocks = serverBlocks.getBlocks();
 
-        mainServer.setServerBlocks(serverBlocks);
-        mainServer.createSockets(); // Create sockets and bind them to the specified ones
-        while (1)
-        {
-            mainServer.checkForReadyFds(); // Poll used here to determine if a fd is ready for I/O
-            mainServer.receiveOrSend(); // Check whether fd is ready for I or O, and do the right job
-        }
-        
-    }
-    catch ( )
-    {
+		mainServer.setServerBlocks(serverBlocks);
+		mainServer.createSockets(); // Create sockets and bind them to the specified ones
+		while (1)
+		{
+			mainServer.checkForReadyFds(); // Poll used here to determine if a fd is ready for I/O
+			mainServer.receiveOrSend(); // Check whether fd is ready for I or O, and do the right job
+		}
+		
+	}
+	catch ( )
+	{
 
-    }
-    return (0);
+	}
+	return (0);
 }
