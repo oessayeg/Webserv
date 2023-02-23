@@ -1,24 +1,15 @@
-#include "Webserver.hpp"
+#include "MainHeader.hpp"
 
 int main( void )
 {
     try
     {
-        Webserver mainServer(80, 4000);
-
-        mainServer.createSocket();
-        mainServer.bindAndListen();
-        while (1)
-        {
-            mainServer.acceptConnections();
-            mainServer.parseRequest();
-            mainServer.processRequest();
-        }
+            std::cout << "Hello from server" << std::endl;
     }
-    catch ( const char *msg )
+    catch( const char *msg )
     {
-        std::cout << msg << std::endl;
+        std::cerr << msg << std::endl;
     }
-
-    return ( 0 );
+    
+    return (0);
 }

@@ -1,4 +1,4 @@
-SRCS = main.cpp Webserver.cpp
+SRCS = main.cpp Webserver.class.cpp
 
 NAME = main
 
