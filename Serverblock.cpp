@@ -235,7 +235,7 @@ std::string Serverblock::get_root()  const
     return (this->_root);
 }
 
-std::list<Location> Serverblock::get_locationblocks() const
+std::vector<Location> Serverblock::get_locationblocks() const
 {
     return(this->_location);
 }

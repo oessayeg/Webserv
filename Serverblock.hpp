@@ -21,8 +21,8 @@ private:
     int                     _countlisten;
     int                     _countbodysize;
     int                     _countroot;
-    std::list<std::string>  _indexes;
-    std::list<Location>  _location;
+    std::vector<std::string>  _indexes;
+    std::vector<Location>  _location;
 public:
     Serverblock();
     Serverblock(std::string &block);
@@ -48,7 +48,7 @@ public:
     std::string get_ip() const;
     long        get_body_size() const;
     std::string get_root() const;
-    std::list<Location> get_locationblocks() const;
+    std::vector<Location> get_locationblocks() const;
 };
 
 

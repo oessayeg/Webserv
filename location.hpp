@@ -13,9 +13,9 @@ class Location
         bool                                     _auto_index;
         std::string                              _root;
         std::string                              _redirection[2];
-        std::list<std::string>                 _accept_list;
-        std::list<std::string>                 _path_location;
-        std::list<std::string>                 _indexes_location;
+        std::vector<std::string>                 _accept_list;
+        std::vector<std::string>                 _path_location;
+        std::vector<std::string>                 _indexes_location;
     public:
         Location();
         Location(std::string &location);
@@ -32,6 +32,8 @@ class Location
         std::string                 get_root_location() const;
         std::vector<std::string>    get_acceptlist_location() const;
         std::vector<std::string>    get_indexes_location() const;
+
+        void                        init_list();
         ~Location();
 };
 

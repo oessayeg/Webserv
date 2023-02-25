@@ -6,7 +6,7 @@ Location::Location():_auto_index(false)
 
 Location::Location(std::string &location)
 {
-    std::cout<<location<<std::endl;
+    init_list();
     size_t find = location.find_first_of("/");
     if (find == std::string::npos)
         throw SyntaxError("'Location' Should have a valid path");
@@ -71,6 +71,8 @@ void        Location::set_root_location(std::string root_location)
 
 void    Location::set_accept_list_location(std::string accept_list)
 {
+    if (!_accept_list.empty())
+        _accept_list.clear();
     size_t found = accept_list.find_first_not_of("  \t\f\v\n\r");
     size_t found_t = accept_list.find_first_of(";");
     if (found_t == std::string::npos)
@@ -114,6 +116,11 @@ void        Location::set_indexes_location(std::string        indexes_location)
         this->_indexes_location.push_back(line);
 }
 
+std::vector<std::string>    Location::get_acceptlist_location() const
+{
+    return (this->_accept_list);
+}
+
 void        Location::set_redirection(std::string             redirection)
 {
     std::cout<<redirection<<std::endl;
@@ -122,6 +129,13 @@ void        Location::set_redirection(std::string             redirection)
 bool    Location::get_autoindex() const
 {
     return (this->_auto_index);
+}
+
+void        Location::init_list()
+{
+    _accept_list.push_back("GET");
+    _accept_list.push_back("POST");
+    _accept_list.push_back("DELETE");
 }
 
 Location::~Location()

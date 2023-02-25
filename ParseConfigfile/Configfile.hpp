@@ -16,7 +16,7 @@ class Configfile
 {
     private :
         std::list<std::string>            list;
-        std::list<Serverblock>          server;       
+        std::vector<Serverblock>          server;       
     public :
         Configfile();
         void                check_errors(std::string &namefile);
@@ -24,6 +24,6 @@ class Configfile
         void                parse_configfile(std::string        &configfile);
 
 
-        std::list<Serverblock>      get_serverblocks();
+        std::vector<Serverblock>      get_serverblocks();
 };
 #endif
