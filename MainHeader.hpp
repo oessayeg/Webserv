@@ -19,9 +19,9 @@
 
 // Macros
 #define MIN_TO_READ 1024
-#define MAX_TO_READ 4096
-#define MAX_TO_SEND 30000
-#define MAX_BODY_SIZE 536870912
+#define MAX_BODY_SIZE 10240 //102400000
+#define MAX_REQUEST_HEADERS 3072 + 4096 // Request line + headers
+#define MAX MAX_BODY_SIZE + MAX_REQUEST_HEADERS
 
 // Structs used
 struct blocks
@@ -34,8 +34,8 @@ struct blocks
 
 struct clients
 {
-	char response[MAX_TO_READ];
-	char request[MAX_TO_SEND];
+	char *response;
+	char request[MAX];
 	int bytesRead;
 	int fd;
 	struct sockaddr_in clientStruct;

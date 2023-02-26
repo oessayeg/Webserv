@@ -26,4 +26,5 @@ class Request
 		bool hasGoodSize( void ) const;
 		bool hasAllowedChars( void ) const;
 		bool isGoodVersion( void ) const;
+		bool isRequestLineParsed( void ) const;
 };

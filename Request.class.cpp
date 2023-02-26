@@ -49,3 +49,8 @@ bool Request::isGoodVersion( void ) const
 {
 	return (this->_version == "HTTP/1.1");
 }
+
+bool Request::isRequestLineParsed( void ) const
+{
+	return (isSupported() && hasGoodSize() && hasAllowedChars() && isGoodVersion());
+}

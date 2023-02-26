@@ -30,4 +30,12 @@ class Webserver
 	private :
 		void _readRequest( std::list< clients >::iterator client );
 		void _sendResponse( std::list< clients >::iterator client );
+		bool _parseRequest( std::list< clients >::iterator client );
+
+	public : // Temporary status code functions
+		void send405( std::list< clients >::iterator client );
+		void send414( std::list< clients >::iterator client );
+		void send400( std::list< clients >::iterator client );
+		void send505( std::list< clients >::iterator client );
+
 };
