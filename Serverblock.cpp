@@ -208,6 +208,7 @@ void    Serverblock::set_root(std::string root)
 }
 
 void    Serverblock::set_index(std::string indexes)
+{
     std::string value;
     check_valid_value(indexes, value);
     size_t found = value.find_first_of(";");
