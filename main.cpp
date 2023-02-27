@@ -16,16 +16,16 @@ int main(int ac, char **av)
             infile.open(av[1]);
             std::string content = Config.get_contentfile(infile);
             Config.parse_configfile(content);
-            std::vector<Serverblock>      servers;
-            std::vector<Location>      locations;
-            std::vector<std::string>      out;
-            servers = Config.get_serverblocks();
-            locations = servers[0].get_locationblocks();
-            out = locations[0].get_acceptlist_location();
-            for(int i = 0; i <out.size(); i++)
-            {
-                std::cout<<out[i]<<std::endl;
-            }
+            // std::vector<Serverblock>      servers;
+            // std::vector<Location>      locations;
+            // std::vector<std::string>      out;
+            // servers = Config.get_serverblocks();
+            // locations = servers[0].get_locationblocks();
+            // out = locations[0].get_acceptlist_location();
+            // for(int i = 0; i <out.size(); i++)
+            // {
+            //     std::cout<<out[i]<<std::endl;
+            //  }
         }
 
     }

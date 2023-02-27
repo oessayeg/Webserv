@@ -1,6 +1,6 @@
 #include "Serverblock.hpp"
 
-Serverblock::Serverblock():_ip(0), _port(0)
+Serverblock::Serverblock():_ip(0), _port(0),_countroot(0), _countbodysize(0), _countlisten(0)
 {
 
 }
@@ -13,7 +13,7 @@ void        Serverblock::block_is_empty(std::string &block)
 }
 
 
-Serverblock::Serverblock(std::string &block)
+Serverblock::Serverblock(std::string &block):_countroot(0), _countbodysize(0), _countlisten(0)
 {
     block_is_empty(block);
     std::string location_block;
@@ -45,6 +45,7 @@ Serverblock::Serverblock(std::string &block)
             }
             _location.push_back(Location(location_block));
         }
+        check_duplicate();
     }
 }
 
@@ -175,10 +176,12 @@ void        Serverblock::set_port_and_ip(std::string line)
             this->_ip = ip;
         }
     }
+    this->_countlisten++;
 }
 
 void    Serverblock::set_body_size(std::string body_size)
 {
+    
     std::string value;
     check_valid_value(body_size, value);
     check_value_arg(value);
@@ -187,6 +190,7 @@ void    Serverblock::set_body_size(std::string body_size)
     if (!is_Number(value))
         throw SyntaxError("Body Size Value Not Valid");
     this->_body_size = atol(value.c_str());
+    this->_countbodysize++;
 }
 
 void    Serverblock::set_root(std::string root)
@@ -200,10 +204,10 @@ void    Serverblock::set_root(std::string root)
         value = value.substr(1);
     if(access(value.c_str(), F_OK) != 0)
         throw NotFoundError("'root' Folder Is Not Found");
+    this->_countroot++;
 }
 
-void    Serverblock::set_index(std::string indexes)//3andak tnsa after ; 
-{
+void    Serverblock::set_index(std::string indexes)
     std::string value;
     check_valid_value(indexes, value);
     size_t found = value.find_first_of(";");
@@ -214,6 +218,11 @@ void    Serverblock::set_index(std::string indexes)//3andak tnsa after ;
         this->_indexes.push_back(line);
 }
 
+void        Serverblock::check_duplicate()
+{
+    if (this->_countbodysize > 1 || this->_countlisten > 1 || this->_countroot > 1)
+        throw SyntaxError("'Duplicate' name");
+}
 
 int         Serverblock::get_port() const
 {

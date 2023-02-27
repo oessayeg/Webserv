@@ -10,6 +10,7 @@
 
 #include "Exception.hpp"
 #include "location.hpp"
+
 class Serverblock
 {
 private:
@@ -21,6 +22,7 @@ private:
     int                     _countlisten;
     int                     _countbodysize;
     int                     _countroot;
+    bool                    _found;
     std::vector<std::string>  _indexes;
     std::vector<Location>  _location;
 public:
@@ -49,6 +51,8 @@ public:
     long        get_body_size() const;
     std::string get_root() const;
     std::vector<Location> get_locationblocks() const;
+
+    void        check_duplicate();
 };
 
 

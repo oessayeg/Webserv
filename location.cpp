@@ -1,10 +1,10 @@
 #include "location.hpp"
 
-Location::Location():_auto_index(false)
+Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_methode(0),_countroot(0)
 {
 }
 
-Location::Location(std::string &location)
+Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0)
 {
     init_list();
     size_t find = location.find_first_of("/");
@@ -33,6 +33,7 @@ Location::Location(std::string &location)
             set_redirection(line.substr(6));
         else
             throw NotFoundError("'Location block' Name Not Found");
+        check_duplicate();
     } 
 }
 
@@ -67,6 +68,7 @@ void        Location::set_root_location(std::string root_location)
     if (found_t != std::string::npos)
         throw "invalid root";
     this->_root = name;
+    this->_countroot++;
 }
 
 void    Location::set_accept_list_location(std::string accept_list)
@@ -82,6 +84,7 @@ void    Location::set_accept_list_location(std::string accept_list)
     std::string line;
     while(getline(list, line, ' '))
         _accept_list.push_back(line);
+    this->_count_allow_methode++;
 }
 
 void        Location::set_autoindex_location(std::string index_location)
@@ -101,6 +104,7 @@ void        Location::set_autoindex_location(std::string index_location)
         this->_auto_index = false;
     else
         throw "'autoindex' : invalid arg";
+    this->_count_auto_index++;
 }
 
 void        Location::set_indexes_location(std::string        indexes_location)
@@ -119,6 +123,12 @@ void        Location::set_indexes_location(std::string        indexes_location)
 std::vector<std::string>    Location::get_acceptlist_location() const
 {
     return (this->_accept_list);
+}
+
+void        Location::check_duplicate()
+{
+    if (this->_count_allow_methode > 1 || this->_count_auto_index > 1 || this->_countroot > 1)
+        throw SyntaxError("'Location block' Duplicate name");
 }
 
 void        Location::set_redirection(std::string             redirection)

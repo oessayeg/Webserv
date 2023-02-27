@@ -16,6 +16,9 @@ class Location
         std::vector<std::string>                 _accept_list;
         std::vector<std::string>                 _path_location;
         std::vector<std::string>                 _indexes_location;
+        int                                      _countroot;
+        int                                      _count_allow_methode;
+        int                                      _count_auto_index;
     public:
         Location();
         Location(std::string &location);
@@ -34,6 +37,7 @@ class Location
         std::vector<std::string>    get_indexes_location() const;
 
         void                        init_list();
+        void                        check_duplicate();
         ~Location();
 };
 
