@@ -1,10 +1,10 @@
 #include "MainHeader.hpp"
 
 // Temporary function
-std::list < blocks > giveList( void )
+std::list < Blocks > giveList( void )
 {
-	std::list < blocks > list;
-	blocks ins1;
+	std::list < Blocks > list;
+	Blocks ins1;
 	ins1.index.push_back("index1.html");
 	ins1.port = 8080;
 	ins1.ip = 0;
@@ -20,7 +20,6 @@ std::list < blocks > giveList( void )
 	return list;
 }
 
-
 // Main
 int main( void )
 {
@@ -30,11 +29,11 @@ int main( void )
 
 		mainServer.setServerBlocks(giveList());
 		mainServer.createSockets();
-		while (1)
-		{
-			mainServer.setReadyFds();
-			mainServer.readAndRespond();
-		}
+		// while (1)
+		// {
+		// 	mainServer.setReadyFds();
+		// 	mainServer.readAndRespond();
+		// }
 	}
 	catch( const char *msg )
 	{

@@ -1,5 +1,27 @@
 #include "Request.class.hpp"
 
+Request::Request( void ) { }
+
+Request::Request( const Request &rhs )
+{
+	*this = rhs;
+}
+
+Request &Request::operator=( const Request &rhs )
+{
+	if (this != &rhs)
+	{
+		this->_method = rhs._method;
+		this->_uri = rhs._uri;
+		this->_version = rhs._version;
+		this->_headers = rhs._headers;
+		this->_body = rhs._body;
+	}
+	return (*this);
+}
+
+Request::~Request( void ) { }
+
 void Request::setMethod( const std::string &meth )
 {
 	this->_method = meth;

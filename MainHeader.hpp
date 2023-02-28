@@ -13,18 +13,18 @@
 #include <list>
 #include <map>
 
-// Classes header files
-#include "Webserver.class.hpp"
-#include "Request.class.hpp"
 
 // Macros
 #define MIN_TO_READ 1024
-#define MAX_BODY_SIZE 10240 //102400000
-#define MAX_REQUEST_HEADERS 3072 + 4096 // Request line + headers
-#define MAX MAX_BODY_SIZE + MAX_REQUEST_HEADERS
+#define MAX_RQ 8192
+
+// Classes header files
+#include "Request.class.hpp"
+#include "Client.class.hpp"
+#include "Webserver.class.hpp"
 
 // Structs used
-struct blocks
+struct Blocks
 {
 	int port;
 	int ip;
@@ -32,12 +32,12 @@ struct blocks
 	std::string root;
 };
 
-struct clients
-{
-	char *response;
-	char request[MAX];
-	int bytesRead;
-	int fd;
-	struct sockaddr_in clientStruct;
-	Request parsedRequest;
-};
+// struct clients
+// {
+// 	char *response;
+// 	char request[MAX];
+// 	int bytesRead;
+// 	int fd;
+// 	struct sockaddr_in clientStruct;
+// 	Request parsedRequest;
+// };
