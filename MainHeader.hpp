@@ -13,31 +13,13 @@
 #include <list>
 #include <map>
 
-
-// Macros
+// The first macro is used when using recv function
+// The second one is for the size of request line + headers
 #define MIN_TO_READ 1024
 #define MAX_RQ 8192
 
 // Classes header files
+#include "Block.tmp.hpp"
 #include "Request.class.hpp"
 #include "Client.class.hpp"
 #include "Webserver.class.hpp"
-
-// Structs used
-struct Blocks
-{
-	int port;
-	int ip;
-	std::vector < std::string > index;
-	std::string root;
-};
-
-// struct clients
-// {
-// 	char *response;
-// 	char request[MAX];
-// 	int bytesRead;
-// 	int fd;
-// 	struct sockaddr_in clientStruct;
-// 	Request parsedRequest;
-// };

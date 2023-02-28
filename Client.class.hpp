@@ -4,7 +4,7 @@
 
 class Client
 {
-	private :
+	public :
 		int _port;
 		int _socket;
 		int _bytesRead;
@@ -12,7 +12,8 @@ class Client
 		char _request[MAX_RQ];
 		Request _parsedRequest;
 		struct sockaddr_in *_clientStruct;
-	
+		// Need to add a pointer to blocks
+
 	public :
 		Client( void );
 		Client( const Client &rhs );

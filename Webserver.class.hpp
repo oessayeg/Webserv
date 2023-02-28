@@ -12,7 +12,7 @@ class Webserver
 		std::list < Blocks > _serverBlocks;
 		std::list < Client > _pendingClients;
 		std::list < int > _listeningSockets;
-		pollfd *_fds;
+		pollfd *_fdToCheck;
 
 	public :
 		// Webserver Constructors
@@ -24,7 +24,7 @@ class Webserver
 
 		void setServerBlocks( std::list < Blocks > list );
 		void createSockets( void );
-		// void setReadyFds( void );
+		void setReadyFds( void );
 		// void readAndRespond( void );
 
 	private :

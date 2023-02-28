@@ -31,8 +31,8 @@ int main( void )
 		mainServer.createSockets();
 		// while (1)
 		// {
-		// 	mainServer.setReadyFds();
-		// 	mainServer.readAndRespond();
+			mainServer.setReadyFds();
+			// mainServer.readAndRespond();
 		// }
 	}
 	catch( const char *msg )
