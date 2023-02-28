@@ -29,11 +29,11 @@ int main( void )
 
 		mainServer.setServerBlocks(giveList());
 		mainServer.createSockets();
-		// while (1)
-		// {
+		while (1)
+		{
 			mainServer.setReadyFds();
-			// mainServer.readAndRespond();
-		// }
+			mainServer.readAndRespond();
+		}
 	}
 	catch( const char *msg )
 	{

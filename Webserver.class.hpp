@@ -25,9 +25,10 @@ class Webserver
 		void setServerBlocks( std::list < Blocks > list );
 		void createSockets( void );
 		void setReadyFds( void );
-		// void readAndRespond( void );
+		void readAndRespond( void );
 
 	private :
+		void _acceptNewClients( void );
 		// void _readRequest( std::list< clients * >::iterator client );
 		// void _sendResponse( std::list< clients * >::iterator client );
 		// bool _parseRequest( std::list< clients * >::iterator client );

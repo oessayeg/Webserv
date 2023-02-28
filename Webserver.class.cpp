@@ -26,6 +26,7 @@ void Webserver::createSockets( void )
 	sock = 0;
 	tmp = 1;
 	// Need to change the exceptions thrown
+	std::cout << "Creating the listening sockets : ";
 	for (b = this->_serverBlocks.begin(); b != this->_serverBlocks.end(); b++)
 	{
 		memset(&b->socketNeeds, 0, sizeof(sockaddr_in)); // Should not forget to change memset (not allowed)
@@ -41,8 +42,10 @@ void Webserver::createSockets( void )
 			throw "Bind function failed";
 		if (listen(sock, 0) == -1)
 			throw "Listen function failed";
+		std::cout << sock << " ";
 		this->_listeningSockets.push_back(sock);
 	}
+	std::cout << std::endl;
 }
 
 void Webserver::setReadyFds( void )
@@ -52,36 +55,85 @@ void Webserver::setReadyFds( void )
 	int i;
 
 	i = 0;
-	this->_fdToCheck = new pollfd[this->_listeningSockets.size() + this->_pendingClients.size()];
+	_fdToCheck = new pollfd[_listeningSockets.size() + _pendingClients.size()];
 	std::cout << "Sockets : ";
-	for (sIter = this->_listeningSockets.begin(); sIter != this->_listeningSockets.end(); sIter++)
+	for (sIter = _listeningSockets.begin(); sIter != _listeningSockets.end(); sIter++)
 	{
 		std::cout << *sIter << " ";
-		this->_fdToCheck[i].fd = *sIter;
-		this->_fdToCheck[i].events = POLLRDNORM;
+		_fdToCheck[i].fd = *sIter;
+		_fdToCheck[i].events = POLLRDNORM;
 		i++;
 	}
 	std::cout << ", clients : ";
-	for (cIter = this->_pendingClients.begin(); cIter != this->_pendingClients.end(); cIter++)
+	for (cIter = _pendingClients.begin(); cIter != _pendingClients.end(); cIter++)
 	{
-		std::cout << cIter->_port << " ";
-		this->_fdToCheck[i].fd = cIter->_socket;
-		this->_fdToCheck[i].events = POLLRDNORM | POLLWRNORM;
+		std::cout << cIter->getSocket() << " ";
+		_fdToCheck[i].fd = cIter->getSocket();
+		_fdToCheck[i].events = POLLRDNORM | POLLWRNORM;
 		i++;
 	}
 	std::cout << std::endl;
 }
 
-// void Webserver::readAndRespond( void )
-// {
-// 	int nbFds;
-// 	int sizeOfSocketsAndClients;
+void Webserver::readAndRespond( void )
+{
+	std::list< Client >::iterator b;
+	int sizeOfSocketsAndClients;
+	int nbFds;
+	int i;
 
-// 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
+	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
+	nbFds = poll(this->_fdToCheck, sizeOfSocketsAndClients, -1);
+	this->_acceptNewClients();
+	b = _pendingClients.begin();
+	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
+	{
+		if (_fdToCheck[i].events & POLLRDNORM)
+		{
+			std::cout << "Should read from fd : " << _fdToCheck[i].fd << " ";
+			// Here I should read the request 
+		}
+		else if (_fdToCheck[i].events & POLLWRNORM)
+		{
+			std::cout << "Should write in fd : " << _fdToCheck[i].fd << " ";
+			// Here I should send the response
+		}
+		
+		i++;
+	}
+	std::cout << std::endl;
+}
 
-// 	nbFds = poll(this->_fdToCheck, sizeOfSocketsAndClients, -1);
-	
-// }
+void Webserver::_acceptNewClients( void )
+{
+	std::list< int >::iterator sockIter;
+	std::list< Blocks >::iterator blIter;
+	socklen_t sizeOfSockaddr_in;
+	int newFd;
+	int i;
+
+	i = 0;
+	newFd = 0;
+	sizeOfSockaddr_in = sizeof(struct sockaddr_in);
+	sockIter = _listeningSockets.begin();
+	blIter = _serverBlocks.begin();
+	for (; sockIter != _listeningSockets.end(); sockIter++)
+	{
+		if (_fdToCheck[i].revents == POLLRDNORM)
+		{
+			Client newClient;
+
+			newFd = accept(*sockIter, (struct sockaddr *)newClient.getClientStruct(), &sizeOfSockaddr_in);
+			if (newFd == -1)
+				throw "Accept function failed";
+			newClient.correspondingBlock = &(*blIter);
+			newClient.setSocket(newFd);
+			_pendingClients.push_back(newClient);
+		}
+		i++;
+		blIter++;
+	}
+}
 
 // bool Webserver::_parseRequest( std::list< clients * >::iterator client )
 // {
