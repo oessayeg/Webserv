@@ -22,6 +22,7 @@ class Webserver
 		Webserver( std::list < Blocks > &rhs );
 		~Webserver( void );
 
+		// Need to change the list param to a reference
 		void setServerBlocks( std::list < Blocks > list );
 		void createSockets( void );
 		void setReadyFds( void );

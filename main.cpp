@@ -23,22 +23,15 @@ std::list < Blocks > giveList( void )
 // Main
 int main( void )
 {
-	try
-	{
-		Webserver mainServer;
-
-		mainServer.setServerBlocks(giveList());
-		mainServer.createSockets();
-		while (1)
-		{
-			mainServer.setReadyFds();
-			mainServer.readAndRespond();
-		}
-	}
-	catch( const char *msg )
-	{
-		std::cerr << msg << std::endl;
-	}
 	
+	Webserver mainServer;
+
+	mainServer.setServerBlocks(giveList());
+	mainServer.createSockets();
+	while (1)
+	{
+		mainServer.setReadyFds();
+		mainServer.readAndRespond();
+	}
 	return (0);
 }

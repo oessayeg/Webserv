@@ -56,23 +56,27 @@ void Webserver::setReadyFds( void )
 
 	i = 0;
 	_fdToCheck = new pollfd[_listeningSockets.size() + _pendingClients.size()];
-	std::cout << "Sockets : ";
 	for (sIter = _listeningSockets.begin(); sIter != _listeningSockets.end(); sIter++)
 	{
-		std::cout << *sIter << " ";
 		_fdToCheck[i].fd = *sIter;
-		_fdToCheck[i].events = POLLRDNORM;
+		_fdToCheck[i].events = POLLIN;
+		_fdToCheck[i].revents = 0;
 		i++;
 	}
-	std::cout << ", clients : ";
 	for (cIter = _pendingClients.begin(); cIter != _pendingClients.end(); cIter++)
 	{
-		std::cout << cIter->getSocket() << " ";
 		_fdToCheck[i].fd = cIter->getSocket();
-		_fdToCheck[i].events = POLLRDNORM | POLLWRNORM;
+		_fdToCheck[i].events = POLLIN | POLLOUT;
+		_fdToCheck[i].revents = 0;
 		i++;
 	}
-	std::cout << std::endl;
+}
+
+void read( Client &c )
+{
+	// To change '40' later
+	c.bytesRead += recv(c.getSocket(), c.request + c.bytesRead, 100, 0);
+	c.request[c.bytesRead] = '\0';
 }
 
 void Webserver::readAndRespond( void )
@@ -81,27 +85,32 @@ void Webserver::readAndRespond( void )
 	int sizeOfSocketsAndClients;
 	int nbFds;
 	int i;
+	bool increment;
 
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
-	nbFds = poll(this->_fdToCheck, sizeOfSocketsAndClients, -1);
+	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
 	this->_acceptNewClients();
 	b = _pendingClients.begin();
+	increment = true;
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
-		if (_fdToCheck[i].events & POLLRDNORM)
+		if (_fdToCheck[i].revents & POLLIN)
+			b->readAndParse();
+		if ((_fdToCheck[i].revents & POLLOUT) && b->isParsed)
 		{
-			std::cout << "Should read from fd : " << _fdToCheck[i].fd << " ";
-			// Here I should read the request 
+			// This is temporary, should form the correct response
+			std::cout << b->request << std::endl;
+			std::cout << "Here fd : " << _fdToCheck[i].fd << std::endl;
+			send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Wecome !</h1>", 36, 0);
+			close(_fdToCheck[i].fd);
+			b = _pendingClients.erase(b);
+			increment = false;
 		}
-		else if (_fdToCheck[i].events & POLLWRNORM)
-		{
-			std::cout << "Should write in fd : " << _fdToCheck[i].fd << " ";
-			// Here I should send the response
-		}
-		
+		if (increment)
+			b++;
+		increment = true;
 		i++;
 	}
-	std::cout << std::endl;
 }
 
 void Webserver::_acceptNewClients( void )
@@ -119,11 +128,11 @@ void Webserver::_acceptNewClients( void )
 	blIter = _serverBlocks.begin();
 	for (; sockIter != _listeningSockets.end(); sockIter++)
 	{
-		if (_fdToCheck[i].revents == POLLRDNORM)
+		if (_fdToCheck[i].revents & POLLIN)
 		{
 			Client newClient;
 
-			newFd = accept(*sockIter, (struct sockaddr *)newClient.getClientStruct(), &sizeOfSockaddr_in);
+			newFd = accept(*sockIter, (struct sockaddr *)newClient.clientStruct, &sizeOfSockaddr_in);
 			if (newFd == -1)
 				throw "Accept function failed";
 			newClient.correspondingBlock = &(*blIter);
