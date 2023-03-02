@@ -69,13 +69,6 @@ void Webserver::setReadyFds( void )
 	}
 }
 
-void read( Client &c )
-{
-	// To change '40' later
-	c.bytesRead += recv(c.getSocket(), c.request + c.bytesRead, 100, 0);
-	c.request[c.bytesRead] = '\0';
-}
-
 void Webserver::readAndRespond( void )
 {
 	std::list< Client >::iterator b;
@@ -91,15 +84,18 @@ void Webserver::readAndRespond( void )
 	increment = true;
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
+		// Here I check if the fd is ready for reading
 		if (_fdToCheck[i].revents & POLLIN)
 		{
-			b->read();
-			b->parseRequest();
+			this->_readRequest(*b);
+			this->_parseRequestLine(*b);
+			this->_parseHeaders(*b);
 		}
-		if ((_fdToCheck[i].revents & POLLOUT) && b->isRead == true)
+		// Here I check if the fd is ready for writing && that the request is read
+		if ((_fdToCheck[i].revents & POLLOUT) && b->isHeaderParsed == true)
 		{
 			// This is temporary, should form the correct response
-			send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Wecome !</h1>", 36, 0);
+			send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome !</h1>", 37, 0);
 			close(_fdToCheck[i].fd);
 			b = _pendingClients.erase(b);
 			increment = false;
@@ -142,43 +138,70 @@ void Webserver::_acceptNewClients( void )
 	}
 }
 
-// bool Webserver::_parseRequest( std::list< clients * >::iterator client )
-// {
-// 	std::string req((*client)->request);
-// 	int index1, index2;
+void Webserver::_readRequest( Client &client )
+{
+	int r;
 
-// 	index1 = 0;
-// 	if (!(*client)->parsedRequest.isRequestLineParsed() && req.find("\r\n") >= 0)
-// 	{
-// 		index1 = req.find(" ", 0);
-// 		(*client)->parsedRequest.setMethod(req.substr(0, index1));
-// 		if (!(*client)->parsedRequest.isSupported())
-// 		{
-// 			// send405(client);
-// 			return (false);
-// 		}
-// 		index2 = req.find(" ", index1 + 1);
-// 		(*client)->parsedRequest.setUri(req.substr(index1 + 1, index2 - index1 - 1));
-// 		if (!(*client)->parsedRequest.hasGoodSize())
-// 		{
-// 			// send414(client);
-// 			return (false);
-// 		}
-// 		else if (!(*client)->parsedRequest.hasAllowedChars())
-// 		{
-// 			// send400((*client));
-// 			return (false);
-// 		}
-// 		index1 = req.find("\r\n", index2 + 1);
-// 		(*client)->parsedRequest.setVersion(req.substr(index2 + 1, index1 - index2 - 1));
-// 		if (!(*client)->parsedRequest.isGoodVersion())
-// 		{
-// 			// send505(client);
-// 			return (false);
-// 		}
-// 	}
-// 	return (true);
-// }
+	// Here I should check for a closed connection or a fail from recv
+	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
+
+	// Here I should check if the length is equal to the maximum one
+	client.bytesRead += r;
+	client.request[client.bytesRead] = '\0';
+
+	// Need to optimize this operation
+	if (strstr(client.request, "\r\n\r\n"))
+		client.isRead = true;
+}
+
+void Webserver::_parseRequestLine( Client &client )
+{
+	int i1, i2;
+
+	if (!client.isRead)
+		return ;
+	// Here putting the char request to a string for easy manipulation
+	client.stringRequest = client.request;
+	
+	i1 = client.stringRequest.find(' ');
+	client.parsedRequest.setMethod(client.stringRequest.substr(0, i1));
+	i2 = client.stringRequest.find(' ', i1 + 1);
+	client.parsedRequest.setUri(client.stringRequest.substr(i1 + 1, i2 - i1 - 1));
+	i1 = client.stringRequest.find('\r', i2 + 1);
+	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
+
+	//Here I erase the request line
+	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
+
+	// Here I should check if the methods/uris/versions are well formed
+	client.isRqLineParsed = true;
+
+	// std::cout << "Method : " << client.parsedRequest._method << "." << std::endl;
+	// std::cout << "Uri : " << client.parsedRequest._uri << "." << std::endl;
+	// std::cout << "Version : " << client.parsedRequest._version << "." <<  std::endl << std::endl;
+}
+
+void Webserver::_parseHeaders( Client &client )
+{
+	std::string first, second;
+	int index;
+
+	// Pour l'optimisation je peux mémoriser la position du premier CRLF
+	if (!client.isRqLineParsed)
+		return ;
+	while (1)
+	{
+		index = client.stringRequest.find(':');
+		first = client.stringRequest.substr(0, index);
+		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
+		client.parsedRequest.insertHeader(std::make_pair(first, second));
+		client.stringRequest.erase(0, client.stringRequest.find('\n') + 1);
+		index = client.stringRequest.find('\r');
+		if (client.stringRequest[index + 2] == '\r')
+			break;
+	}
+	client.isHeaderParsed = true;
+}
 
 // void Webserver::send405( std::list< clients >::iterator client )
 // {

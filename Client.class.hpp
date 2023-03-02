@@ -18,6 +18,8 @@ class Client
 		Blocks *correspondingBlock;
 		struct sockaddr_in *clientStruct;
 		bool isRead;
+		bool isRqLineParsed;
+		bool isHeaderParsed;
 
 	public :
 		Client( void );
@@ -26,9 +28,5 @@ class Client
 		~Client( void );
 		void setSocket( int s );
 		int getSocket( void );
-		void read( void );
-		void parseRequest( void );
-	
-	// public :
 
 };
