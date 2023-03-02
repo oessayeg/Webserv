@@ -45,3 +45,36 @@ void Client::setSocket( int s )
 {
 	_socket = s;
 }
+
+void Client::checkRequestLine( void )
+{
+	this->clientResponse.setBool(true);
+
+	if (!parsedRequest.hasAllowedChars())
+		this->clientResponse.setResponse("HTTP/1.1 400 Bad Request\r\n\r\n<h1>Bad Request !</h1>");
+	else if (!parsedRequest.hasGoodSize())
+		this->clientResponse.setResponse("HTTP/1.1 414 Request-URI too long\r\n\r\n<h1>Request uri too long !</h1>");
+	else if (!parsedRequest.isSupported())
+		this->clientResponse.setResponse("HTTP/1.1 405 Method Not Allowed\r\n\r\n<h1>This method is not allowed !</h1>");
+	else if (!parsedRequest.isGoodVersion())
+		this->clientResponse.setResponse("HTTP/1.1 501 Version Not Supported\r\n\r\n</h1>This version is not supported !</h1>");
+	else
+		this->clientResponse.setBool(false);
+}
+
+void Client::checkHeaders( void )
+{
+	if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
+		&& parsedRequest._headers["Transfer-Encoding"] != "chunked")
+	{
+		clientResponse.setResponse("HTTP/1.1 501 Not Implement\r\n\r\n<h1>Not implemented !</h1>");
+		clientResponse.setBool(true);
+	}
+	else if (parsedRequest._method == "POST" && parsedRequest._headers.find("Content-Length")
+		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
+		== parsedRequest._headers.end())
+	{
+		clientResponse.setResponse("HTTP/1.1 400 Bad Request\r\n\r\n<h1>Bad Request !</h1>");
+		clientResponse.setBool(true);
+	}
+}

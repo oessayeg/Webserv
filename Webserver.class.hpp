@@ -33,12 +33,4 @@ class Webserver
 		void _readRequest( Client &client );
 		void _parseRequestLine( Client &client );
 		void _parseHeaders( Client &client );
-		// void _sendResponse( std::list< clients * >::iterator client );
-
-	public : // Temporary status code functions
-		// void send405( std::list< clients >::iterator client );
-		// void send414( std::list< clients >::iterator client );
-		// void send400( std::list< clients >::iterator client );
-		// void send505( std::list< clients >::iterator client );
-
 };

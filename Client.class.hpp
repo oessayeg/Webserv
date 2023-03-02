@@ -1,8 +1,9 @@
 #pragma once
 
 #include "MainHeader.hpp"
-class Blocks;
+// #include "Response.class.hpp"
 
+class Blocks;
 
 class Client
 {
@@ -10,13 +11,14 @@ class Client
 		int _socket;
 
 	public :
+		Request parsedRequest;
+		Response clientResponse;
 		int bytesRead;
 		char *response;
 		char request[MAX_RQ];
-		Request parsedRequest;
 		std::string stringRequest;
-		Blocks *correspondingBlock;
 		struct sockaddr_in *clientStruct;
+		Blocks *correspondingBlock;
 		bool isRead;
 		bool isRqLineParsed;
 		bool isHeaderParsed;
@@ -28,5 +30,6 @@ class Client
 		~Client( void );
 		void setSocket( int s );
 		int getSocket( void );
-
+		void checkRequestLine( void );
+		void checkHeaders( void );
 };

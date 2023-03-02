@@ -19,8 +19,8 @@
 #define MAX_RQ 8192
 
 // Classes header files
-#include "Request.class.hpp"
 #include "Response.class.hpp"
+#include "Request.class.hpp"
 #include "Client.class.hpp"
 #include "Block.tmp.hpp"
 #include "Webserver.class.hpp"

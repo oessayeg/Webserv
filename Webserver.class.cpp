@@ -79,6 +79,7 @@ void Webserver::readAndRespond( void )
 
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
 	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
+	// Should not forget to try https
 	this->_acceptNewClients();
 	b = _pendingClients.begin();
 	increment = true;
@@ -92,10 +93,12 @@ void Webserver::readAndRespond( void )
 			this->_parseHeaders(*b);
 		}
 		// Here I check if the fd is ready for writing && that the request is read
-		if ((_fdToCheck[i].revents & POLLOUT) && b->isHeaderParsed == true)
+		if ((_fdToCheck[i].revents & POLLOUT) && (b->isHeaderParsed == true || b->clientResponse.getBool()))
 		{
-			// This is temporary, should form the correct response
-			send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome !</h1>", 37, 0);
+			if (b->clientResponse.getBool())
+				b->clientResponse.sendResponse(b->getSocket());
+			else
+				send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome !</h1>", 37, 0);
 			close(_fdToCheck[i].fd);
 			b = _pendingClients.erase(b);
 			increment = false;
@@ -144,7 +147,6 @@ void Webserver::_readRequest( Client &client )
 
 	// Here I should check for a closed connection or a fail from recv
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
-
 	// Here I should check if the length is equal to the maximum one
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
@@ -157,7 +159,7 @@ void Webserver::_readRequest( Client &client )
 void Webserver::_parseRequestLine( Client &client )
 {
 	int i1, i2;
-
+	
 	if (!client.isRead)
 		return ;
 	// Here putting the char request to a string for easy manipulation
@@ -168,27 +170,26 @@ void Webserver::_parseRequestLine( Client &client )
 	i2 = client.stringRequest.find(' ', i1 + 1);
 	client.parsedRequest.setUri(client.stringRequest.substr(i1 + 1, i2 - i1 - 1));
 	i1 = client.stringRequest.find('\r', i2 + 1);
-	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
 
+	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
+	client.isRqLineParsed = true;
 	//Here I erase the request line
 	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
-
-	// Here I should check if the methods/uris/versions are well formed
-	client.isRqLineParsed = true;
-
-	// std::cout << "Method : " << client.parsedRequest._method << "." << std::endl;
-	// std::cout << "Uri : " << client.parsedRequest._uri << "." << std::endl;
-	// std::cout << "Version : " << client.parsedRequest._version << "." <<  std::endl << std::endl;
+	client.checkRequestLine();
 }
 
 void Webserver::_parseHeaders( Client &client )
 {
 	std::string first, second;
+	bool contentLe;
+	bool transferEnc;
 	int index;
 
 	// Pour l'optimisation je peux mémoriser la position du premier CRLF
-	if (!client.isRqLineParsed)
+	if (!client.isRqLineParsed || client.clientResponse.getBool())
 		return ;
+	transferEnc = false;
+	contentLe = false;
 	while (1)
 	{
 		index = client.stringRequest.find(':');
@@ -200,33 +201,6 @@ void Webserver::_parseHeaders( Client &client )
 		if (client.stringRequest[index + 2] == '\r')
 			break;
 	}
+	client.checkHeaders();
 	client.isHeaderParsed = true;
 }
-
-// void Webserver::send405( std::list< clients >::iterator client )
-// {
-// 	send(client->fd, "HTTP/1.1 405 Method Not Allowed\r\n\r\n<h1>This method is not allowed !</h1>", 73, 0);
-// 	close(client->fd);
-// 	this->_pendingClients.erase(client);
-// }
-
-// void Webserver::send414( std::list< clients >::iterator client )
-// {
-// 	send(client->fd, "HTTP/1.1 414 Request-URI too long\r\n\r\n<h1>The request uri is too long !</h1>", 76, 0);
-// 	close(client->fd);
-// 	this->_pendingClients.erase(client);
-// }
-
-// void Webserver::send400( std::list< clients >::iterator client )
-// {
-// 	send(client->fd, "HTTP/1.1 400 Bad Request\r\n\r\n<h1>Bad Request !</h1>", 51, 0);
-// 	close(client->fd);
-// 	this->_pendingClients.erase(client);
-// }
-
-// void Webserver::send505( std::list< clients >::iterator client )
-// {
-// 	send(client->fd, "HTTP/1.1 501 Http Version Not Supported\r\n\r\n<h1>Http Version Not Supported !</h1>", 81, 0);
-// 	close(client->fd);
-// 	this->_pendingClients.erase(client);
-// }
