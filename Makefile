@@ -1,4 +1,5 @@
-SRCS = main.cpp Webserver.class.cpp Request.class.cpp Client.class.cpp Block.tmp.cpp
+SRCS = main.cpp Webserver.class.cpp Request.class.cpp Client.class.cpp \
+	Block.tmp.cpp Response.class.cpp
 
 NAME = main
 

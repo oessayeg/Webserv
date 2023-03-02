@@ -15,11 +15,12 @@
 
 // The first macro is used when using recv function
 // The second one is for the size of request line + headers
-#define MIN_TO_READ 1024
+#define MIN_TO_READ 200 // Temporary
 #define MAX_RQ 8192
 
 // Classes header files
-#include "Block.tmp.hpp"
 #include "Request.class.hpp"
+#include "Response.class.hpp"
 #include "Client.class.hpp"
+#include "Block.tmp.hpp"
 #include "Webserver.class.hpp"

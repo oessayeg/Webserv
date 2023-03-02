@@ -13,11 +13,11 @@ class Client
 		int bytesRead;
 		char *response;
 		char request[MAX_RQ];
-		std::string stringRequest;
 		Request parsedRequest;
+		std::string stringRequest;
 		Blocks *correspondingBlock;
 		struct sockaddr_in *clientStruct;
-		bool isParsed;
+		bool isRead;
 
 	public :
 		Client( void );
@@ -26,7 +26,8 @@ class Client
 		~Client( void );
 		void setSocket( int s );
 		int getSocket( void );
-		void readAndParse( void );
+		void read( void );
+		void parseRequest( void );
 	
 	// public :
 

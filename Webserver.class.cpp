@@ -26,7 +26,6 @@ void Webserver::createSockets( void )
 	sock = 0;
 	tmp = 1;
 	// Need to change the exceptions thrown
-	std::cout << "Creating the listening sockets : ";
 	for (b = this->_serverBlocks.begin(); b != this->_serverBlocks.end(); b++)
 	{
 		memset(&b->socketNeeds, 0, sizeof(sockaddr_in)); // Should not forget to change memset (not allowed)
@@ -42,10 +41,8 @@ void Webserver::createSockets( void )
 			throw "Bind function failed";
 		if (listen(sock, 0) == -1)
 			throw "Listen function failed";
-		std::cout << sock << " ";
 		this->_listeningSockets.push_back(sock);
 	}
-	std::cout << std::endl;
 }
 
 void Webserver::setReadyFds( void )
@@ -95,12 +92,13 @@ void Webserver::readAndRespond( void )
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
 		if (_fdToCheck[i].revents & POLLIN)
-			b->readAndParse();
-		if ((_fdToCheck[i].revents & POLLOUT) && b->isParsed)
+		{
+			b->read();
+			b->parseRequest();
+		}
+		if ((_fdToCheck[i].revents & POLLOUT) && b->isRead == true)
 		{
 			// This is temporary, should form the correct response
-			std::cout << b->request << std::endl;
-			std::cout << "Here fd : " << _fdToCheck[i].fd << std::endl;
 			send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Wecome !</h1>", 36, 0);
 			close(_fdToCheck[i].fd);
 			b = _pendingClients.erase(b);
