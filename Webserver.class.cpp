@@ -78,6 +78,7 @@ void Webserver::readAndRespond( void )
 	bool increment;
 
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
+	// Need to check for nbFds when iterating through fds for optimization
 	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
 	// Should not forget to try https
 	this->_acceptNewClients();
@@ -148,10 +149,15 @@ void Webserver::_readRequest( Client &client )
 	// Here I should check for a closed connection or a fail from recv
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
 	// Here I should check if the length is equal to the maximum one
-	
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
-
+	if (client.bytesRead == MAX_RQ && !strstr(client.request + client.bytesRead - 5, "\r\n\r\n"))
+	{
+		// This is temporary, should add a function to form responses
+		client.clientResponse.setResponse("HTTP/1.1 413 Entity Too Large\r\nContent-length: 25\r\n\r\n<h1>Entity Too Large</h1>");
+		client.clientResponse.setBool(true);
+		return ;
+	}
 	// Need to optimize this operation
 	if (strstr(client.request, "\r\n\r\n"))
 		client.isRead = true;
@@ -161,7 +167,7 @@ void Webserver::_parseRequestLine( Client &client )
 {
 	int i1, i2;
 	
-	if (!client.isRead)
+	if (!client.isRead || client.clientResponse.getBool())
 		return ;
 	// Here putting the char request to a string for easy manipulation
 	client.stringRequest = client.request;
@@ -182,15 +188,11 @@ void Webserver::_parseRequestLine( Client &client )
 void Webserver::_parseHeaders( Client &client )
 {
 	std::string first, second;
-	bool contentLe;
-	bool transferEnc;
 	int index;
 
 	// Pour l'optimisation je peux mémoriser la position du premier CRLF
 	if (!client.isRqLineParsed || client.clientResponse.getBool())
 		return ;
-	transferEnc = false;
-	contentLe = false;
 	while (1)
 	{
 		index = client.stringRequest.find(':');
@@ -203,7 +205,7 @@ void Webserver::_parseHeaders( Client &client )
 			break;
 	}
 	// Here I erase the last header to get to the body (if there's any)
-	client.stringRequest.erase();
+	// client.stringRequest.erase( do not forget it );
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 }
