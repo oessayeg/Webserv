@@ -146,11 +146,16 @@ void Webserver::_acceptNewClients( void )
 
 void Webserver::_readRequest( Client &client )
 {
+	char *ptrToEnd;
 	int r;
 
-	// Here I should check for a closed connection or a fail from recv
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
-	// Here I should check if the length is equal to the maximum one
+	if (r <= 0)
+	{
+		client.clientResponse.setResponse("HTTP/1.1 459 Client Error\r\nContent-Length: 22\r\n\r\n<h1>Client Error!</h1>");
+		client.clientResponse.setBool(true);
+		return ;
+	}
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
 	if (client.bytesRead == MAX_RQ && !strstr(client.request + client.bytesRead - 5, "\r\n\r\n"))
@@ -161,7 +166,8 @@ void Webserver::_readRequest( Client &client )
 		return ;
 	}
 	// Need to optimize this operation
-	if (strstr(client.request, "\r\n\r\n"))
+	ptrToEnd = strstr(client.request, "\r\n\r\n");
+	if (ptrToEnd)
 		client.isRead = true;
 }
 
