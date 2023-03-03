@@ -19,6 +19,7 @@ Client &Client::operator=( const Client &rhs )
 		this->bytesRead = rhs.bytesRead;
 		// this->response = new char[strlen(rhs.response)];
 		// *this->response = *rhs.response;
+		this->correspondingBlock = rhs.correspondingBlock;
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
@@ -57,14 +58,20 @@ void Client::checkRequestLine( void )
 	else if (!parsedRequest.isSupported())
 		this->clientResponse.setResponse("HTTP/1.1 405 Method Not Allowed\r\n\r\n<h1>This method is not allowed !</h1>");
 	else if (!parsedRequest.isGoodVersion())
-		this->clientResponse.setResponse("HTTP/1.1 501 Version Not Supported\r\n\r\n</h1>This version is not supported !</h1>");
+		this->clientResponse.setResponse("HTTP/1.1 505 Version Not Supported\r\n\r\n</h1>This version is not supported !</h1>");
 	else
 		this->clientResponse.setBool(false);
 }
 
 void Client::checkHeaders( void )
 {
-	if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
+	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end()
+		&& atoi(parsedRequest._headers["Content-Length"].c_str()) > correspondingBlock->port)
+	{
+		clientResponse.setResponse("HTTP/1.1 413 Content Too Large\r\n\r\n<h1>Body content too large !</h1>");
+		clientResponse.setBool(true);
+	}
+	else if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
 		&& parsedRequest._headers["Transfer-Encoding"] != "chunked")
 	{
 		clientResponse.setResponse("HTTP/1.1 501 Not Implement\r\n\r\n<h1>Not implemented !</h1>");

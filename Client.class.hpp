@@ -1,9 +1,7 @@
 #pragma once
 
+#include "Block.tmp.hpp"
 #include "MainHeader.hpp"
-// #include "Response.class.hpp"
-
-class Blocks;
 
 class Client
 {
@@ -11,17 +9,17 @@ class Client
 		int _socket;
 
 	public :
-		Request parsedRequest;
-		Response clientResponse;
 		int bytesRead;
 		char *response;
 		char request[MAX_RQ];
-		std::string stringRequest;
-		struct sockaddr_in *clientStruct;
-		Blocks *correspondingBlock;
 		bool isRead;
 		bool isRqLineParsed;
 		bool isHeaderParsed;
+		struct sockaddr_in *clientStruct;
+		Blocks *correspondingBlock;
+		std::string stringRequest;
+		Response clientResponse;
+		Request parsedRequest;
 
 	public :
 		Client( void );

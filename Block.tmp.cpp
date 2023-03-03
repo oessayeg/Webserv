@@ -5,6 +5,7 @@ Blocks::Blocks( void )
 	this->port = 0;
 	this->ip = 0;
 	this->listeningSocket = 0;
+	this->maxBodySize = 0;
 }
 
 Blocks::Blocks( const Blocks &rhs )
@@ -22,6 +23,7 @@ Blocks &Blocks::operator=( const Blocks &rhs )
 		this->index = rhs.index;
 		this->root = rhs.root;
 		this->socketNeeds = rhs.socketNeeds;
+		this->maxBodySize = rhs.maxBodySize;
 	}
 	return *this;
 }

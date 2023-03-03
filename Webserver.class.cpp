@@ -148,6 +148,7 @@ void Webserver::_readRequest( Client &client )
 	// Here I should check for a closed connection or a fail from recv
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
 	// Here I should check if the length is equal to the maximum one
+	
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
 
@@ -173,7 +174,7 @@ void Webserver::_parseRequestLine( Client &client )
 
 	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
 	client.isRqLineParsed = true;
-	//Here I erase the request line
+	//Here I erase the request line to have just the headers
 	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
 	client.checkRequestLine();
 }
@@ -201,6 +202,8 @@ void Webserver::_parseHeaders( Client &client )
 		if (client.stringRequest[index + 2] == '\r')
 			break;
 	}
+	// Here I erase the last header to get to the body (if there's any)
+	client.stringRequest.erase();
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 }

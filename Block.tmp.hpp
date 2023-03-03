@@ -1,6 +1,8 @@
 #pragma once
 
-#include "MainHeader.hpp"
+#include <iostream>
+#include <netinet/in.h>
+#include <vector>
 
 class Blocks
 {
@@ -8,6 +10,7 @@ class Blocks
 		int port;
 		int ip;
 		int listeningSocket;
+		int maxBodySize;
 		std::vector < std::string > index;
 		std::string root;
 		struct sockaddr_in socketNeeds;
