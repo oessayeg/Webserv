@@ -1,5 +1,7 @@
 #include "Webserver.class.hpp"
 
+// Should not forget to change map to hashmap for efficiency
+
 Webserver::Webserver( void ) : _serverBlocks(), _pendingClients(), _listeningSockets(),\
 	_fdToCheck(NULL) { }
 
@@ -189,10 +191,12 @@ void Webserver::_parseHeaders( Client &client )
 {
 	std::string first, second;
 	int index;
+	bool isHeader;
 
 	// Pour l'optimisation je peux mémoriser la position du premier CRLF
 	if (!client.isRqLineParsed || client.clientResponse.getBool())
 		return ;
+	isHeader = false;
 	while (1)
 	{
 		index = client.stringRequest.find(':');
@@ -200,12 +204,12 @@ void Webserver::_parseHeaders( Client &client )
 		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
 		client.parsedRequest.insertHeader(std::make_pair(first, second));
 		client.stringRequest.erase(0, client.stringRequest.find('\n') + 1);
+		if (isHeader)
+			break;
 		index = client.stringRequest.find('\r');
 		if (client.stringRequest[index + 2] == '\r')
-			break;
+			isHeader = true;
 	}
-	// Here I erase the last header to get to the body (if there's any)
-	// client.stringRequest.erase( do not forget it );
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 }

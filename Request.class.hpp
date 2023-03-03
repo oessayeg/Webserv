@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <unordered_map>
+#include <map>
 #include <ctype.h>
 #include <utility>
 
@@ -12,7 +12,7 @@ class Request
 		std::string _method;
 		std::string _uri;
 		std::string _version;
-		std::unordered_map< std::string, std::string > _headers;
+		std::map< std::string, std::string > _headers;
 		std::string _body;
 
 	// Default constructor, copy constructor, assignment overload, destructor
