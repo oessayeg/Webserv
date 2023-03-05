@@ -3,6 +3,8 @@
 #include <iostream>
 #include <netinet/in.h>
 #include <vector>
+#include <map>
+#include <utility>
 
 class Blocks
 {
@@ -14,7 +16,8 @@ class Blocks
 		std::vector < std::string > index;
 		std::string root;
 		struct sockaddr_in socketNeeds;
-	
+		std::map< int, std::string > errorMap;
+
 	public :
 		Blocks( void );
 		Blocks( const Blocks &rhs );

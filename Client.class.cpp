@@ -4,7 +4,7 @@
 Client::Client( void ) : _socket(0), bytesRead(0), response(NULL), \
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
-		isHeaderParsed(false) { }
+		isHeaderParsed(false), errString() { }
 
 Client::Client( const Client &rhs )
 {
@@ -27,6 +27,7 @@ Client &Client::operator=( const Client &rhs )
 		this->parsedRequest = rhs.parsedRequest;
 		this->clientStruct = new struct sockaddr_in;
 		*this->clientStruct = *rhs.clientStruct;
+		this->errString = rhs.errString;
 	}
 	return *this;
 }
@@ -49,16 +50,17 @@ void Client::setSocket( int s )
 
 void Client::checkRequestLine( void )
 {
-	this->clientResponse.setBool(true);
+	std::string errorResponse;
 
+	this->clientResponse.setBool(true);
 	if (!parsedRequest.hasAllowedChars())
-		this->clientResponse.setResponse("HTTP/1.1 400 Bad Request\r\nContent-Length: 22\r\n\r\n<h1>Bad Request !</h1>");
+		this->clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 	else if (!parsedRequest.hasGoodSize())
-		this->clientResponse.setResponse("HTTP/1.1 414 Request-URI too long\r\nContent-Length: 31\r\n\r\n<h1>Request uri too long !</h1>");
+		this->clientResponse.setResponse(formError(414, "HTTP/1.1 414 Request-URI too long\r\n", "Error 414 Uri Too Long"));
 	else if (!parsedRequest.isSupported())
-		this->clientResponse.setResponse("HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 37\r\n\r\n<h1>This method is not allowed !</h1>");
+		this->clientResponse.setResponse(formError(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Error 405 Method Not Allowed"));
 	else if (!parsedRequest.isGoodVersion())
-		this->clientResponse.setResponse("HTTP/1.1 505 Version Not Supported\r\nContent-Length: 41\r\n\r\n</h1>This version is not supported !</h1>");
+		this->clientResponse.setResponse(formError(505, "HTTP/1.1 505 Version Not Supported\r\n", "Error 505 Version Not Supported"));
 	else
 		this->clientResponse.setBool(false);
 }
@@ -68,20 +70,53 @@ void Client::checkHeaders( void )
 	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end()
 		&& atoi(parsedRequest._headers["Content-Length"].c_str()) > correspondingBlock->maxBodySize)
 	{
-		clientResponse.setResponse("HTTP/1.1 413 Content Too Large\r\nContent-Length: 33\r\n\r\n<h1>Body content too large !</h1>");
+		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
 		clientResponse.setBool(true);
 	}
 	else if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
 		&& parsedRequest._headers["Transfer-Encoding"] != "chunked")
 	{
-		clientResponse.setResponse("HTTP/1.1 501 Not Implement\r\nContent-Length: 26\r\n\r\n<h1>Not implemented !</h1>");
+		clientResponse.setResponse(formError(501, "HTTP/1.1 501 Not Implement\r\n", "Error 501 Not Implemented"));
 		clientResponse.setBool(true);
 	}
-	else if (parsedRequest._method == "POST" && parsedRequest._headers.find("Content-Length")
+	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
 		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end())
+		== parsedRequest._headers.end()) || (atoi(parsedRequest._headers["ContentLength"].c_str())) == 0))
 	{
-		clientResponse.setResponse("HTTP/1.1 400 Bad Request\r\nContent-Length: 22\r\n\r\n<h1>Bad Request !</h1>");
+		clientResponse.setResponse(formError(501, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 		clientResponse.setBool(true);
 	}
+}
+
+// This function forms the whole response when an error happens
+std::string Client::formError( int statusCode, const std::string &statusLine, const std::string &msgInBody )
+{
+	std::map< int, std::string >::iterator b;
+	std::string returnString, fileInString;
+	std::ifstream errorFile;
+	std::stringstream s;
+
+	b = correspondingBlock->errorMap.find(statusCode);
+	if (b != correspondingBlock->errorMap.end())
+		errorFile.open(b->second);
+	if (b != correspondingBlock->errorMap.end() && !errorFile.is_open())
+	{
+		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
+		errString.setErrorFile("Error 505 Internal Error");
+		s << errString.getFileInString().size();
+		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		return (returnString + errString.getFileInString());
+	}
+	else if (b != correspondingBlock->errorMap.end() && errorFile.is_open())
+	{
+		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
+		s << fileInString.size();
+		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		return returnString + fileInString;
+	}
+	errString.setErrorFile(msgInBody);
+	s << errString.getFileInString().size();
+	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
+	returnString += "\r\n\r\n";
+	return (returnString + errString.getFileInString());
 }

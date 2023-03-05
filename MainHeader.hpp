@@ -6,8 +6,11 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <iostream>
-#include <string.h> // To remove after finishing, just for memset
+#include <string.h>
+#include <iterator>
 #include <unistd.h>
+#include <fstream>
+#include <sstream>
 #include <poll.h>
 #include <vector>
 #include <list>

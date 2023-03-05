@@ -23,6 +23,7 @@ Blocks &Blocks::operator=( const Blocks &rhs )
 		this->index = rhs.index;
 		this->root = rhs.root;
 		this->socketNeeds = rhs.socketNeeds;
+		this->errorMap = rhs.errorMap;
 		this->maxBodySize = rhs.maxBodySize;
 	}
 	return *this;

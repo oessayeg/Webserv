@@ -2,6 +2,7 @@
 
 #include "Block.tmp.hpp"
 #include "MainHeader.hpp"
+#include "ErrorString.class.hpp"
 
 class Client
 {
@@ -20,6 +21,7 @@ class Client
 		std::string stringRequest;
 		Response clientResponse;
 		Request parsedRequest;
+		ErrorString errString;
 
 	public :
 		Client( void );
@@ -30,4 +32,5 @@ class Client
 		int getSocket( void );
 		void checkRequestLine( void );
 		void checkHeaders( void );
+		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
 };
