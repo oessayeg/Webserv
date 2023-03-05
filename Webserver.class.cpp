@@ -209,13 +209,17 @@ void Webserver::_parseHeaders( Client &client )
 		first = client.stringRequest.substr(0, index);
 		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
 		client.parsedRequest.insertHeader(std::make_pair(first, second));
-		client.stringRequest.erase(0, client.stringRequest.find('\n') + 1);
 		if (isHeader)
+		{
+			client.stringRequest.erase(0, client.stringRequest.find('\r') + 4);
 			break;
+		}
+		client.stringRequest.erase(0, client.stringRequest.find('\n') + 1);
 		index = client.stringRequest.find('\r');
 		if (client.stringRequest[index + 2] == '\r')
 			isHeader = true;
 	}
+	std::cout << client.stringRequest;
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 }
