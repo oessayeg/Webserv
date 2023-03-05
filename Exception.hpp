@@ -58,5 +58,19 @@ class NotFoundError  : public  OurException
         {
             return(message);
         }
+};
+
+class LogicError  : public  OurException
+{
+        private : 
+            std::string message;
+        public :
+        LogicError(std::string msg):message(msg){}
+        std::string what() const throw()
+        {
+            std::string name = "LogicError : ";
+            return(name + message);
+        }
 }; 
+
 # endif

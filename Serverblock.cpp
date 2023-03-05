@@ -1,6 +1,6 @@
 #include "Serverblock.hpp"
 
-Serverblock::Serverblock():_ip(0), _port(0),_countroot(0), _countbodysize(0), _countlisten(0)
+Serverblock::Serverblock():_ip(0), _port(0),_countbodysize(0), _countlisten(0),_count_location(0)
 {
 
 }
@@ -13,7 +13,7 @@ void        Serverblock::block_is_empty(std::string &block)
 }
 
 
-Serverblock::Serverblock(std::string &block):_countroot(0), _countbodysize(0), _countlisten(0)
+Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),_count_location(0)
 {
     block_is_empty(block);
     std::string location_block;
@@ -26,14 +26,12 @@ Serverblock::Serverblock(std::string &block):_countroot(0), _countbodysize(0), _
         if (found_first_char == std::string::npos)
             continue;
         line = line.substr(found_first_char, found_last_char - found_first_char + 1);
+        if(line[0] == '#')
+            continue;
         if (line.substr(0, 6) == "listen")
             set_port_and_ip(line.substr(6));
         else if (line.substr(0, 9) == "body_size")
             set_body_size(line.substr(9));
-        else if (line.substr(0, 4) == "root")
-            set_root(line.substr(4));
-        else if (line.substr(0, 5) == "index")
-            set_index(line.substr(5));
         else if (line.substr(0, 8) == "location")
         {
             location_block = line + "\n";
@@ -44,16 +42,28 @@ Serverblock::Serverblock(std::string &block):_countroot(0), _countbodysize(0), _
                     break;
             }
             _location.push_back(Location(location_block));
+            this->_count_location++;
         }
+        else if(line.substr(0, 10) == "error_page")
+            set_error_page(line.substr(10));
+        else
+            throw NotFoundError("'Server block' :  name is not valid");
         check_duplicate();
     }
+    check_valid_config();
+}
+
+void        Serverblock::check_valid_config()
+{
+    if (this->_countbodysize == 0 || this->_countlisten == 0  || this->_count_location == 0)
+        throw LogicError("configfile Error");
 }
 
 void        Serverblock::check_valid_value(std::string buffer, std::string &value)
 {
-    size_t found = buffer.find_first_not_of("  \t\f\v\n\r");
+    size_t found = buffer.find_first_not_of("  \t\f\v\n\r;");
     if(found == std::string::npos)
-        throw SyntaxError("'name' should have a value");
+        throw LogicError("'name' should have a value");
     size_t found_t = buffer.find_first_of(";");
     if (found_t == std::string::npos)
         throw SyntaxError("value Should be Closed By ';'");
@@ -66,7 +76,7 @@ void        Serverblock::check_value_arg(std::string value)
     size_t found_t = value.find_first_of(" \t\f\v\n\r;", found);
     size_t found_tt = value.find_first_not_of(" \t\f\v\n\r;", found_t);
     if (found_tt != std::string::npos)
-        throw SyntaxError("Invalid Arg");
+        throw LogicError("Invalid Arg");
 }
 
 bool Serverblock::is_Number(std::string  str)
@@ -85,76 +95,38 @@ bool        Serverblock::check_valid_port(std::string &port)
 
     port = port.substr(0, found);
     if (!is_Number(port))
-        throw SyntaxError("Invalid Port");
+        throw LogicError("Invalid Port");
     unsigned int num = atoi(port.c_str());
     if (num > USHRT_MAX)
-        throw SyntaxError("Your Ip Is Out Of Range '" + port + "'");
+        throw LogicError("Your Ip Is Out Of Range '" + port + "'");
     return (true);
 }
 
-void             Serverblock::check_valid_numIp(std::string &value)
+bool        Serverblock::check_valid_ip(std::string    &ip)
 {
-    if (value.length() > 3)
-        throw SyntaxError("Invalid Ip");
-    if(!is_Number(value))
-        throw SyntaxError("Invalid Ip");
-    int num = atoi(value.c_str());
-    if (num > 255)
-        throw SyntaxError("Ip is not in valid Range");
-}
-
-
-bool        Serverblock::check_valid_ip(std::string &ip)
-{
-    int count;
-
-    count = 0;
-    if (ip != "0")
-    {
-        size_t found = ip.find_first_of(".");
-        size_t  found_t = ip.find_first_of(".");
-        if (found == std::string::npos)
-            return(true);
-        while (found_t != std::string::npos)
-        {
-            count++;
-            found_t = ip.find_first_of(".", found_t + 1);
-        }
-        if(count != 3)
-            throw SyntaxError("Invalid Ip");
-        if (found != std::string::npos)
-        {
-            std::stringstream outfile(ip);
-            std::string line;
-            while (getline(outfile, line, '.'))
-                check_valid_numIp(line);
-        }
-    }
-    return (true);
+    std::string value  = "127.0.0.1";
+    if(ip != value)
+        return (0);
+    return (1);
 }
 
 bool        Serverblock::check_valid_listen(std::string value, std::string &ip, std::string &port)
 {
-  
     std::string str[2];
     int i = 0;
-    size_t found = value.find(":");
+    size_t found = value.find_first_of(":");
     if (found == std::string::npos)
     {
-        ip = "0";
+        ip = "127.0.0.1";
         port = value;
         return (true);
     }
     size_t find_port = value.find_first_not_of(" \t\f\v\n\r;:", found + 1);
     if (find_port == std::string::npos)
-        throw SyntaxError("Invalid arg");
-    std::stringstream ff(value);
-    std::string line;
-    while (getline(ff, line, ':'))
-    {
-        str[i] = line;
-        ++i;
-    }
+        throw LogicError("Invalid arg");
+    str[0] = value.substr(0, find_port - 1);
+    size_t find_next = value.find_first_of(" \t\f\v\n\r;", find_port);
+    str[1]  = value.substr(find_port, find_next - find_port);
     ip = str[0];
     port = str[1];
     return (true);
@@ -175,6 +147,8 @@ void        Serverblock::set_port_and_ip(std::string line)
             this->_port = atoi(port.c_str());
             this->_ip = ip;
         }
+        else
+            throw LogicError("'listen' invalid value");
     }
     this->_countlisten++;
 }
@@ -188,40 +162,41 @@ void    Serverblock::set_body_size(std::string body_size)
     size_t found = value.find_first_of(" \t\f\v\n\r;");
     value = value.substr(0, found);
     if (!is_Number(value))
-        throw SyntaxError("Body Size Value Not Valid");
+        throw LogicError("'Body_Size' Value not Valid");
     this->_body_size = atol(value.c_str());
     this->_countbodysize++;
 }
 
-void    Serverblock::set_root(std::string root)
+void        Serverblock::set_error_page(std::string line)
 {
     std::string value;
-    check_valid_value(root, value);
-    check_value_arg(value);
-    size_t found = value.find_first_of(" \t\f\v\n\r;");
-    value = value.substr(0, found);
-    if (value[0] == '/')
-        value = value.substr(1);
-    if(access(value.c_str(), F_OK) != 0)
-        throw NotFoundError("'root' Folder Is Not Found");
-    this->_countroot++;
+    std::string key;
+    std::string data;
+    check_valid_value(line, value);
+    size_t found = value.find_first_not_of(" \t\f\v\n\r");
+    size_t found_next = value.find_first_of(" \t\f\v\n\r", found + 1);
+    if(found_next == std::string::npos)
+        throw LogicError("'error_page' invalid value");
+    key = value.substr(found, found_next - found);
+    found  = value.find_first_not_of(" \t\f\v\n\r;", found_next + 1);
+    if(found == std::string::npos)
+        throw LogicError("'error_page' invalid value");
+    found_next = value.find_first_of(" \t\f\v\n\r;", found + 1);
+    data = value.substr(found, found_next - found);
+    found = value.find_first_not_of(" \t\f\v\n\r;", found_next + 1);
+    if(found != std::string::npos)
+        throw LogicError("'error_page' invalid value");
+    _error_page[atoi(key.c_str())] = data;
 }
 
-void    Serverblock::set_index(std::string indexes)
+std::map<int, std::string>  Serverblock::get_error_page(std::string line)
 {
-    std::string value;
-    check_valid_value(indexes, value);
-    size_t found = value.find_first_of(";");
-    value = value.substr(0, found);
-    std::stringstream ff(value);
-    std::string       line;
-    while (getline(ff, line, ' '))
-        this->_indexes.push_back(line);
+    return (this->_error_page);
 }
 
 void        Serverblock::check_duplicate()
 {
-    if (this->_countbodysize > 1 || this->_countlisten > 1 || this->_countroot > 1)
+    if (this->_countbodysize > 1 || this->_countlisten > 1 )
         throw SyntaxError("'Duplicate' name");
 }
 
@@ -240,12 +215,7 @@ long        Serverblock::get_body_size() const
     return(this->_body_size);
 }
 
-std::string Serverblock::get_root()  const
-{
-    return (this->_root);
-}
-
-std::vector<Location> Serverblock::get_locationblocks() const
+std::list<Location> Serverblock::get_locationblocks() const
 {
     return(this->_location);
 }
