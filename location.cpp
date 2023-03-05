@@ -68,10 +68,19 @@ void        Location::set_path_location(std::string path_location)
     else
         _path_location.push_back("/");
 }
+
+bool Location::is_Number(std::string  str)
+{
+    for(int i = 0; i < str.length(); i++)
+    {
+        if (std::isdigit(str[i]) == 0)
+            return false;
+    }
+    return true;
+}
  
 void        Location::set_root_location(std::string root_location)
 {
-
     size_t found = root_location.find_first_not_of(" \t\f\v\n\r");
     size_t found_t = root_location.find_first_of(";");
     if (found_t == std::string::npos)
@@ -112,13 +121,22 @@ void        Location::set_autoindex_location(std::string index_location)
     found_t = name.find_first_not_of(" \t\f\v\n\r", found);
     if (found_t != std::string::npos)
         throw "invalid auto index";
-    if (name.substr(0, 2) == "on")
+    if (name  == "on")
         this->_auto_index = true;
-    else if (name.substr(0, 3) == "off")
+    else if (name == "off")
         this->_auto_index = false;
     else
         throw LogicError("'autoindex' : invalid arg");
     this->_count_auto_index++;
+}
+
+void        Location::check_valid_status_code(std::string key)
+{
+    if (!is_Number(key))
+        throw LogicError("Status code not valid : '" + key + "'");
+    int num = atoi(key.c_str());
+    if (num < 100 || num > 999)
+        throw LogicError("Status code is out of range : '" + key + "'");
 }
 
 void        Location::set_indexes_location(std::string        indexes_location)
@@ -153,6 +171,7 @@ void        Location::set_redirection(std::string             redirection)
     if(found_next == std::string::npos)
         throw LogicError("'return' invalid value");
     key = value.substr(found, found_next - found);
+    check_valid_status_code(key);
     found  = value.find_first_not_of(" \t\f\v\n\r;", found_next + 1);
     if(found == std::string::npos)
         throw LogicError("'return' invalid value");

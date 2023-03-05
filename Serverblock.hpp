@@ -51,6 +51,7 @@ public:
     std::list<Location>        get_locationblocks() const;
     void                       check_valid_config();
     void                       check_duplicate();
+    void                       check_valid_status_code(std::string key);
 };
 
 

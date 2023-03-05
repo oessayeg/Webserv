@@ -1,6 +1,6 @@
 #include "Serverblock.hpp"
 
-Serverblock::Serverblock():_ip(0), _port(0),_countbodysize(0), _countlisten(0),_count_location(0)
+Serverblock::Serverblock():_ip(0), _port(0),_countbodysize(0), _countlisten(0),_count_location(0),_body_size(10)
 {
 
 }
@@ -13,7 +13,7 @@ void        Serverblock::block_is_empty(std::string &block)
 }
 
 
-Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),_count_location(0)
+Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),_count_location(0),_body_size(10)
 {
     block_is_empty(block);
     std::string location_block;
@@ -55,7 +55,7 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
 
 void        Serverblock::check_valid_config()
 {
-    if (this->_countbodysize == 0 || this->_countlisten == 0  || this->_count_location == 0)
+    if (this->_countlisten == 0  || this->_count_location == 0)
         throw LogicError("configfile Error");
 }
 
@@ -97,8 +97,8 @@ bool        Serverblock::check_valid_port(std::string &port)
     if (!is_Number(port))
         throw LogicError("Invalid Port");
     unsigned int num = atoi(port.c_str());
-    if (num > USHRT_MAX)
-        throw LogicError("Your Ip Is Out Of Range '" + port + "'");
+    if (num > USHRT_MAX || num <= 0)
+        throw LogicError("Your Port Is Out Of Range '" + port + "'");
     return (true);
 }
 
@@ -155,7 +155,6 @@ void        Serverblock::set_port_and_ip(std::string line)
 
 void    Serverblock::set_body_size(std::string body_size)
 {
-    
     std::string value;
     check_valid_value(body_size, value);
     check_value_arg(value);
@@ -165,6 +164,15 @@ void    Serverblock::set_body_size(std::string body_size)
         throw LogicError("'Body_Size' Value not Valid");
     this->_body_size = atol(value.c_str());
     this->_countbodysize++;
+}
+
+void        Serverblock::check_valid_status_code(std::string key)
+{
+    if (!is_Number(key))
+        throw LogicError("Status code not valid : '" + key + "'");
+    int num = atoi(key.c_str());
+    if (num < 100 || num > 999)
+        throw LogicError("Status code is out of range : '" + key + "'");
 }
 
 void        Serverblock::set_error_page(std::string line)
@@ -178,6 +186,7 @@ void        Serverblock::set_error_page(std::string line)
     if(found_next == std::string::npos)
         throw LogicError("'error_page' invalid value");
     key = value.substr(found, found_next - found);
+    check_valid_status_code(key);
     found  = value.find_first_not_of(" \t\f\v\n\r;", found_next + 1);
     if(found == std::string::npos)
         throw LogicError("'error_page' invalid value");
