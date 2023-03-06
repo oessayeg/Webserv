@@ -91,9 +91,11 @@ void Webserver::readAndRespond( void )
 		// Here I check if the fd is ready for reading
 		if (_fdToCheck[i].revents & POLLIN)
 		{
+			// this->_readBodyIfPossible(*b);
 			this->_readRequest(*b);
 			this->_parseRequestLine(*b);
 			this->_parseHeaders(*b);
+			this->_prepareResponse(*b); // Temporary, just to test POST requests
 		}
 		// Here I check if the fd is ready for writing && that the request is read
 		if ((_fdToCheck[i].revents & POLLOUT) && (b->isHeaderParsed == true || b->clientResponse.getBool()))
@@ -149,10 +151,13 @@ void Webserver::_readRequest( Client &client )
 	char *ptrToEnd;
 	int r;
 
+	if (client.isRead)
+		return ;
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
 	if (r <= 0)
 	{
-		client.clientResponse.setResponse("HTTP/1.1 459 Client Error\r\nContent-Length: 22\r\n\r\n<h1>Client Error!</h1>");
+		// Need to set 2 responses, one for error -1, and one for 0 error (closed connection)
+		client.clientResponse.setResponse(client.formError(459, "HTTP/1.1 459 Client Error\r\n", "Closed Connection !"));
 		client.clientResponse.setBool(true);
 		return ;
 	}
@@ -160,8 +165,7 @@ void Webserver::_readRequest( Client &client )
 	client.request[client.bytesRead] = '\0';
 	if (client.bytesRead == MAX_RQ && !strstr(client.request + client.bytesRead - 5, "\r\n\r\n"))
 	{
-		// This is temporary, should add a function to form responses
-		client.clientResponse.setResponse("HTTP/1.1 413 Entity Too Large\r\nContent-length: 25\r\n\r\n<h1>Entity Too Large</h1>");
+		client.clientResponse.setResponse(client.formError(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large"));
 		client.clientResponse.setBool(true);
 		return ;
 	}
@@ -175,21 +179,23 @@ void Webserver::_parseRequestLine( Client &client )
 {
 	int i1, i2;
 	
-	if (!client.isRead || client.clientResponse.getBool())
+	if (!client.isRead || client.clientResponse.getBool() || client.isRqLineParsed)
 		return ;
 	// Here putting the char request to a string for easy manipulation
 	client.stringRequest = client.request;
 	
+	// Here parsing the request line into 3 parts
 	i1 = client.stringRequest.find(' ');
 	client.parsedRequest.setMethod(client.stringRequest.substr(0, i1));
 	i2 = client.stringRequest.find(' ', i1 + 1);
 	client.parsedRequest.setUri(client.stringRequest.substr(i1 + 1, i2 - i1 - 1));
 	i1 = client.stringRequest.find('\r', i2 + 1);
-
 	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
 	client.isRqLineParsed = true;
-	//Here I erase the request line to have just the headers
+
+	// Here I erase the request line to have just the headers
 	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
+	// This function checks if the request line is well formed or not
 	client.checkRequestLine();
 }
 
@@ -200,7 +206,7 @@ void Webserver::_parseHeaders( Client &client )
 	bool isHeader;
 
 	// Pour l'optimisation je peux mémoriser la position du premier CRLF
-	if (!client.isRqLineParsed || client.clientResponse.getBool())
+	if (!client.isRqLineParsed || client.clientResponse.getBool() || client.isHeaderParsed)
 		return ;
 	isHeader = false;
 	while (1)
@@ -219,7 +225,40 @@ void Webserver::_parseHeaders( Client &client )
 		if (client.stringRequest[index + 2] == '\r')
 			isHeader = true;
 	}
-	std::cout << client.stringRequest;
 	client.checkHeaders();
 	client.isHeaderParsed = true;
+}
+
+// Temporary function
+void Webserver::_prepareResponse( Client &client )
+{
+	std::string response;
+	std::ifstream fileToSend;
+	std::stringstream s, s2;
+
+	// Here I should add a condition that checks if a body exists and if it's read or not
+	if (!client.isHeaderParsed)
+		return ;
+	// Should add Delete later
+	if (client.parsedRequest._method == "GET"
+		&& !client.isHeaderParsed)
+		return ;
+	client.clientResponse.setBool(true);
+	if (client.parsedRequest._method == "GET")
+	{
+		fileToSend.open("upload.html");
+		s << fileToSend.rdbuf();
+		s2 << s.str().size();
+		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
+		response +=  s2.str() + "\r\n\r\n" + s.str();
+		client.clientResponse.setResponse(response);
+	}
+	else
+		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+}
+
+void Webserver::_readBodyIfPossible( Client &client )
+{
+	if (!client.isThereBody)
+		return ;
 }

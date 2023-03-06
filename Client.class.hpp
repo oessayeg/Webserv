@@ -11,14 +11,16 @@ class Client
 
 	public :
 		int bytesRead;
-		char *response;
 		char request[MAX_RQ];
 		bool isRead;
 		bool isRqLineParsed;
 		bool isHeaderParsed;
+		bool isThereBody;
+		bool finishedBody;
 		struct sockaddr_in *clientStruct;
 		Blocks *correspondingBlock;
 		std::string stringRequest;
+		std::string body;
 		Response clientResponse;
 		Request parsedRequest;
 		ErrorString errString;

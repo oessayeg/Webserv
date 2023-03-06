@@ -1,10 +1,11 @@
 #include "MainHeader.hpp"
 
 // need to allocate 'response'
-Client::Client( void ) : _socket(0), bytesRead(0), response(NULL), \
+Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
-		isHeaderParsed(false), errString() { }
+		isHeaderParsed(false), isThereBody(false), errString(), \
+		finishedBody(true) { }
 
 Client::Client( const Client &rhs )
 {
@@ -17,12 +18,13 @@ Client &Client::operator=( const Client &rhs )
 	{
 		this->_socket = rhs._socket;
 		this->bytesRead = rhs.bytesRead;
-		// this->response = new char[strlen(rhs.response)];
-		// *this->response = *rhs.response;
 		this->correspondingBlock = rhs.correspondingBlock;
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
+		this->isThereBody = rhs.isThereBody;
+		this->finishedBody = rhs.finishedBody;
+		this->body = rhs.body;
 		*this->request = *rhs.request;
 		this->parsedRequest = rhs.parsedRequest;
 		this->clientStruct = new struct sockaddr_in;
@@ -34,7 +36,6 @@ Client &Client::operator=( const Client &rhs )
 
 Client::~Client( void )
 {
-	// delete this->response;
 	delete this->clientStruct;
 }
 
@@ -81,9 +82,9 @@ void Client::checkHeaders( void )
 	}
 	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
 		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end()) || (atoi(parsedRequest._headers["ContentLength"].c_str())) == 0))
+		== parsedRequest._headers.end()) || (atoi(parsedRequest._headers["Content-Length"].c_str())) == 0))
 	{
-		clientResponse.setResponse(formError(501, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
+		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 		clientResponse.setBool(true);
 	}
 }
@@ -102,7 +103,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	if (b != correspondingBlock->errorMap.end() && !errorFile.is_open())
 	{
 		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
-		errString.setErrorFile("Error 505 Internal Error");
+		errString.setErrorFile("Error 500 Internal Server Error");
 		s << errString.getFileInString().size();
 		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
 		return (returnString + errString.getFileInString());

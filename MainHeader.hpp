@@ -18,7 +18,7 @@
 
 // The first macro is used when using recv function
 // The second one is for the size of request line + headers
-#define MIN_TO_READ 256 // Temporary
+#define MIN_TO_READ 1024
 #define MAX_RQ 8192
 
 // Classes header files
