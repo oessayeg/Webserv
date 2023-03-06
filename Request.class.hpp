@@ -8,6 +8,7 @@
 class Request
 {
 	// Private member attributes
+	// Should consider returning them back to private
 	public :
 		std::string _method;
 		std::string _uri;

@@ -33,6 +33,9 @@ class Webserver
 		void _readRequest( Client &client );
 		void _parseRequestLine( Client &client );
 		void _parseHeaders( Client &client );
-		void _prepareResponse( Client &client );
 		void _readBodyIfPossible( Client &client );
+		void _prepareResponse( Client &client );
+		void _prepareGetResponse( Client &client );
+		// void _preparePostResponse( Client &client );
+		// void _prepareDeleteResponse( Client &client );
 };

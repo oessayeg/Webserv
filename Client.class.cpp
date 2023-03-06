@@ -68,6 +68,7 @@ void Client::checkRequestLine( void )
 
 void Client::checkHeaders( void )
 {
+	// I should change atoi because of big bodies (will change it to size_t)
 	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end()
 		&& atoi(parsedRequest._headers["Content-Length"].c_str()) > correspondingBlock->maxBodySize)
 	{
@@ -77,7 +78,7 @@ void Client::checkHeaders( void )
 	else if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
 		&& parsedRequest._headers["Transfer-Encoding"] != "chunked")
 	{
-		clientResponse.setResponse(formError(501, "HTTP/1.1 501 Not Implement\r\n", "Error 501 Not Implemented"));
+		clientResponse.setResponse(formError(501, "HTTP/1.1 501 Not Implemented\r\n", "Error 501 Not Implemented"));
 		clientResponse.setBool(true);
 	}
 	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")

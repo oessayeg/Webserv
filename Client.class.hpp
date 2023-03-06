@@ -18,21 +18,30 @@ class Client
 		bool isThereBody;
 		bool finishedBody;
 		struct sockaddr_in *clientStruct;
-		Blocks *correspondingBlock;
 		std::string stringRequest;
 		std::string body;
+		ErrorString errString;
+
+		// These are the three attributes that you need
+		Blocks *correspondingBlock;
 		Response clientResponse;
 		Request parsedRequest;
-		ErrorString errString;
 
 	public :
 		Client( void );
 		Client( const Client &rhs );
 		Client &operator=( const Client &rhs );
 		~Client( void );
+
+	public :
+		// Accessors for the _socket variable
 		void setSocket( int s );
 		int getSocket( void );
+
+		// These are checkFunctions that check if the request or header are well formed
 		void checkRequestLine( void );
 		void checkHeaders( void );
+
+		// This function forms the correct error response in case of an error
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
 };

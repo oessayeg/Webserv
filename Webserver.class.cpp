@@ -40,7 +40,10 @@ void Webserver::createSockets( void )
 		b->socketNeeds.sin_family = PF_INET;
 		b->socketNeeds.sin_addr.s_addr = b->ip;
 		if (bind(sock, (struct sockaddr *)&b->socketNeeds, sizeof(sockaddr_in)) == -1)
+		{
+			perror("bind : ");
 			throw "Bind function failed";
+		}
 		if (listen(sock, 0) == -1)
 			throw "Listen function failed";
 		this->_listeningSockets.push_back(sock);
@@ -81,7 +84,7 @@ void Webserver::readAndRespond( void )
 
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
 	// Need to check for nbFds when iterating through fds for optimization
-	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
+	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, 0);
 	// Should not forget to try https
 	this->_acceptNewClients();
 	b = _pendingClients.begin();
@@ -98,7 +101,7 @@ void Webserver::readAndRespond( void )
 			this->_prepareResponse(*b); // Temporary, just to test POST requests
 		}
 		// Here I check if the fd is ready for writing && that the request is read
-		if ((_fdToCheck[i].revents & POLLOUT) && (b->isHeaderParsed == true || b->clientResponse.getBool()))
+		if ((_fdToCheck[i].revents & POLLOUT) && b->clientResponse.getBool())
 		{
 			if (b->clientResponse.getBool())
 				b->clientResponse.sendResponse(b->getSocket());
@@ -232,33 +235,49 @@ void Webserver::_parseHeaders( Client &client )
 // Temporary function
 void Webserver::_prepareResponse( Client &client )
 {
-	std::string response;
-	std::ifstream fileToSend;
-	std::stringstream s, s2;
+	// This condition checks if the response is ready or not
+	if (client.clientResponse.getBool())
+		return ;
 
-	// Here I should add a condition that checks if a body exists and if it's read or not
-	if (!client.isHeaderParsed)
-		return ;
-	// Should add Delete later
-	if (client.parsedRequest._method == "GET"
-		&& !client.isHeaderParsed)
-		return ;
-	client.clientResponse.setBool(true);
-	if (client.parsedRequest._method == "GET")
-	{
-		fileToSend.open("upload.html");
-		s << fileToSend.rdbuf();
-		s2 << s.str().size();
-		response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
-		response +=  s2.str() + "\r\n\r\n" + s.str();
-		client.clientResponse.setResponse(response);
-	}
+	// Here the GET method should be handled (all the request is parsed and well formed)
+	// Should also check if GET is in the location block or not
+	if (client.isHeaderParsed && client.parsedRequest._method == "GET")
+		this->_prepareGetResponse(client);
 	else
+	{
+		// Here I should add a condition that checks if a body exists and if it's read or not
+		std::cout << client.request << std::endl;
+		client.clientResponse.setBool(true);
 		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+	}
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
 {
 	if (!client.isThereBody)
 		return ;
+}
+
+void Webserver::_prepareGetResponse( Client &client )
+{
+	// Here should be the code that handles Get request
+
+	// In the end, the 'clientResponse' member attribute in the class 'Client' \
+	// should have the _canBeSent variable set to true and the _response \
+	// should also be set to the correct response to send to the client
+
+	// This is temporary
+	std::string response;
+	std::ifstream fileToSend;
+	std::stringstream s, s2;
+
+	fileToSend.open("upload.html");
+	s << fileToSend.rdbuf();
+	s2 << s.str().size();
+	response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
+	response +=  s2.str() + "\r\n\r\n" + s.str();
+	
+	// Here's an example of the end of this code
+	client.clientResponse.setResponse(response);
+	client.clientResponse.setBool(true);
 }

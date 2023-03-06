@@ -22,6 +22,15 @@ std::list < Blocks > giveList( void )
 	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
 	list.push_back(ins1);
 
+
+	ins1.index[0] = "index3.html";
+	ins1.port = 7070;
+	ins1.ip = 0;
+	ins1.maxBodySize = 10000;
+	ins1.root = "./";
+	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
+	list.push_back(ins1);
+
 	return list;
 }
 
@@ -30,12 +39,23 @@ int main( void )
 {
 	Webserver mainServer;
 
-	mainServer.setServerBlocks(giveList());
-	mainServer.createSockets();
-	while (1)
+	try
 	{
-		mainServer.setReadyFds();
-		mainServer.readAndRespond();
+		mainServer.setServerBlocks(giveList());
+		mainServer.createSockets();
+		while (1)
+		{
+			mainServer.setReadyFds();
+			mainServer.readAndRespond();
+		}
+	}
+	catch( const char *msg )
+	{
+		std::cout << msg << std::endl;
+	}
+	catch ( std::exception &rhs )
+	{
+		std::cout << rhs.what() << std::endl;
 	}
 	return (0);
 }

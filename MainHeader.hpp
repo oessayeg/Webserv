@@ -9,6 +9,7 @@
 #include <string.h>
 #include <iterator>
 #include <unistd.h>
+#include <fcntl.h>
 #include <fstream>
 #include <sstream>
 #include <poll.h>
