@@ -22,6 +22,8 @@ class Configfile
         void                check_errors(std::string &namefile);
         std::string         get_contentfile(std::ifstream &file);
         void                parse_configfile(std::string        &configfile);
+        void                skip_comments(std::string& configfile);
+
 
 
         std::vector<Serverblock>      get_serverblocks();

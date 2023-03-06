@@ -26,8 +26,6 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
         if (found_first_char == std::string::npos)
             continue;
         line = line.substr(found_first_char, found_last_char - found_first_char + 1);
-        if(line[0] == '#')
-            continue;
         if (line.substr(0, 6) == "listen")
             set_port_and_ip(line.substr(6));
         else if (line.substr(0, 9) == "body_size")
@@ -39,7 +37,14 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
             {
                 location_block += line + "\n";
                 if (line.find("}") != std::string::npos)
-                    break;
+                {
+                    size_t found  = line.find_first_not_of("  \t\f\v\n");
+                    std::string name = line.substr(found);
+                    if(name.length() != 1)
+                        throw SyntaxError("Invalid close bracket");
+                    else
+                        break;
+                }
             }
             _location.push_back(Location(location_block));
             this->_count_location++;

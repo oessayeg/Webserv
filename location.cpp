@@ -19,9 +19,7 @@ Location::Location(std::string &location):_count_auto_index(0),_count_allow_meth
         if (found_t == std::string::npos)
                 continue;
         line = line.substr(found_t, found_tt - found_t + 1);
-        if(line[0] == '#')
-            continue;
-        else if (line.substr(0, 8) == "location")
+        if (line.substr(0, 8) == "location")
             set_path_location(line.substr(8));
         else if (line.substr(0, 4) == "root")
            set_root_location(line.substr(4));
@@ -52,21 +50,18 @@ void        Location::check_valid_value(std::string buffer, std::string &value)
 
 void        Location::set_path_location(std::string path_location)
 {
-    size_t found = path_location.find_first_not_of(" \t\f\v\n\r");
-    size_t found_t = path_location.find_first_of("/");
-    if (found_t == std::string::npos)
-        throw "invalid arg in location";
-    found = path_location.find_first_not_of(" \t\f\v\n\r", found_t + 1);
-    if (found != std::string::npos)
+    size_t find = path_location.find_first_not_of(" \t\f\v\n\r");
+    if(find == std::string::npos)
+        throw SyntaxError("Invalid argument in location path");
+    std::string name = path_location.substr(find);
+    std::stringstream buffer(name);
+    std::string line;
+    while(getline(buffer, line, ' '))
     {
-        std::string name = path_location.substr(found, path_location.find_last_not_of(" \t\f\v\n\r") - found);
-        std::stringstream oufile(name);
-        std::string       line;
-        while (getline(oufile, line, ' '))
-            _path_location.push_back(line);
+        if(line[0] != '/')
+            throw SyntaxError("'" + line + "' path should start with '/'");
+        _path_location.push_back(line);   
     }
-    else
-        _path_location.push_back("/");
 }
 
 bool Location::is_Number(std::string  str)
@@ -150,6 +145,8 @@ void        Location::set_indexes_location(std::string        indexes_location)
     std::string       line;
     while(getline(paths, line, ' '))
         this->_indexes_location.push_back(line);
+    std::list<std::string>::iterator it = this->_indexes_location.begin();
+    std::cout<<*it<<std::endl;
 }
 
 
@@ -182,6 +179,7 @@ void        Location::set_redirection(std::string             redirection)
         throw LogicError("'return' invalid value");
     _redirection[0] = key;
     _redirection[1] = data;
+    std::cout<<_redirection[0]<<std::endl;
     this->_count_return++;
 }
 
