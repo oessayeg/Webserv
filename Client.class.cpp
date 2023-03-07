@@ -4,8 +4,8 @@
 Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
-		isHeaderParsed(false), isThereBody(false), errString(), \
-		finishedBody(true) { }
+		isHeaderParsed(false), shouldReadBody(false), errString(), \
+		finishedBody(false) { }
 
 Client::Client( const Client &rhs )
 {
@@ -22,7 +22,7 @@ Client &Client::operator=( const Client &rhs )
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
-		this->isThereBody = rhs.isThereBody;
+		this->shouldReadBody = rhs.shouldReadBody;
 		this->finishedBody = rhs.finishedBody;
 		this->body = rhs.body;
 		*this->request = *rhs.request;

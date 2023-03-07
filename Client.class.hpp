@@ -11,13 +11,14 @@ class Client
 
 	public :
 		int bytesRead;
-		char request[MAX_RQ];
+		char request[MAX_RQ + 1];
 		bool isRead;
 		bool isRqLineParsed;
 		bool isHeaderParsed;
-		bool isThereBody;
+		bool shouldReadBody;
 		bool finishedBody;
 		struct sockaddr_in *clientStruct;
+		std::string bodyDelimiter;
 		std::string stringRequest;
 		std::string body;
 		ErrorString errString;
@@ -41,6 +42,7 @@ class Client
 		// These are checkFunctions that check if the request or header are well formed
 		void checkRequestLine( void );
 		void checkHeaders( void );
+		void checkBody( const std::string &key, const std::string &value );
 
 		// This function forms the correct error response in case of an error
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );

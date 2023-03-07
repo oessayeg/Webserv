@@ -94,7 +94,7 @@ void Webserver::readAndRespond( void )
 		// Here I check if the fd is ready for reading
 		if (_fdToCheck[i].revents & POLLIN)
 		{
-			// this->_readBodyIfPossible(*b);
+			this->_readBodyIfPossible(*b);
 			this->_readRequest(*b);
 			this->_parseRequestLine(*b);
 			this->_parseHeaders(*b);
@@ -217,6 +217,7 @@ void Webserver::_parseHeaders( Client &client )
 		index = client.stringRequest.find(':');
 		first = client.stringRequest.substr(0, index);
 		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
+		client.checkBody(first, second);
 		client.parsedRequest.insertHeader(std::make_pair(first, second));
 		if (isHeader)
 		{
@@ -236,26 +237,38 @@ void Webserver::_parseHeaders( Client &client )
 void Webserver::_prepareResponse( Client &client )
 {
 	// This condition checks if the response is ready or not
-	if (client.clientResponse.getBool())
+	if (client.clientResponse.getBool() || !client.isHeaderParsed
+		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
 
-	// Here the GET method should be handled (all the request is parsed and well formed)
-	// Should also check if GET is in the location block or not
-	if (client.isHeaderParsed && client.parsedRequest._method == "GET")
+	if (client.parsedRequest._method == "GET")
 		this->_prepareGetResponse(client);
-	else
+	else if (client.parsedRequest._method == "POST")
 	{
-		// Here I should add a condition that checks if a body exists and if it's read or not
-		std::cout << client.request << std::endl;
-		client.clientResponse.setBool(true);
-		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+		// client.clientResponse.setBool(true);
+		// client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+		// this->_preparePostResponse(client);
 	}
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
 {
-	if (!client.isThereBody)
+	int r;
+	char buff[MIN_TO_READ + 1];
+
+	// Need to check if I already read the whole body before arriving here
+	// Check if the content-length is equal to the stringRequest in prepare response
+	if (!client.shouldReadBody || client.finishedBody)
 		return ;
+	std::cout << client.request << std::endl;
+	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
+	if (r <= 0)
+	{
+		std::cout << "Return value of recv = " << r << std::endl;
+		exit(0);
+	}
+	buff[r] = '\0';
+	exit(0);
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -280,4 +293,13 @@ void Webserver::_prepareGetResponse( Client &client )
 	// Here's an example of the end of this code
 	client.clientResponse.setResponse(response);
 	client.clientResponse.setBool(true);
+}
+
+void Client::checkBody( const std::string &key, const std::string &value )
+{
+	// Should change atoi because the content-length can be > MAX_INT
+	if (parsedRequest._method == "POST" && ((key == "Content-Length" && atoi(value.c_str()) > 0)
+		|| (key == "Transfer-Encoding" && value == "chunked")))
+		this->shouldReadBody = true;
+	// else if (parsedRequest._method == "POST" && key == "Content-Type")
 }

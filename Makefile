@@ -15,3 +15,6 @@ clean :
 fclean : clean
 
 re : fclean all
+
+run : re
+	clear && ./main
