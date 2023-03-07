@@ -19,7 +19,9 @@ Location::Location(std::string &location):_count_auto_index(0),_count_allow_meth
         if (found_t == std::string::npos)
                 continue;
         line = line.substr(found_t, found_tt - found_t + 1);
-        if (line.substr(0, 8) == "location")
+        if(line[0] == '#')
+            continue ;
+        else if (line.substr(0, 8) == "location")
             set_path_location(line.substr(8));
         else if (line.substr(0, 4) == "root")
            set_root_location(line.substr(4));

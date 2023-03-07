@@ -16,7 +16,6 @@ class Serverblock
 private:
     int                     _port;
     std::string              _ip;
-    std::string             _hostname;
     long                    _body_size;
     int                     _countlisten;
     int                     _countbodysize;

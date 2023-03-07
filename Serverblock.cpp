@@ -26,7 +26,9 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
         if (found_first_char == std::string::npos)
             continue;
         line = line.substr(found_first_char, found_last_char - found_first_char + 1);
-        if (line.substr(0, 6) == "listen")
+        if(line[0] == '#')
+            continue ;
+        else if (line.substr(0, 6) == "listen")
             set_port_and_ip(line.substr(6));
         else if (line.substr(0, 9) == "body_size")
             set_body_size(line.substr(9));

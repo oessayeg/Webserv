@@ -31,32 +31,9 @@ void            Configfile::check_errors(std::string    &namefile)
          throw FileError("extension should be '.conf'");
 }
 
-void    Configfile::skip_comments(std::string& Configfile) {
 
-    std::string result;
-    bool found_comment = false;
-
-    for (std::string::iterator it = Configfile.begin(); it != Configfile.end(); ++it) {
-        char c = *it;
-        if (found_comment) {
-            if(c == ';')
-                throw SyntaxError("Invalid comment");
-            if (c == '\n') {
-                found_comment = false;
-            }
-        } else {
-            if (c == '#') {
-                found_comment = true;
-            } else {
-                result += c;
-            }
-        }
-    }
-    Configfile = result;
-}
 void    Configfile::parse_configfile(std::string &configfile)
 {
-    skip_comments(configfile);
     while(configfile != "")
     {
         size_t found = configfile.find_first_not_of(" \t\f\v\n\r");
