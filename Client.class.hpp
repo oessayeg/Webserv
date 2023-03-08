@@ -17,11 +17,13 @@ class Client
 		bool isHeaderParsed;
 		bool shouldReadBody;
 		bool finishedBody;
+		bool gotFileName;
 		struct sockaddr_in *clientStruct;
-		std::string bodyDelimiter;
 		std::string stringRequest;
+		std::string boundary;
 		std::string body;
 		ErrorString errString;
+		std::ofstream fileToUpload;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
@@ -39,11 +41,14 @@ class Client
 		void setSocket( int s );
 		int getSocket( void );
 
-		// These are checkFunctions that check if the request or header are well formed
+		// These are checkFunctions that check if the request or headers are well formed
 		void checkRequestLine( void );
 		void checkHeaders( void );
 		void checkBody( const std::string &key, const std::string &value );
 
 		// This function forms the correct error response in case of an error
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
+
+		// Functions to parse the body in case of POST method
+		void parseMultipartBody( void );
 };

@@ -5,7 +5,7 @@ Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
-		finishedBody(false) { }
+		finishedBody(false), gotFileName(false) { }
 
 Client::Client( const Client &rhs )
 {
@@ -24,6 +24,8 @@ Client &Client::operator=( const Client &rhs )
 		this->isHeaderParsed = rhs.isHeaderParsed;
 		this->shouldReadBody = rhs.shouldReadBody;
 		this->finishedBody = rhs.finishedBody;
+		this->gotFileName = rhs.gotFileName;
+		this->boundary = rhs.boundary;
 		this->body = rhs.body;
 		*this->request = *rhs.request;
 		this->parsedRequest = rhs.parsedRequest;
@@ -121,4 +123,40 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
 	returnString += "\r\n\r\n";
 	return (returnString + errString.getFileInString());
+}
+
+// Should consider moving the check functions/parse functions to Webserv class
+void Client::parseMultipartBody( void )
+{
+	int endOfLineIndex;
+	int fileIndex;
+	int crlfIndex;
+
+	crlfIndex = stringRequest.find("\r\n\r\n");
+	if (!gotFileName)
+	{
+		if (crlfIndex == std::string::npos)
+			return ;
+		else
+		{
+			fileIndex = stringRequest.find("filename=") + 10;
+			if (fileIndex != std::string::npos)
+			{
+				fileToUpload.open(stringRequest.substr(fileIndex, stringRequest.find('\"', fileIndex) - fileIndex), std::ios::trunc);
+				std::cout << "Opened File" << std::endl;
+			}
+			stringRequest.erase(0, crlfIndex + 4);
+		}
+	}
+	// std::cout << stringRequest << std::endl;
+	// endOfLineIndex = stringRequest.find("\n");
+	// while (endOfLineIndex != std::string::npos)
+	// {
+	// 	fileToUpload << stringRequest.substr(0, endOfLineIndex + 1);
+	// 	stringRequest.erase(0, endOfLineIndex + 1);
+	// 	endOfLineIndex = stringRequest.find("\n");
+	// }
+	fileToUpload << stringRequest;
+	fileToUpload.close();
+	exit(0);
 }

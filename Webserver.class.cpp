@@ -249,6 +249,10 @@ void Webserver::_prepareResponse( Client &client )
 		// client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
 		// this->_preparePostResponse(client);
 	}
+	else if (client.parsedRequest._method == "DELETE")
+	{
+		std::cout << "Delete method should be handled here" << std::endl;
+	}
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
@@ -260,15 +264,13 @@ void Webserver::_readBodyIfPossible( Client &client )
 	// Check if the content-length is equal to the stringRequest in prepare response
 	if (!client.shouldReadBody || client.finishedBody)
 		return ;
-	std::cout << client.request << std::endl;
+	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
-	if (r <= 0)
-	{
-		std::cout << "Return value of recv = " << r << std::endl;
-		exit(0);
-	}
 	buff[r] = '\0';
-	exit(0);
+	client.stringRequest += buff;
+	if (!client.boundary.empty())
+		client.parseMultipartBody();
+	// exit(0);
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -297,9 +299,17 @@ void Webserver::_prepareGetResponse( Client &client )
 
 void Client::checkBody( const std::string &key, const std::string &value )
 {
+	int index;
+
 	// Should change atoi because the content-length can be > MAX_INT
 	if (parsedRequest._method == "POST" && ((key == "Content-Length" && atoi(value.c_str()) > 0)
 		|| (key == "Transfer-Encoding" && value == "chunked")))
 		this->shouldReadBody = true;
-	// else if (parsedRequest._method == "POST" && key == "Content-Type")
+	else if (parsedRequest._method == "POST" && key == "Content-Type"
+		&& value.find("multipart/form-data;") != std::string::npos)
+	{
+		index = value.find("boundary=") + 9;
+		this->boundary = "--";
+		this->boundary += value.substr(index, value.size() - index);
+	}
 }
