@@ -5,7 +5,7 @@ Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
-		finishedBody(false), gotFileName(false) { }
+		finishedBody(false), gotFileName(false), shouldSkip(false) { }
 
 Client::Client( const Client &rhs )
 {
@@ -25,6 +25,7 @@ Client &Client::operator=( const Client &rhs )
 		this->shouldReadBody = rhs.shouldReadBody;
 		this->finishedBody = rhs.finishedBody;
 		this->gotFileName = rhs.gotFileName;
+		this->shouldSkip = rhs.shouldSkip;
 		this->boundary = rhs.boundary;
 		this->body = rhs.body;
 		*this->request = *rhs.request;
@@ -128,35 +129,58 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 // Should consider moving the check functions/parse functions to Webserv class
 void Client::parseMultipartBody( void )
 {
+	std::string lineToAdd;
 	int endOfLineIndex;
 	int fileIndex;
 	int crlfIndex;
 
-	crlfIndex = stringRequest.find("\r\n\r\n");
+	std::cout << "............\n";
+	std::cout << stringRequest << std::endl;
 	if (!gotFileName)
 	{
+		crlfIndex = stringRequest.find("\r\n\r\n");
 		if (crlfIndex == std::string::npos)
 			return ;
 		else
 		{
-			fileIndex = stringRequest.find("filename=") + 10;
+			fileIndex = stringRequest.find("filename=");
 			if (fileIndex != std::string::npos)
 			{
+				fileIndex += 10;
+				gotFileName = true;
 				fileToUpload.open(stringRequest.substr(fileIndex, stringRequest.find('\"', fileIndex) - fileIndex), std::ios::trunc);
-				std::cout << "Opened File" << std::endl;
 			}
+			else
+				shouldSkip = true;
 			stringRequest.erase(0, crlfIndex + 4);
 		}
 	}
-	// std::cout << stringRequest << std::endl;
-	// endOfLineIndex = stringRequest.find("\n");
-	// while (endOfLineIndex != std::string::npos)
-	// {
-	// 	fileToUpload << stringRequest.substr(0, endOfLineIndex + 1);
-	// 	stringRequest.erase(0, endOfLineIndex + 1);
-	// 	endOfLineIndex = stringRequest.find("\n");
-	// }
-	fileToUpload << stringRequest;
-	fileToUpload.close();
-	exit(0);
+	endOfLineIndex = stringRequest.find('\n');
+	lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
+	while (endOfLineIndex != std::string::npos)
+	{
+		// Should not forget to check if it is the end of the body with the --
+		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
+		{
+			stringRequest.erase(0, endOfLineIndex + 1);
+			gotFileName = false;
+			fileToUpload.close();
+			shouldSkip = false;
+			break;
+		}
+		stringRequest.erase(0, endOfLineIndex + 1);
+		if (!shouldSkip)
+			fileToUpload << lineToAdd;
+		endOfLineIndex = stringRequest.find('\n');
+		lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
+	}
+	// std::cout << "Line to add : " << lineToAdd << std::endl;
+	if (endOfLineIndex == std::string::npos)
+		return ;
+	if (stringRequest.substr(0, stringRequest.find('\r')) == boundary + "--")
+	{
+		finishedBody = true;
+		return ;
+	}
+	parseMultipartBody();
 }

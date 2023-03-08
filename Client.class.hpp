@@ -18,12 +18,13 @@ class Client
 		bool shouldReadBody;
 		bool finishedBody;
 		bool gotFileName;
+		bool shouldSkip;
 		struct sockaddr_in *clientStruct;
+		std::ofstream fileToUpload;
 		std::string stringRequest;
 		std::string boundary;
 		std::string body;
 		ErrorString errString;
-		std::ofstream fileToUpload;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;

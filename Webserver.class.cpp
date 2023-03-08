@@ -231,6 +231,8 @@ void Webserver::_parseHeaders( Client &client )
 	}
 	client.checkHeaders();
 	client.isHeaderParsed = true;
+	if (client.stringRequest.size() == atoi(client.parsedRequest._headers["Content-Length"].c_str()))
+		client.parseMultipartBody();
 }
 
 // Temporary function
@@ -243,10 +245,11 @@ void Webserver::_prepareResponse( Client &client )
 
 	if (client.parsedRequest._method == "GET")
 		this->_prepareGetResponse(client);
-	else if (client.parsedRequest._method == "POST")
+	else if (client.parsedRequest._method == "POST" && client.finishedBody)
 	{
-		// client.clientResponse.setBool(true);
-		// client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+		std::cout << "Finished Post" << std::endl;
+		client.clientResponse.setBool(true);
+		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
 		// this->_preparePostResponse(client);
 	}
 	else if (client.parsedRequest._method == "DELETE")
@@ -270,7 +273,6 @@ void Webserver::_readBodyIfPossible( Client &client )
 	client.stringRequest += buff;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();
-	// exit(0);
 }
 
 void Webserver::_prepareGetResponse( Client &client )
