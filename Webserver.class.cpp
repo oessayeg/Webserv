@@ -231,8 +231,17 @@ void Webserver::_parseHeaders( Client &client )
 	}
 	client.checkHeaders();
 	client.isHeaderParsed = true;
-	if (client.stringRequest.size() == atoi(client.parsedRequest._headers["Content-Length"].c_str()))
-		client.parseMultipartBody();
+	// Here I should check the type of reading (chunked, normal, multipart)
+	if (client.shouldReadBody)
+	{
+		std::istringstream ss(client.parsedRequest._headers["Content-Length"]);
+		size_t len;
+
+		ss >> len;
+		if (len == client.stringRequest.size())
+			client.parseMultipartBody();	
+	}
+
 }
 
 // Temporary function
@@ -302,13 +311,20 @@ void Webserver::_prepareGetResponse( Client &client )
 void Client::checkBody( const std::string &key, const std::string &value )
 {
 	int index;
+	size_t contentLen;
 
-	// Should change atoi because the content-length can be > MAX_INT
-	if (parsedRequest._method == "POST" && ((key == "Content-Length" && atoi(value.c_str()) > 0)
-		|| (key == "Transfer-Encoding" && value == "chunked")))
+	if (parsedRequest._method != "POST")
+		return ;
+	if (key == "Transfer-Encoding" && value == "chunked")
 		this->shouldReadBody = true;
-	else if (parsedRequest._method == "POST" && key == "Content-Type"
-		&& value.find("multipart/form-data;") != std::string::npos)
+	else if (key == "Content-Length")
+	{
+		std::istringstream s(value);
+		s >> contentLen;
+		if (contentLen > 0)
+			this->shouldReadBody = true;
+	}
+	else if (key == "Content-Type" && value.find("multipart/form-data;") != std::string::npos)
 	{
 		index = value.find("boundary=") + 9;
 		this->boundary = "--";

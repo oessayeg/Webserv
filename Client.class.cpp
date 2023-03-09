@@ -71,9 +71,11 @@ void Client::checkRequestLine( void )
 
 void Client::checkHeaders( void )
 {
-	// I should change atoi because of big bodies (will change it to size_t)
-	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end()
-		&& atoi(parsedRequest._headers["Content-Length"].c_str()) > correspondingBlock->maxBodySize)
+	size_t contentLen;
+	std::istringstream s(parsedRequest._headers["Content-Length"]);
+
+	s >> contentLen;
+	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end() && contentLen > correspondingBlock->maxBodySize)
 	{
 		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
 		clientResponse.setBool(true);
@@ -86,7 +88,7 @@ void Client::checkHeaders( void )
 	}
 	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
 		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end()) || (atoi(parsedRequest._headers["Content-Length"].c_str())) == 0))
+		== parsedRequest._headers.end()) || contentLen == 0))
 	{
 		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 		clientResponse.setBool(true);
@@ -134,8 +136,6 @@ void Client::parseMultipartBody( void )
 	int fileIndex;
 	int crlfIndex;
 
-	std::cout << "............\n";
-	std::cout << stringRequest << std::endl;
 	if (!gotFileName)
 	{
 		crlfIndex = stringRequest.find("\r\n\r\n");
@@ -174,7 +174,6 @@ void Client::parseMultipartBody( void )
 		endOfLineIndex = stringRequest.find('\n');
 		lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
 	}
-	// std::cout << "Line to add : " << lineToAdd << std::endl;
 	if (endOfLineIndex == std::string::npos)
 		return ;
 	if (stringRequest.substr(0, stringRequest.find('\r')) == boundary + "--")
