@@ -251,20 +251,17 @@ void Webserver::_prepareResponse( Client &client )
 	if (client.clientResponse.getBool() || !client.isHeaderParsed
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
-
 	if (client.parsedRequest._method == "GET")
 		this->_prepareGetResponse(client);
 	else if (client.parsedRequest._method == "POST" && client.finishedBody)
 	{
-		std::cout << "Finished Post" << std::endl;
+		std::cout << "Body reading finished" << std::endl;
 		client.clientResponse.setBool(true);
 		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
 		// this->_preparePostResponse(client);
 	}
 	else if (client.parsedRequest._method == "DELETE")
-	{
 		std::cout << "Delete method should be handled here" << std::endl;
-	}
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
@@ -280,8 +277,14 @@ void Webserver::_readBodyIfPossible( Client &client )
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	buff[r] = '\0';
 	client.stringRequest += buff;
+	std::cout << client.stringRequest << std::endl;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();
+	else if (client.parsedRequest._headers["Content-Type"] == "text/plain")
+	{
+		std::cout  << "Here" << std::endl;
+		exit(0);
+	}
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -315,8 +318,12 @@ void Client::checkBody( const std::string &key, const std::string &value )
 
 	if (parsedRequest._method != "POST")
 		return ;
-	if (key == "Transfer-Encoding" && value == "chunked")
-		this->shouldReadBody = true;
+	if ((key == "Transfer-Encoding" && value == "chunked")
+		|| (key == "Content-Type" && value == "text/plain"))
+		{
+			std::cout << value << std::endl;
+			this->shouldReadBody = true;
+		}
 	else if (key == "Content-Length")
 	{
 		std::istringstream s(value);

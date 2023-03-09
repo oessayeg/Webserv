@@ -160,6 +160,7 @@ void Client::parseMultipartBody( void )
 	while (endOfLineIndex != std::string::npos)
 	{
 		// Should not forget to check if it is the end of the body with the --
+		// Here should double check for windows files
 		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
 		{
 			stringRequest.erase(0, endOfLineIndex + 1);
