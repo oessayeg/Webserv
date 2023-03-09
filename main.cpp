@@ -9,7 +9,7 @@ std::list < Blocks > giveList( void )
 	ins1.index.push_back("index1.html");
 	ins1.port = 8080;
 	ins1.ip = 0;
-	ins1.maxBodySize = 10000;
+	ins1.maxBodySize = 1000000000;
 	ins1.root = "./";
 	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
 
@@ -17,7 +17,7 @@ std::list < Blocks > giveList( void )
 	ins1.index[0] = "index2.html";
 	ins1.port = 9090;
 	ins1.ip = 0;
-	ins1.maxBodySize = 10000;
+	ins1.maxBodySize = 1000000000;
 	ins1.root = "./";
 	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
 	list.push_back(ins1);
@@ -25,7 +25,7 @@ std::list < Blocks > giveList( void )
 	ins1.index[0] = "index3.html";
 	ins1.port = 7070;
 	ins1.ip = 0;
-	ins1.maxBodySize = 10000;
+	ins1.maxBodySize = 1000000000;
 	ins1.root = "./";
 	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
 	list.push_back(ins1);

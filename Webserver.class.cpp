@@ -84,7 +84,7 @@ void Webserver::readAndRespond( void )
 
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
 	// Need to check for nbFds when iterating through fds for optimization
-	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, 0);
+	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
 	// Should not forget to try https
 	this->_acceptNewClients();
 	b = _pendingClients.begin();
@@ -98,7 +98,7 @@ void Webserver::readAndRespond( void )
 			this->_readRequest(*b);
 			this->_parseRequestLine(*b);
 			this->_parseHeaders(*b);
-			this->_prepareResponse(*b); // Temporary, just to test POST requests
+			this->_prepareResponse(*b);
 		}
 		// Here I check if the fd is ready for writing && that the request is read
 		if ((_fdToCheck[i].revents & POLLOUT) && b->clientResponse.getBool())
