@@ -22,6 +22,11 @@
 #define MIN_TO_READ 2048
 #define MAX_RQ 8192
 
+// Body type macros
+
+#define CHUNKED_MULTIPART 1
+#define MULTIPART 2
+
 // Classes header files
 #include "Response.class.hpp"
 #include "Request.class.hpp"

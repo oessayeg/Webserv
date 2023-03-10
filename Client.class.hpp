@@ -19,12 +19,14 @@ class Client
 		bool finishedBody;
 		bool gotFileName;
 		bool shouldSkip;
+		size_t bytesToRead;
 		struct sockaddr_in *clientStruct;
 		std::ofstream fileToUpload;
 		std::string stringRequest;
 		std::string boundary;
 		std::string body;
 		ErrorString errString;
+		int bodyType;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
@@ -51,5 +53,11 @@ class Client
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
 
 		// Functions to parse the body in case of POST method
+		bool isThereFilename( int bodyType );
 		void parseMultipartBody( void );
+		void parseChunkedMultipart( void );
+
+		// Utils
+		// Give decimal should be optimized
+		size_t giveDecimal( std::string &hexaString );
 };

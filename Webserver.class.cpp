@@ -238,7 +238,11 @@ void Webserver::_parseHeaders( Client &client )
 		size_t len;
 
 		ss >> len;
-		if (len == client.stringRequest.size())
+		if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
+			&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked"
+			&& client.giveDecimal(client.stringRequest) == len)
+			client.parseChunkedMultipart();
+		else if (len == client.stringRequest.size())
 			client.parseMultipartBody();	
 	}
 
@@ -255,7 +259,6 @@ void Webserver::_prepareResponse( Client &client )
 		this->_prepareGetResponse(client);
 	else if (client.parsedRequest._method == "POST" && client.finishedBody)
 	{
-		std::cout << "Body reading finished" << std::endl;
 		client.clientResponse.setBool(true);
 		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
 		// this->_preparePostResponse(client);
@@ -277,14 +280,10 @@ void Webserver::_readBodyIfPossible( Client &client )
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	buff[r] = '\0';
 	client.stringRequest += buff;
-	std::cout << client.stringRequest << std::endl;
-	if (!client.boundary.empty())
+	if (!client.boundary.empty() && client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end())
+		client.parseChunkedMultipart();
+	else if (!client.boundary.empty())
 		client.parseMultipartBody();
-	else if (client.parsedRequest._headers["Content-Type"] == "text/plain")
-	{
-		std::cout  << "Here" << std::endl;
-		exit(0);
-	}
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -318,12 +317,8 @@ void Client::checkBody( const std::string &key, const std::string &value )
 
 	if (parsedRequest._method != "POST")
 		return ;
-	if ((key == "Transfer-Encoding" && value == "chunked")
-		|| (key == "Content-Type" && value == "text/plain"))
-		{
-			std::cout << value << std::endl;
-			this->shouldReadBody = true;
-		}
+	if ((key == "Transfer-Encoding" && value == "chunked"))
+		this->shouldReadBody = true;
 	else if (key == "Content-Length")
 	{
 		std::istringstream s(value);

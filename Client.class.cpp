@@ -18,7 +18,7 @@ Client &Client::operator=( const Client &rhs )
 	{
 		this->_socket = rhs._socket;
 		this->bytesRead = rhs.bytesRead;
-		this->correspondingBlock = rhs.correspondingBlock;
+		*this->request = *rhs.request;
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
@@ -26,13 +26,15 @@ Client &Client::operator=( const Client &rhs )
 		this->finishedBody = rhs.finishedBody;
 		this->gotFileName = rhs.gotFileName;
 		this->shouldSkip = rhs.shouldSkip;
-		this->boundary = rhs.boundary;
-		this->body = rhs.body;
-		*this->request = *rhs.request;
-		this->parsedRequest = rhs.parsedRequest;
+		this->correspondingBlock = rhs.correspondingBlock;
 		this->clientStruct = new struct sockaddr_in;
 		*this->clientStruct = *rhs.clientStruct;
+		this->stringRequest = rhs.stringRequest;
+		this->boundary = rhs.boundary;
+		this->body = rhs.body;
 		this->errString = rhs.errString;
+		this->parsedRequest = rhs.parsedRequest;
+		this->bodyType = rhs.bodyType;
 	}
 	return *this;
 }
@@ -128,22 +130,23 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	return (returnString + errString.getFileInString());
 }
 
-// Should consider moving the check functions/parse functions to Webserv class
-void Client::parseMultipartBody( void )
+bool Client::isThereFilename( int bodyType )
 {
-	std::string lineToAdd;
-	int endOfLineIndex;
-	int fileIndex;
 	int crlfIndex;
+	int fileIndex;
 
 	if (!gotFileName)
 	{
-		crlfIndex = stringRequest.find("\r\n\r\n");
+		if (bodyType == MULTIPART)
+			crlfIndex = stringRequest.find("\r\n\r\n");
+		else if (bodyType == CHUNKED_MULTIPART)
+			crlfIndex = stringRequest.find("\r\n\r\n\r\n");
 		if (crlfIndex == std::string::npos)
-			return ;
+			return false;
 		else
 		{
 			fileIndex = stringRequest.find("filename=");
+			// Should check if filename is empty
 			if (fileIndex != std::string::npos)
 			{
 				fileIndex += 10;
@@ -152,9 +155,27 @@ void Client::parseMultipartBody( void )
 			}
 			else
 				shouldSkip = true;
-			stringRequest.erase(0, crlfIndex + 4);
+			if (bodyType == MULTIPART)
+				stringRequest.erase(0, crlfIndex + 4);
+			else if (bodyType == CHUNKED_MULTIPART)
+			{
+				stringRequest.erase(0, crlfIndex + 6);
+				bytesToRead = giveDecimal(stringRequest);
+				stringRequest.erase(0, stringRequest.find('\r') + 2);
+			}
 		}
 	}
+	return true;
+}
+
+// Should consider moving the check functions/parse functions to Webserv class
+void Client::parseMultipartBody( void )
+{
+	std::string lineToAdd;
+	int endOfLineIndex;
+
+	if (!isThereFilename(MULTIPART))
+		return ;
 	endOfLineIndex = stringRequest.find('\n');
 	lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
 	while (endOfLineIndex != std::string::npos)
@@ -164,8 +185,8 @@ void Client::parseMultipartBody( void )
 		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
 		{
 			stringRequest.erase(0, endOfLineIndex + 1);
-			gotFileName = false;
 			fileToUpload.close();
+			gotFileName = false;
 			shouldSkip = false;
 			break;
 		}
@@ -183,4 +204,44 @@ void Client::parseMultipartBody( void )
 		return ;
 	}
 	parseMultipartBody();
+}
+
+void Client::parseChunkedMultipart( void )
+{
+	int endOfBody;
+
+	if (!this->isThereFilename(CHUNKED_MULTIPART))
+		return ;
+	std::cout << "============================================\n";
+	std::cout << stringRequest << std::endl;
+	std::cout << "============================================\n";
+	if (stringRequest.size() <= bytesToRead)
+	{
+		fileToUpload << stringRequest;
+		bytesToRead -= stringRequest.size();
+		return ;
+	}
+	else if (stringRequest.size() + 1 > bytesToRead)
+	{
+		// In case the size of the string is bigger that the bytes to read
+		fileToUpload << stringRequest.substr(0, bytesToRead);
+		stringRequest.erase(0, bytesToRead);
+		bytesToRead = 0;
+	}
+	std::cout << "============================================\n";
+	std::cout << stringRequest << std::endl;
+	std::cout << "============================================\n";
+
+	// endOfBody = stringRequest.find() << std::endl;
+	exit(0);
+}
+
+size_t Client::giveDecimal( std::string &hexaString )
+{
+	std::stringstream ss;
+	size_t ret;
+
+	ss << std::hex << hexaString.substr(0, hexaString.find('\r'));
+	ss >> ret;
+	return ret;
 }
