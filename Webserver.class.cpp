@@ -238,14 +238,13 @@ void Webserver::_parseHeaders( Client &client )
 		size_t len;
 
 		ss >> len;
-		if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
-			&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked"
-			&& client.giveDecimal(client.stringRequest) == len)
-			client.parseChunkedMultipart();
-		else if (len == client.stringRequest.size())
+		// if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
+		// 	&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked"
+		// 	&& client.giveDecimal(client.stringRequest) == len)
+		// 	client.parseChunkedMultipart();
+		if (len == client.stringRequest.size())
 			client.parseMultipartBody();	
 	}
-
 }
 
 // Temporary function

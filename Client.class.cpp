@@ -168,7 +168,6 @@ bool Client::isThereFilename( int bodyType )
 	return true;
 }
 
-// Should consider moving the check functions/parse functions to Webserv class
 void Client::parseMultipartBody( void )
 {
 	std::string lineToAdd;
@@ -176,35 +175,62 @@ void Client::parseMultipartBody( void )
 
 	if (!isThereFilename(MULTIPART))
 		return ;
-	endOfLineIndex = stringRequest.find('\n');
-	lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
-	while (endOfLineIndex != std::string::npos)
-	{
-		// Should not forget to check if it is the end of the body with the --
-		// Here should double check for windows files
-		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
-		{
-			stringRequest.erase(0, endOfLineIndex + 1);
-			fileToUpload.close();
-			gotFileName = false;
-			shouldSkip = false;
-			break;
-		}
-		stringRequest.erase(0, endOfLineIndex + 1);
-		if (!shouldSkip)
-			fileToUpload << lineToAdd;
-		endOfLineIndex = stringRequest.find('\n');
-		lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
-	}
-	if (endOfLineIndex == std::string::npos)
+	endOfLineIndex = stringRequest.find(boundary);
+	if (endOfLineIndex == std::string::npos && !shouldSkip)
+			fileToUpload << stringRequest;
+	else if (!shouldSkip)
+			fileToUpload << stringRequest.substr(0, endOfLineIndex - 2);
+	stringRequest.erase(0, endOfLineIndex);
+	if (endOfLineIndex == -1)
 		return ;
-	if (stringRequest.substr(0, stringRequest.find('\r')) == boundary + "--")
+	fileToUpload.close();
+	shouldSkip = false;
+	gotFileName = false;
+	if (stringRequest.substr(0, stringRequest.find("\r\n")) == (boundary + "--"))
 	{
 		finishedBody = true;
 		return ;
 	}
 	parseMultipartBody();
 }
+// Should consider moving the check functions/parse functions to Webserv class
+// void Client::parseMultipartBody( void )
+// {
+// 	std::string lineToAdd;
+// 	int endOfLineIndex;
+
+// 	if (!isThereFilename(MULTIPART))
+// 		return ;
+// 	std::cout << stringRequest << std::endl;
+// 	exit(0);
+// 	endOfLineIndex = stringRequest.find('\n');
+// 	lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
+// 	while (endOfLineIndex != std::string::npos)
+// 	{
+// 		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
+// 		{
+// 			stringRequest.erase(0, endOfLineIndex + 1);
+// 			fileToUpload.close();
+// 			gotFileName = false;
+// 			shouldSkip = false;
+// 			break;
+// 		}
+// 		stringRequest.erase(0, endOfLineIndex + 1);
+// 		if (!shouldSkip)
+// 			fileToUpload << lineToAdd;
+// 		endOfLineIndex = stringRequest.find('\n');
+// 		lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
+// 	}
+// 	if (endOfLineIndex == std::string::npos)
+// 		return ;
+// 	if (stringRequest.substr(0, stringRequest.find('\r')) == boundary + "--")
+// 	{
+// 		finishedBody = true;
+// 		std::cout << "Finished " << std::endl;
+// 		return ;
+// 	}
+// 	parseMultipartBody();
+// }
 
 void Client::parseChunkedMultipart( void )
 {
@@ -216,13 +242,14 @@ void Client::parseChunkedMultipart( void )
 		return ;
 	else if (bytesToRead == 0 && isEndOfBody())
 	{
-		std::cout << "---------Here--------" << std::endl;
 		gotFileName = false;
 		shouldSkip = false;
 		fileToUpload.close();
 	}
 	else if (bytesToRead == 0 && gotFileName)
 	{
+		if (stringRequest[0] == '\r')
+			stringRequest.erase(0, 2);
 		bytesToRead = giveDecimal(stringRequest);
 		stringRequest.erase(0, stringRequest.find('\n') + 1);
 	}
@@ -231,15 +258,17 @@ void Client::parseChunkedMultipart( void )
 		if (!shouldSkip)
 			fileToUpload << stringRequest;
 		bytesToRead -= stringRequest.size();
+		stringRequest.erase();
 		return ;
 	}
 	else if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() >= bytesToRead)
 	{
-		// In case the size of the string is bigger that the bytes to read
-		stringRequest.erase(0, bytesToRead);
-		bytesToRead = 0;
 		if (!shouldSkip)
 			fileToUpload << stringRequest.substr(0, bytesToRead);
+		stringRequest.erase(0, bytesToRead);
+		bytesToRead = 0;
+		if (stringRequest.size() < 9)
+			return ;
 	}
 	parseChunkedMultipart();
 }
@@ -249,6 +278,8 @@ size_t Client::giveDecimal( std::string &hexaString )
 	std::stringstream ss;
 	size_t ret;
 
+	// std::cout << "HEXA STRING\n";
+	// std::cout << hexaString << std::endl;
 	ss << std::hex << hexaString.substr(0, hexaString.find('\r'));
 	ss >> ret;
 	return ret;
@@ -257,14 +288,27 @@ size_t Client::giveDecimal( std::string &hexaString )
 bool Client::isEndOfBody( void )
 {
 	std::string hexStr;
+	size_t decimal;
 
 	if (stringRequest.size() <= 9)
 		return false;
 	if (stringRequest[0] == '\r' && stringRequest[1] == '\n')
 		hexStr = stringRequest.substr(2, stringRequest.find('\r', 2) - 2);
-	if (giveDecimal(hexStr) == 2 && stringRequest.substr(5, 4) == "\r\n\r\n")
+	decimal = giveDecimal(hexStr);
+	if (decimal == 2 && stringRequest.substr(5, 4) == "\r\n\r\n")
 	{
 		stringRequest.erase(0, 9);
+		return true;
+	}
+	else if (decimal == (boundary.size() + 6))
+	{
+		decimal = stringRequest.find('\r', 2);
+		if (stringRequest.substr(decimal + 4, stringRequest.find('\r', decimal + 4) - (decimal + 4))
+			== (boundary + "--"))
+		{
+			std::cout << "Finished Body" << std::endl;
+			finishedBody = true;
+		}
 		return true;
 	}
 	return false;
