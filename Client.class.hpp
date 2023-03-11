@@ -60,4 +60,5 @@ class Client
 		// Utils
 		// Give decimal should be optimized
 		size_t giveDecimal( std::string &hexaString );
+		bool isEndOfBody( void );
 };

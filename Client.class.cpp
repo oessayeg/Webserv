@@ -5,7 +5,8 @@ Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
-		finishedBody(false), gotFileName(false), shouldSkip(false) { }
+		finishedBody(false), gotFileName(false), shouldSkip(false), \
+		bytesToRead(0) { }
 
 Client::Client( const Client &rhs )
 {
@@ -26,6 +27,7 @@ Client &Client::operator=( const Client &rhs )
 		this->finishedBody = rhs.finishedBody;
 		this->gotFileName = rhs.gotFileName;
 		this->shouldSkip = rhs.shouldSkip;
+		this->bytesToRead = rhs.bytesToRead;
 		this->correspondingBlock = rhs.correspondingBlock;
 		this->clientStruct = new struct sockaddr_in;
 		*this->clientStruct = *rhs.clientStruct;
@@ -158,11 +160,9 @@ bool Client::isThereFilename( int bodyType )
 			if (bodyType == MULTIPART)
 				stringRequest.erase(0, crlfIndex + 4);
 			else if (bodyType == CHUNKED_MULTIPART)
-			{
 				stringRequest.erase(0, crlfIndex + 6);
-				bytesToRead = giveDecimal(stringRequest);
-				stringRequest.erase(0, stringRequest.find('\r') + 2);
-			}
+			// bytesToRead = giveDecimal(stringRequest);
+			// stringRequest.erase(0, stringRequest.find('\r') + 2);
 		}
 	}
 	return true;
@@ -212,28 +212,36 @@ void Client::parseChunkedMultipart( void )
 
 	if (!this->isThereFilename(CHUNKED_MULTIPART))
 		return ;
-	std::cout << "============================================\n";
-	std::cout << stringRequest << std::endl;
-	std::cout << "============================================\n";
-	if (stringRequest.size() <= bytesToRead)
+	if (bytesToRead == 0 && stringRequest.find("\r\n") == std::string::npos)
+		return ;
+	else if (bytesToRead == 0 && isEndOfBody())
 	{
-		fileToUpload << stringRequest;
+		std::cout << "---------Here--------" << std::endl;
+		gotFileName = false;
+		shouldSkip = false;
+		fileToUpload.close();
+	}
+	else if (bytesToRead == 0 && gotFileName)
+	{
+		bytesToRead = giveDecimal(stringRequest);
+		stringRequest.erase(0, stringRequest.find('\n') + 1);
+	}
+	if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() < bytesToRead)
+	{
+		if (!shouldSkip)
+			fileToUpload << stringRequest;
 		bytesToRead -= stringRequest.size();
 		return ;
 	}
-	else if (stringRequest.size() + 1 > bytesToRead)
+	else if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() >= bytesToRead)
 	{
 		// In case the size of the string is bigger that the bytes to read
-		fileToUpload << stringRequest.substr(0, bytesToRead);
 		stringRequest.erase(0, bytesToRead);
 		bytesToRead = 0;
+		if (!shouldSkip)
+			fileToUpload << stringRequest.substr(0, bytesToRead);
 	}
-	std::cout << "============================================\n";
-	std::cout << stringRequest << std::endl;
-	std::cout << "============================================\n";
-
-	// endOfBody = stringRequest.find() << std::endl;
-	exit(0);
+	parseChunkedMultipart();
 }
 
 size_t Client::giveDecimal( std::string &hexaString )
@@ -244,4 +252,20 @@ size_t Client::giveDecimal( std::string &hexaString )
 	ss << std::hex << hexaString.substr(0, hexaString.find('\r'));
 	ss >> ret;
 	return ret;
+}
+
+bool Client::isEndOfBody( void )
+{
+	std::string hexStr;
+
+	if (stringRequest.size() <= 9)
+		return false;
+	if (stringRequest[0] == '\r' && stringRequest[1] == '\n')
+		hexStr = stringRequest.substr(2, stringRequest.find('\r', 2) - 2);
+	if (giveDecimal(hexStr) == 2 && stringRequest.substr(5, 4) == "\r\n\r\n")
+	{
+		stringRequest.erase(0, 9);
+		return true;
+	}
+	return false;
 }
