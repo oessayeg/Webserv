@@ -55,10 +55,14 @@ class Client
 		// Functions to parse the body in case of POST method
 		bool isThereFilename( int bodyType );
 		void parseMultipartBody( void );
-		void parseChunkedMultipart( void );
+		// void parseChunkedMultipart( void );
 
 		// Utils
 		// Give decimal should be optimized
 		size_t giveDecimal( std::string &hexaString );
 		bool isEndOfBody( void );
+		void openFile( char *name );
+		char *giveBody( char *limiter );
+		char *giveDelimiter( void );
+		bool isBoundary( char *ptr );
 };

@@ -132,35 +132,54 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	return (returnString + errString.getFileInString());
 }
 
+void Client::openFile( char *name )
+{
+	char *fileName;
+	int i;
+
+	for (i = 0; name[i] != '\"'; i++);
+	fileName = new char[i + 1];
+	for (i = 0; name[i] != '\"'; i++)
+		fileName[i] = name[i];
+	fileName[i] = '\0';
+	fileToUpload.open(fileName, std::ios::trunc | std::ios::binary);
+	delete fileName;
+	return ;
+}
+
 bool Client::isThereFilename( int bodyType )
 {
-	int crlfIndex;
-	int fileIndex;
+	char *crlfIndex;
+	char *fileIndex;
 
 	if (!gotFileName)
 	{
 		if (bodyType == MULTIPART)
-			crlfIndex = stringRequest.find("\r\n\r\n");
+			crlfIndex = strstr(request, "\r\n\r\n");
 		else if (bodyType == CHUNKED_MULTIPART)
-			crlfIndex = stringRequest.find("\r\n\r\n\r\n");
-		if (crlfIndex == std::string::npos)
+			crlfIndex = strstr(request, "\r\n\r\n\r\n");
+		if (crlfIndex == NULL)
 			return false;
 		else
 		{
-			fileIndex = stringRequest.find("filename=");
-			// Should check if filename is empty
-			if (fileIndex != std::string::npos)
+			fileIndex = strstr(request, "filename=");
+			if (fileIndex != NULL && *(fileIndex + 10) != '\"')
 			{
 				fileIndex += 10;
 				gotFileName = true;
-				fileToUpload.open(stringRequest.substr(fileIndex, stringRequest.find('\"', fileIndex) - fileIndex), std::ios::trunc);
+				openFile(fileIndex);
 			}
 			else
 				shouldSkip = true;
 			if (bodyType == MULTIPART)
-				stringRequest.erase(0, crlfIndex + 4);
+			{
+				int i;
+				for (i = 0; request + i < crlfIndex + 4; i++);
+				memmove(request, crlfIndex + 4, strlen(crlfIndex + 4) + 1);
+				bytesRead -= i;
+			}
 			else if (bodyType == CHUNKED_MULTIPART)
-				stringRequest.erase(0, crlfIndex + 6);
+				memmove(request, crlfIndex + 6, strlen(crlfIndex + 6) + 1);
 			// bytesToRead = giveDecimal(stringRequest);
 			// stringRequest.erase(0, stringRequest.find('\r') + 2);
 		}
@@ -168,32 +187,120 @@ bool Client::isThereFilename( int bodyType )
 	return true;
 }
 
+char *Client::giveBody( char *limiter )
+{
+	int i;
+	char *retString;
+
+	for (i = 0; request + i != limiter; i++);
+	retString = new char[i + 1];
+	for (i = 0; request + i != limiter; i++)
+		retString[i] = request[i];
+	retString[i] = '\0';
+	return retString;
+}
+
+char *Client::giveDelimiter( void )
+{
+	char *retString;
+	int i;
+
+	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++);
+	retString = new char[i + 1];
+	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++)
+		retString[i] = request[i];
+	retString[i] = '\0';
+	return retString;
+}
+
+bool Client::isBoundary( char *ptr )
+{
+	int i;
+
+	while (i < bytesRead && ptr[i] == boundary[i])
+		i++;
+	return i == boundary.size();
+}
+
 void Client::parseMultipartBody( void )
 {
-	std::string lineToAdd;
-	int endOfLineIndex;
+	int i;
+	bool isFound;
 
+	isFound = false;
+	// std::cout << "=============="
 	if (!isThereFilename(MULTIPART))
 		return ;
-	endOfLineIndex = stringRequest.find(boundary);
-	if (endOfLineIndex == std::string::npos && !shouldSkip)
-			fileToUpload << stringRequest;
-	else if (!shouldSkip)
-			fileToUpload << stringRequest.substr(0, endOfLineIndex - 2);
-	stringRequest.erase(0, endOfLineIndex);
-	if (endOfLineIndex == -1)
+	for (i = 0; i < bytesRead; i++)
+	{
+		if (request[i] == '\r' && i + 2 < bytesRead && request[i + 2] == '-')
+			isFound = isBoundary(&request[i + 2]);
+		if (isFound)
+			break;
+		if (!shouldSkip)
+			fileToUpload << request[i];
+	}
+	if (!isFound)
+	{
+		memset(request, 0, bytesRead);
+		bytesRead = 0;
 		return ;
-	fileToUpload.close();
+	}
+	i += 2;
+	bytesRead -= i;
 	shouldSkip = false;
 	gotFileName = false;
-	if (stringRequest.substr(0, stringRequest.find("\r\n")) == (boundary + "--"))
+	fileToUpload.close();
+	if (request[i + boundary.size()] == '-' && request[i + boundary.size() + 1] == '-')
 	{
 		finishedBody = true;
 		return ;
 	}
+	memmove(request, &request[i], bytesRead + 1);
 	parseMultipartBody();
 }
-// Should consider moving the check functions/parse functions to Webserv class
+
+// void Client::parseMultipartBody( void )
+// {
+// 	char *endOfBody;
+// 	char *tmp;
+
+// 	if (!isThereFilename(MULTIPART))
+// 		return ;
+// 	// std::cout << request << std::endl;
+// 	endOfBody = strstr(request, boundary.c_str());
+// 	if (endOfBody == NULL && !shouldSkip)
+// 		fileToUpload << request;
+// 	else if (endOfBody != NULL && !shouldSkip)
+// 	{
+// 		tmp = giveBody(endOfBody - 2);
+// 		fileToUpload << tmp;
+// 		delete tmp;
+// 	}
+// 	if (endOfBody == NULL)
+// 	{
+// 		memset(request, 0, MAX_RQ);
+// 		return ;
+// 	}
+// 	if (request[0] == '\0')
+// 		std::cout << "It is null" << std::endl;
+// 	memmove(request, endOfBody, strlen(endOfBody) + 1);
+// 	fileToUpload.close();
+// 	shouldSkip = false;
+// 	gotFileName = false;
+// 	tmp = giveDelimiter();
+// 	std::cout << tmp << std::endl;
+// 	if (strcmp(tmp, (boundary + "--").c_str()) == 0)
+// 	{
+// 		std::cout << "Finished Body" << std::endl;
+// 		finishedBody = true;
+// 		delete tmp;
+// 		return ;
+// 	}
+// 	delete tmp;
+// 	parseMultipartBody();
+// }
+
 // void Client::parseMultipartBody( void )
 // {
 // 	std::string lineToAdd;
@@ -201,77 +308,65 @@ void Client::parseMultipartBody( void )
 
 // 	if (!isThereFilename(MULTIPART))
 // 		return ;
-// 	std::cout << stringRequest << std::endl;
-// 	exit(0);
-// 	endOfLineIndex = stringRequest.find('\n');
-// 	lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
-// 	while (endOfLineIndex != std::string::npos)
-// 	{
-// 		if (endOfLineIndex > 0 && lineToAdd[endOfLineIndex - 1] == '\r')
-// 		{
-// 			stringRequest.erase(0, endOfLineIndex + 1);
-// 			fileToUpload.close();
-// 			gotFileName = false;
-// 			shouldSkip = false;
-// 			break;
-// 		}
-// 		stringRequest.erase(0, endOfLineIndex + 1);
-// 		if (!shouldSkip)
-// 			fileToUpload << lineToAdd;
-// 		endOfLineIndex = stringRequest.find('\n');
-// 		lineToAdd = stringRequest.substr(0, endOfLineIndex + 1);
-// 	}
-// 	if (endOfLineIndex == std::string::npos)
+// 	endOfLineIndex = stringRequest.find(boundary);
+// 	if (endOfLineIndex == std::string::npos && !shouldSkip)
+// 			fileToUpload << stringRequest;
+// 	else if (!shouldSkip)
+// 			fileToUpload << stringRequest.substr(0, endOfLineIndex - 2);
+// 	stringRequest.erase(0, endOfLineIndex);
+// 	if (endOfLineIndex == -1)
 // 		return ;
-// 	if (stringRequest.substr(0, stringRequest.find('\r')) == boundary + "--")
+// 	fileToUpload.close();
+// 	shouldSkip = false;
+// 	gotFileName = false;
+// 	if (stringRequest.substr(0, stringRequest.find("\r\n")) == (boundary + "--"))
 // 	{
 // 		finishedBody = true;
-// 		std::cout << "Finished " << std::endl;
 // 		return ;
 // 	}
 // 	parseMultipartBody();
 // }
 
-void Client::parseChunkedMultipart( void )
-{
-	int endOfBody;
+// void Client::parseChunkedMultipart( void )
+// {
+// 	int endOfBody;
 
-	if (!this->isThereFilename(CHUNKED_MULTIPART))
-		return ;
-	if (bytesToRead == 0 && stringRequest.find("\r\n") == std::string::npos)
-		return ;
-	else if (bytesToRead == 0 && isEndOfBody())
-	{
-		gotFileName = false;
-		shouldSkip = false;
-		fileToUpload.close();
-	}
-	else if (bytesToRead == 0 && gotFileName)
-	{
-		if (stringRequest[0] == '\r')
-			stringRequest.erase(0, 2);
-		bytesToRead = giveDecimal(stringRequest);
-		stringRequest.erase(0, stringRequest.find('\n') + 1);
-	}
-	if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() < bytesToRead)
-	{
-		if (!shouldSkip)
-			fileToUpload << stringRequest;
-		bytesToRead -= stringRequest.size();
-		stringRequest.erase();
-		return ;
-	}
-	else if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() >= bytesToRead)
-	{
-		if (!shouldSkip)
-			fileToUpload << stringRequest.substr(0, bytesToRead);
-		stringRequest.erase(0, bytesToRead);
-		bytesToRead = 0;
-		if (stringRequest.size() < 9)
-			return ;
-	}
-	parseChunkedMultipart();
-}
+// 	if (!this->isThereFilename(CHUNKED_MULTIPART))
+// 		return ;
+// 	if (bytesToRead == 0 && stringRequest.find("\r\n") == std::string::npos)
+// 		return ;
+// 	else if (bytesToRead == 0 && isEndOfBody())
+// 	{
+// 		gotFileName = false;
+// 		shouldSkip = false;
+// 		fileToUpload.close();
+// 	}
+// 	else if (bytesToRead == 0 && gotFileName)
+// 	{
+// 		if (stringRequest[0] == '\r')
+// 			stringRequest.erase(0, 2);
+// 		bytesToRead = giveDecimal(stringRequest);
+// 		stringRequest.erase(0, stringRequest.find('\n') + 1);
+// 	}
+// 	if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() < bytesToRead)
+// 	{
+// 		if (!shouldSkip)
+// 			fileToUpload << stringRequest;
+// 		bytesToRead -= stringRequest.size();
+// 		stringRequest.erase();
+// 		return ;
+// 	}
+// 	else if (bytesToRead > 0 && stringRequest.size() > 0 && stringRequest.size() >= bytesToRead)
+// 	{
+// 		if (!shouldSkip)
+// 			fileToUpload << stringRequest.substr(0, bytesToRead);
+// 		stringRequest.erase(0, bytesToRead);
+// 		bytesToRead = 0;
+// 		if (stringRequest.size() < 9)
+// 			return ;
+// 	}
+// 	parseChunkedMultipart();
+// }
 
 size_t Client::giveDecimal( std::string &hexaString )
 {

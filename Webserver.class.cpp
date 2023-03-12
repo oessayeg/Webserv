@@ -172,10 +172,17 @@ void Webserver::_readRequest( Client &client )
 		client.clientResponse.setBool(true);
 		return ;
 	}
-	// Need to optimize this operation
 	ptrToEnd = strstr(client.request, "\r\n\r\n");
 	if (ptrToEnd)
+	{
+		client.stringRequest = client.request;
+		// Need to change this
+		client.bytesRead -= (client.stringRequest.find("\r\n\r\n") + 4);
+		// Move what is after the request headers to the beggining (POST REQUEST)
+		if (*(ptrToEnd + 4) != '\0')
+			memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
 		client.isRead = true;
+	}
 }
 
 void Webserver::_parseRequestLine( Client &client )
@@ -184,8 +191,6 @@ void Webserver::_parseRequestLine( Client &client )
 	
 	if (!client.isRead || client.clientResponse.getBool() || client.isRqLineParsed)
 		return ;
-	// Here putting the char request to a string for easy manipulation
-	client.stringRequest = client.request;
 	
 	// Here parsing the request line into 3 parts
 	i1 = client.stringRequest.find(' ');
@@ -238,11 +243,7 @@ void Webserver::_parseHeaders( Client &client )
 		size_t len;
 
 		ss >> len;
-		// if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
-		// 	&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked"
-		// 	&& client.giveDecimal(client.stringRequest) == len)
-		// 	client.parseChunkedMultipart();
-		if (len == client.stringRequest.size())
+		if (len == client.bytesRead)
 			client.parseMultipartBody();	
 	}
 }
@@ -278,10 +279,9 @@ void Webserver::_readBodyIfPossible( Client &client )
 	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	buff[r] = '\0';
-	client.stringRequest += buff;
-	if (!client.boundary.empty() && client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end())
-		client.parseChunkedMultipart();
-	else if (!client.boundary.empty())
+	strcat(client.request, buff);
+	client.bytesRead += r;
+	if (!client.boundary.empty())
 		client.parseMultipartBody();
 }
 
