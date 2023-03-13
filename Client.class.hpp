@@ -27,6 +27,7 @@ class Client
 		std::string body;
 		ErrorString errString;
 		int bodyType;
+		size_t bytesCounter;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
@@ -59,10 +60,13 @@ class Client
 
 		// Utils
 		// Give decimal should be optimized
-		size_t giveDecimal( std::string &hexaString );
+		size_t giveDecimal( const std::string &hexaString );
 		bool isEndOfBody( void );
 		void openFile( char *name );
 		char *giveBody( char *limiter );
 		char *giveDelimiter( void );
 		bool isBoundary( char *ptr );
+		void parseChunkedMultipart( void );
+		void parseChunkedBody( void );
+		std::string generateRandomString( void );
 };

@@ -30,7 +30,7 @@ void Webserver::createSockets( void )
 	// Need to change the exceptions thrown
 	for (b = this->_serverBlocks.begin(); b != this->_serverBlocks.end(); b++)
 	{
-		memset(&b->socketNeeds, 0, sizeof(sockaddr_in)); // Should not forget to change memset (not allowed)
+		memset(&b->socketNeeds, 0, sizeof(sockaddr_in));
 		sock = socket(PF_INET, SOCK_STREAM, 0);
 		if (sock == -1)
 			throw "Socket function failed";
@@ -237,7 +237,15 @@ void Webserver::_parseHeaders( Client &client )
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 	// Here I should check the type of reading (chunked, normal, multipart)
-	if (client.shouldReadBody)
+	if (!client.shouldReadBody)
+		return ;
+	if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
+		&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked" && client.boundary.empty())
+	{
+		client.fileToUpload.open("binaryFile", std::ios::trunc | std::ios::binary);
+		client.parseChunkedBody();
+	}
+	else
 	{
 		std::istringstream ss(client.parsedRequest._headers["Content-Length"]);
 		size_t len;
@@ -281,14 +289,13 @@ void Webserver::_readBodyIfPossible( Client &client )
 	buff[r] = '\0';
 	int b = client.bytesRead;
 	for (int i = 0; i < r; i++)
-	{
-		client.request[b] = buff[i];
-		b++;
-	}
+		client.request[b++] = buff[i];
 	client.request[b] = '\0';
 	client.bytesRead += r;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();
+	else
+		client.parseChunkedBody();
 }
 
 void Webserver::_prepareGetResponse( Client &client )
