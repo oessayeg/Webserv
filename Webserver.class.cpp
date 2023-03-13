@@ -279,7 +279,13 @@ void Webserver::_readBodyIfPossible( Client &client )
 	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	buff[r] = '\0';
-	strcat(client.request, buff);
+	int b = client.bytesRead;
+	for (int i = 0; i < r; i++)
+	{
+		client.request[b] = buff[i];
+		b++;
+	}
+	client.request[b] = '\0';
 	client.bytesRead += r;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();

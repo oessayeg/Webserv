@@ -174,8 +174,9 @@ bool Client::isThereFilename( int bodyType )
 			if (bodyType == MULTIPART)
 			{
 				int i;
+
 				for (i = 0; request + i < crlfIndex + 4; i++);
-				memmove(request, crlfIndex + 4, strlen(crlfIndex + 4) + 1);
+				memmove(request, crlfIndex + 4, bytesRead - i + 1);
 				bytesRead -= i;
 			}
 			else if (bodyType == CHUNKED_MULTIPART)
@@ -228,7 +229,6 @@ void Client::parseMultipartBody( void )
 	bool isFound;
 
 	isFound = false;
-	// std::cout << "=============="
 	if (!isThereFilename(MULTIPART))
 		return ;
 	for (i = 0; i < bytesRead; i++)
