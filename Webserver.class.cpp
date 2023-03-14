@@ -176,9 +176,7 @@ void Webserver::_readRequest( Client &client )
 	if (ptrToEnd)
 	{
 		client.stringRequest = client.request;
-		// Need to change this
-		client.bytesRead -= (client.stringRequest.find("\r\n\r\n") + 4);
-		// Move what is after the request headers to the beggining (POST REQUEST)
+		client.bytesRead -= (ptrToEnd - client.request + 4);
 		if (*(ptrToEnd + 4) != '\0')
 			memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
 		client.isRead = true;
@@ -256,6 +254,7 @@ void Webserver::_parseHeaders( Client &client )
 	}
 	else
 	{
+		// client.openWithProperExtension();
 		client.fileToUpload.open("normalData", std::ios::trunc | std::ios::binary);
 		client.parseNormalData();
 	}
