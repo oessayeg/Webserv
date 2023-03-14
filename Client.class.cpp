@@ -266,13 +266,6 @@ void Client::parseMultipartBody( void )
 
 // void Client::parseChunkedMultipart( void )
 // {
-// 	if (!isThereFilename(CHUNKED_MULTIPART))
-// 		return ;
-
-// }
-
-// void Client::parseChunkedMultipart( void )
-// {
 // 	int endOfBody;
 
 // 	if (!this->isThereFilename(CHUNKED_MULTIPART))
@@ -325,33 +318,34 @@ size_t Client::giveDecimal( const std::string &hexaString )
 void Client::parseChunkedBody( void )
 {
 	size_t i;
+	size_t index2;
 
+	i = 0;
 	if (bytesToRead == 0)
 	{
-		for (i = 0; request[i] != '\r'; i++);
+		for (; request[i] != '\r'; i++);
 		bytesToRead = giveDecimal(std::string(request, request + i));
-		memmove(request, &request[i + 2], (bytesRead - (i + 2)) + 1);
-		bytesRead -= i + 2;
+		i += 2;
 	}
-	i = 0;
-	for (; i < bytesToRead && i < bytesRead; i++)
-		fileToUpload << request[i];
-	bytesToRead -= i;
-	bytesCounter += i;
+	index2 = i;
+	for (; index2 < bytesToRead + i && index2 < bytesRead; index2++);
+	fileToUpload.write(request + i, index2 - i);
+	bytesToRead -= index2 - i;
+	bytesCounter += index2 - i;
 	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
 	{
 		finishedBody = true;
 		fileToUpload.close();
 	}
-	else if (i == bytesRead)
+	else if (index2 == bytesRead)
 	{
 		memset(request, 0, MAX_RQ);
 		bytesRead = 0;
 	}
 	else
 	{
-		memmove(request, &request[i + 2], (bytesRead - (i + 2)) + 1);
-		bytesRead -= (i + 2);
+		memmove(request, &request[index2 + 2], (bytesRead - (index2 + 2)) + 1);
+		bytesRead -= (index2 + 2);
 		parseChunkedBody();
 	}
 }
