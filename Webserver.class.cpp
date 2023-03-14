@@ -324,7 +324,6 @@ void Webserver::_prepareGetResponse( Client &client )
 	s2 << s.str().size();
 	response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
 	response +=  s2.str() + "\r\n\r\n" + s.str();
-	
 	// Here's an example of the end of this code
 	client.clientResponse.setResponse(response);
 	client.clientResponse.setBool(true);

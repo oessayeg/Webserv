@@ -32,3 +32,4 @@
 #include "Request.class.hpp"
 #include "Client.class.hpp"
 #include "Webserver.class.hpp"
+#include "MimeTypes.class.hpp"
