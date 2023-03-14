@@ -176,13 +176,13 @@ bool Client::isThereFilename( int bodyType )
 			if (bodyType == MULTIPART)
 			{
 				for (i = 0; request + i < crlfIndex + 4; i++);
-				memmove(request, crlfIndex + 4, bytesRead - i + 1);
+				memmove(request, crlfIndex + 4, (bytesRead - i) + 1);
 				bytesRead -= i;
 			}
 			else if (bodyType == CHUNKED_MULTIPART)
 			{
 				for (i = 0; request + i < crlfIndex + 6; i++);
-				memmove(request, crlfIndex + 6, bytesRead - i + 1);
+				memmove(request, crlfIndex + 6, (bytesRead - i) + 1);
 				bytesRead -= i;
 			}
 			// bytesToRead = giveDecimal(stringRequest);
@@ -222,6 +222,7 @@ bool Client::isBoundary( char *ptr )
 {
 	int i;
 
+	i = 0;
 	while (i < bytesRead && ptr[i] == boundary[i])
 		i++;
 	return i == boundary.size();
@@ -229,8 +230,8 @@ bool Client::isBoundary( char *ptr )
 
 void Client::parseMultipartBody( void )
 {
-	int i;
 	bool isFound;
+	int i;
 
 	isFound = false;
 	if (!isThereFilename(MULTIPART))
@@ -241,9 +242,9 @@ void Client::parseMultipartBody( void )
 			isFound = isBoundary(&request[i + 2]);
 		if (isFound)
 			break;
-		if (!shouldSkip)
-			fileToUpload << request[i];
 	}
+	if (!shouldSkip)
+		fileToUpload.write(request, i);
 	if (!isFound)
 	{
 		memset(request, 0, bytesRead);
@@ -349,48 +350,6 @@ void Client::parseChunkedBody( void )
 		parseChunkedBody();
 	}
 }
-
-// void Client::parseChunkedBody( void )
-// {
-// 	int i, putInFile;
-
-// 	i = 0;
-// 	putInFile = 0;
-// 	std::cout << "================================\n";
-// 	std::cout << "Bytes to read = " << bytesToRead << std::endl;
-// 	std::cout << "Bytes in total = " << bytesCounter << std::endl;
-// 	std::cout << "Content Length = " << atoi(parsedRequest._headers["Content-Length"].c_str()) << std::endl;
-// 	std::cout << request << std::endl;
-// 	if (bytesToRead == 0)
-// 	{
-// 		for (; request[i] != '\r'; i++);
-// 		bytesToRead = giveDecimal(std::string(request, request + i));
-// 		i += 2;
-// 	}
-// 	for (; putInFile < bytesToRead && i < bytesRead; i++)
-// 	{
-// 		fileToUpload << request[i];
-// 		putInFile++;
-// 	}
-// 	bytesCounter += putInFile;
-// 	bytesToRead -= putInFile;
-// 	// Need to change atoi
-// 	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
-// 	{
-// 		finishedBody = true;
-// 		fileToUpload.close();
-// 	}
-// 	else if (i == bytesRead)
-// 	{
-// 		memset(request, 0, MAX_RQ + 1);
-// 		bytesRead = 0;
-// 	}
-// 	else
-// 	{
-// 		memmove(request, &request[i + 2], bytesRead - (i + 2) + 1);
-// 		parseChunkedBody();
-// 	}
-// }
 
 bool Client::isEndOfBody( void )
 {
