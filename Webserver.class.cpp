@@ -245,7 +245,7 @@ void Webserver::_parseHeaders( Client &client )
 		client.fileToUpload.open("binaryFile", std::ios::trunc | std::ios::binary);
 		client.parseChunkedBody();
 	}
-	else
+	else if (client.parsedRequest._headers["Content-Type"].find("multipart") != std::string::npos)
 	{
 		std::istringstream ss(client.parsedRequest._headers["Content-Length"]);
 		size_t len;
@@ -254,6 +254,13 @@ void Webserver::_parseHeaders( Client &client )
 		if (len == client.bytesRead)
 			client.parseMultipartBody();	
 	}
+	else
+	{
+		client.fileToUpload.open("normalData", std::ios::trunc | std::ios::binary);
+		client.parseNormalData();
+	}
+	// The the files that I opened in the first and third condition will 
+	// will be randomly named and will be terminated with their content type
 }
 
 // Temporary function
@@ -294,8 +301,10 @@ void Webserver::_readBodyIfPossible( Client &client )
 	client.bytesRead += r;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();
-	else
+	else if (client.boundary.empty() && client.parsedRequest._headers["Tranfer-Encoding"] == "chunked")
 		client.parseChunkedBody();
+	else
+		client.parseNormalData();
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -343,5 +352,6 @@ void Client::checkBody( const std::string &key, const std::string &value )
 		index = value.find("boundary=") + 9;
 		this->boundary = "--";
 		this->boundary += value.substr(index, value.size() - index);
+		this->shouldReadBody = true;
 	}
 }

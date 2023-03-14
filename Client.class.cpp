@@ -379,3 +379,21 @@ bool Client::isEndOfBody( void )
 	}
 	return false;
 }
+
+void Client::parseNormalData( void )
+{
+	int i;
+
+	for (i = 0; i < bytesRead; i++);
+	bytesCounter += i;
+	fileToUpload.write(request, i);
+	// Should change atoi
+	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
+	{
+		fileToUpload.close();
+		finishedBody = true;
+		return ;
+	}
+	memset(request, 0, MAX_RQ);
+	bytesRead = 0;
+}

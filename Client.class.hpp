@@ -68,5 +68,6 @@ class Client
 		bool isBoundary( char *ptr );
 		void parseChunkedMultipart( void );
 		void parseChunkedBody( void );
+		void parseNormalData( void );
 		std::string generateRandomString( void );
 };
