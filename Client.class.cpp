@@ -326,26 +326,19 @@ void Client::parseChunkedBody( void )
 {
 	size_t i;
 
-	i = 0;
 	if (bytesToRead == 0)
 	{
-		for (; request[i] != '\r'; i++);
+		for (i = 0; request[i] != '\r'; i++);
 		bytesToRead = giveDecimal(std::string(request, request + i));
 		memmove(request, &request[i + 2], (bytesRead - (i + 2)) + 1);
+		bytesRead -= i + 2;
 	}
-	// BytesRead is the size of the request
-	std::cout << "------------------" << std::endl;
-	std::cout << "Size of the request : " << bytesRead << std::endl;
-	std::cout << "To read : " << bytesToRead << std::endl;
 	i = 0;
 	for (; i < bytesToRead && i < bytesRead; i++)
 		fileToUpload << request[i];
-	std::cout << "i = " << i << std::endl;
-	bytesToRead = bytesToRead - i;
-	std::cout << "New bytes to read : " <<  bytesToRead << std::endl;
-	std::cout << "------------------" << std::endl;
-	// std::cout << request << std::endl;
-	if (i == atoi(parsedRequest._headers["Content-Length"].c_str()))
+	bytesToRead -= i;
+	bytesCounter += i;
+	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
 	{
 		finishedBody = true;
 		fileToUpload.close();
@@ -355,24 +348,11 @@ void Client::parseChunkedBody( void )
 		memset(request, 0, MAX_RQ);
 		bytesRead = 0;
 	}
-	else if (bytesToRead == 0)
-	{
-		std::cout << "||||||||||||||||||||||||||" << std::endl;
-		std::cout << "i = " << i << std::endl;
-		std::cout <<
-		memmove(request, &request[i + 2], (bytesRead - (i + 2)) + 1);
-		std::cout << request << std::endl;
-		exit(0);
-		parseChunkedBody();
-	}
 	else
 	{
-		std::cout << "=============================\n";
-		std::cout << request[i] << std::endl;
-		std::cout << "In else " << std::endl;
-		std::cout << "Should read : " << bytesToRead << std::endl;
-		std::cout << request << std::endl;
-		exit(0);
+		memmove(request, &request[i + 2], (bytesRead - (i + 2)) + 1);
+		bytesRead -= (i + 2);
+		parseChunkedBody();
 	}
 }
 
