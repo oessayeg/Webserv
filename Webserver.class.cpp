@@ -239,7 +239,6 @@ void Webserver::_parseHeaders( Client &client )
 	if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
 		&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked" && client.boundary.empty())
 	{
-		std::cout << "CHUNKED" << std::endl;
 		client.openWithProperExtension();
 		client.parseChunkedBody();
 	}

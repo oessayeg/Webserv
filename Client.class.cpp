@@ -90,7 +90,7 @@ void Client::checkHeaders( void )
 	}
 	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
 		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end()) || contentLength == 0))
+		== parsedRequest._headers.end()) || (contentLength == 0 && parsedRequest._headers["Transfer-Encoding"] != "chunked")))
 	{
 		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 		clientResponse.setBool(true);
@@ -324,13 +324,19 @@ void Client::parseChunkedBody( void )
 		for (; request[i] != '\r'; i++);
 		bytesToRead = giveDecimal(std::string(request, request + i));
 		i += 2;
+		if (bytesToRead == 0)
+		{
+			finishedBody = true;
+			fileToUpload.close();
+			return ;
+		}
 	}
 	index2 = i;
 	for (; index2 < bytesToRead + i && index2 < bytesRead; index2++);
 	fileToUpload.write(request + i, index2 - i);
 	bytesToRead -= index2 - i;
 	bytesCounter += index2 - i;
-	if (bytesCounter == contentLength)
+	if (contentLength > 0 && bytesCounter == contentLength)
 	{
 		finishedBody = true;
 		fileToUpload.close();
