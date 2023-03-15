@@ -40,10 +40,7 @@ void Webserver::createSockets( void )
 		b->socketNeeds.sin_family = PF_INET;
 		b->socketNeeds.sin_addr.s_addr = b->ip;
 		if (bind(sock, (struct sockaddr *)&b->socketNeeds, sizeof(sockaddr_in)) == -1)
-		{
-			perror("bind : ");
 			throw "Bind function failed";
-		}
 		if (listen(sock, 0) == -1)
 			throw "Listen function failed";
 		this->_listeningSockets.push_back(sock);
@@ -91,7 +88,6 @@ void Webserver::readAndRespond( void )
 	increment = true;
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
-		// Here I check if the fd is ready for reading
 		if (_fdToCheck[i].revents & POLLIN)
 		{
 			this->_readBodyIfPossible(*b);
@@ -100,7 +96,6 @@ void Webserver::readAndRespond( void )
 			this->_parseHeaders(*b);
 			this->_prepareResponse(*b);
 		}
-		// Here I check if the fd is ready for writing && that the request is read
 		if ((_fdToCheck[i].revents & POLLOUT) && b->clientResponse.getBool())
 		{
 			if (b->clientResponse.getBool())
@@ -140,6 +135,7 @@ void Webserver::_acceptNewClients( void )
 			newFd = accept(*sockIter, (struct sockaddr *)newClient.clientStruct, &sizeOfSockaddr_in);
 			if (newFd == -1)
 				throw "Accept function failed";
+			fcntl(newFd, F_SETFL, O_NONBLOCK);
 			newClient.correspondingBlock = &(*blIter);
 			newClient.setSocket(newFd);
 			_pendingClients.push_back(newClient);
@@ -219,7 +215,7 @@ void Webserver::_parseHeaders( Client &client )
 		index = client.stringRequest.find(':');
 		first = client.stringRequest.substr(0, index);
 		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
-		client.checkBody(first, second);
+		// client.checkBody(first, second);
 		client.parsedRequest.insertHeader(std::make_pair(first, second));
 		if (isHeader)
 		{
@@ -234,23 +230,16 @@ void Webserver::_parseHeaders( Client &client )
 	client.checkHeaders();
 	client.isHeaderParsed = true;
 	// Here I should check the type of reading (chunked, normal, multipart)
-	if (!client.shouldReadBody)
+	if (client.clientResponse.getBool() || !client.shouldReadBody)
 		return ;
+	// parser.chooseCorrectMode(client);
 	if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
 		&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked" && client.boundary.empty())
-	{
-		client.openWithProperExtension();
-		client.parseChunkedBody();
-	}
+		parser.parseChunkedData(client);
 	else if (client.parsedRequest._headers["Content-Type"].find("multipart") != std::string::npos)
-		client.parseMultipartBody();	
+		parser.parseMultipartData(client);	
 	else
-	{
-		client.openWithProperExtension();
-		client.parseNormalData();
-	}
-	// The the files that I opened in the first and third condition will 
-	// will be randomly named and will be terminated with their content type
+		parser.parseNormalData(client);
 }
 
 // Temporary function
@@ -269,7 +258,10 @@ void Webserver::_prepareResponse( Client &client )
 		// this->_preparePostResponse(client);
 	}
 	else if (client.parsedRequest._method == "DELETE")
+	{
 		std::cout << "Delete method should be handled here" << std::endl;
+		// this->_prepareDeleteResponse(client);
+	}
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
@@ -277,8 +269,6 @@ void Webserver::_readBodyIfPossible( Client &client )
 	int r;
 	char buff[MIN_TO_READ + 1];
 
-	// Need to check if I already read the whole body before arriving here
-	// Check if the content-length is equal to the stringRequest in prepare response
 	if (!client.shouldReadBody || client.finishedBody)
 		return ;
 	// Should protect recv here
@@ -290,21 +280,15 @@ void Webserver::_readBodyIfPossible( Client &client )
 	client.request[b] = '\0';
 	client.bytesRead += r;
 	if (!client.boundary.empty())
-		client.parseMultipartBody();
+		parser.parseMultipartData(client);
 	else if (client.boundary.empty() && client.parsedRequest._headers["Transfer-Encoding"] == "chunked")
-		client.parseChunkedBody();
+		parser.parseChunkedData(client);
 	else
-		client.parseNormalData();
+		parser.parseNormalData(client);
 }
 
 void Webserver::_prepareGetResponse( Client &client )
 {
-	// Here should be the code that handles Get request
-
-	// In the end, the 'clientResponse' member attribute in the class 'Client' \
-	// should have the _canBeSent variable set to true and the _response \
-	// should also be set to the correct response to send to the client
-
 	// This is temporary
 	std::string response;
 	std::ifstream fileToSend;
@@ -318,29 +302,4 @@ void Webserver::_prepareGetResponse( Client &client )
 	// Here's an example of the end of this code
 	client.clientResponse.setResponse(response);
 	client.clientResponse.setBool(true);
-}
-
-void Client::checkBody( const std::string &key, const std::string &value )
-{
-	int index;
-
-	if (parsedRequest._method != "POST")
-		return ;
-	if ((key == "Transfer-Encoding" && value == "chunked"))
-		this->shouldReadBody = true;
-	else if (key == "Content-Length")
-	{
-		std::istringstream s(value);
-
-		s >> contentLength;
-		if (contentLength > 0)
-			this->shouldReadBody = true;
-	}
-	else if (key == "Content-Type" && value.find("multipart/form-data;") != std::string::npos)
-	{
-		index = value.find("boundary=") + 9;
-		this->boundary = "--";
-		this->boundary += value.substr(index, value.size() - index);
-		this->shouldReadBody = true;
-	}
 }

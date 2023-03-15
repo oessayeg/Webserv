@@ -24,12 +24,10 @@ class Client
 		std::ofstream fileToUpload;
 		std::string stringRequest;
 		std::string boundary;
-		std::string body;
 		ErrorString errString;
 		int bodyType;
 		size_t bytesCounter;
 		size_t contentLength;
-		MimeTypes extensions;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
@@ -55,22 +53,7 @@ class Client
 		// This function forms the correct error response in case of an error
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
 
-		// Functions to parse the body in case of POST method
-		bool isThereFilename( int bodyType );
-		void parseMultipartBody( void );
-		// void parseChunkedMultipart( void );
-
-		// Utils
-		size_t giveDecimal( const std::string &hexaString );
-		bool isEndOfBody( void );
-		void openFile( char *name );
-		char *giveBody( char *limiter );
-		char *giveDelimiter( void );
-		bool isBoundary( char *ptr );
-		void parseChunkedMultipart( void );
-		void parseChunkedBody( void );
-		void parseNormalData( void );
-		std::string generateRandomString( void );
-		void openWithProperExtension( void );
-		std::string randomString( void );
+		// bool isEndOfBody( void );
+		// char *giveBody( char *limiter );
+		// char *giveDelimiter( void );
 };

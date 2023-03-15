@@ -67,6 +67,8 @@
         "fstream": "cpp",
         "iomanip": "cpp",
         "stack": "cpp",
-        "clocale": "cpp"
+        "clocale": "cpp",
+        "__memory": "cpp",
+        "filesystem": "cpp"
     }
 }

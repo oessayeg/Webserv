@@ -1,12 +1,11 @@
 #include "MainHeader.hpp"
 
-// need to allocate 'response'
 Client::Client( void ) : _socket(0), bytesRead(0),\
 		clientStruct(new struct sockaddr_in), parsedRequest(), \
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
 		finishedBody(false), gotFileName(false), shouldSkip(false), \
-		bytesToRead(0), bytesCounter(0), contentLength(0) { }
+		bytesToRead(0), bytesCounter(0), contentLength(0), bodyType(0) { }
 
 Client::Client( const Client &rhs )
 {
@@ -34,7 +33,6 @@ Client &Client::operator=( const Client &rhs )
 		*this->clientStruct = *rhs.clientStruct;
 		this->stringRequest = rhs.stringRequest;
 		this->boundary = rhs.boundary;
-		this->body = rhs.body;
 		this->errString = rhs.errString;
 		this->contentLength = rhs.contentLength;
 		this->parsedRequest = rhs.parsedRequest;
@@ -77,23 +75,43 @@ void Client::checkRequestLine( void )
 
 void Client::checkHeaders( void )
 {
-	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end() && contentLength > correspondingBlock->maxBodySize)
-	{
+	std::istringstream s(parsedRequest._headers["Content-Length"]);
+	std::string transferEnc;
+	std::string contentType;
+
+	// This first part checks if there is an error
+	s >> contentLength;
+	transferEnc = parsedRequest._headers["Transfer-Encoding"];
+	contentType = parsedRequest._headers["Content-Type"];
+	clientResponse.setBool(true);
+	if (contentLength > correspondingBlock->maxBodySize)
 		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
-		clientResponse.setBool(true);
-	}
-	else if (parsedRequest._headers.find("Transfer-Encoding") != parsedRequest._headers.end()
-		&& parsedRequest._headers["Transfer-Encoding"] != "chunked")
-	{
+	else if ((!transferEnc.empty() && transferEnc != "chunked")
+		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
 		clientResponse.setResponse(formError(501, "HTTP/1.1 501 Not Implemented\r\n", "Error 501 Not Implemented"));
-		clientResponse.setBool(true);
-	}
-	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
-		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end()) || (contentLength == 0 && parsedRequest._headers["Transfer-Encoding"] != "chunked")))
-	{
+	else if (parsedRequest._method == "POST" && contentLength == 0 && transferEnc.empty())
 		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
-		clientResponse.setBool(true);
+	else
+		clientResponse.setBool(false);
+	if (clientResponse.getBool() || parsedRequest._method != "POST")
+		return ;
+	// This second part will set some useful variables for the type of body reading
+	if (transferEnc == "chunked")
+	{
+		this->shouldReadBody = true;
+		this->bodyType = CHUNKED;
+	}
+	else if (contentType.find("multipart/form-data;") != std::string::npos)
+	{
+		int index = contentType.find("boundary=") + 9;
+		this->boundary = "--" + contentType.substr(index, contentType.size() - index);
+		this->shouldReadBody = true;
+		this->bodyType = MULTIPART;
+	}
+	else if (contentLength > 0)
+	{
+		this->shouldReadBody = true;
+		this->bodyType = OTHER;
 	}
 }
 
@@ -130,137 +148,67 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	return (returnString + errString.getFileInString());
 }
 
-void Client::openFile( char *name )
-{
-	char *fileName;
-	int i;
+// void Client::checkBody( const std::string &key, const std::string &value )
+// {
+// 	int index;
 
-	for (i = 0; name[i] != '\"'; i++);
-	fileName = new char[i + 1];
-	for (i = 0; name[i] != '\"'; i++)
-		fileName[i] = name[i];
-	fileName[i] = '\0';
-	fileToUpload.open(fileName, std::ios::trunc | std::ios::binary);
-	delete fileName;
-	return ;
-}
+// 	if (parsedRequest._method != "POST")
+// 		return ;
+// 	if ((key == "Transfer-Encoding" && value == "chunked"))
+// 		this->shouldReadBody = true;
+// 	else if (key == "Content-Length")
+// 	{
+// 		std::istringstream s(value);
 
-bool Client::isThereFilename( int bodyType )
-{
-	char *crlfIndex;
-	char *fileIndex;
-	int i;
+// 		s >> contentLength;
+// 		if (contentLength > 0)
+// 			this->shouldReadBody = true;
+// 	}
+// 	else if (key == "Content-Type" && value.find("multipart/form-data;") != std::string::npos)
+// 	{
+// 		index = value.find("boundary=") + 9;
+// 		this->boundary = "--" + value.substr(index, value.size() - index);
+// 		this->shouldReadBody = true;
+// 	}
+// }
 
-	if (!gotFileName)
-	{
-		if (bodyType == MULTIPART)
-			crlfIndex = strstr(request, "\r\n\r\n");
-		else if (bodyType == CHUNKED_MULTIPART)
-			crlfIndex = strstr(request, "\r\n\r\n\r\n");
-		if (crlfIndex == NULL)
-			return false;
-		else
-		{
-			fileIndex = strstr(request, "filename=");
-			if (fileIndex != NULL && *(fileIndex + 10) != '\"')
-			{
-				fileIndex += 10;
-				gotFileName = true;
-				openFile(fileIndex);
-			}
-			else
-				shouldSkip = true;
-			if (bodyType == MULTIPART)
-			{
-				for (i = 0; request + i < crlfIndex + 4; i++);
-				memmove(request, crlfIndex + 4, (bytesRead - i) + 1);
-				bytesRead -= i;
-			}
-			else if (bodyType == CHUNKED_MULTIPART)
-			{
-				for (i = 0; request + i < crlfIndex + 6; i++);
-				memmove(request, crlfIndex + 6, (bytesRead - i) + 1);
-				bytesRead -= i;
-			}
-			// bytesToRead = giveDecimal(stringRequest);
-			// stringRequest.erase(0, stringRequest.find('\r') + 2);
-		}
-	}
-	return true;
-}
+// void Client::openFile( char *name )
+// {
+// 	char *fileName;
+// 	int i;
 
-char *Client::giveBody( char *limiter )
-{
-	int i;
-	char *retString;
+// 	for (i = 0; name[i] != '\"'; i++);
+// 	fileName = new char[i + 1];
+// 	for (i = 0; name[i] != '\"'; i++)
+// 		fileName[i] = name[i];
+// 	fileName[i] = '\0';
+// 	fileToUpload.open(fileName, std::ios::trunc | std::ios::binary);
+// 	delete fileName;
+// 	return ;
+// }
 
-	for (i = 0; request + i != limiter; i++);
-	retString = new char[i + 1];
-	for (i = 0; request + i != limiter; i++)
-		retString[i] = request[i];
-	retString[i] = '\0';
-	return retString;
-}
+// void Client::openWithProperExtension( void )
+// {
+// 	std::string extension;
 
-char *Client::giveDelimiter( void )
-{
-	char *retString;
-	int i;
+// 	extension = extensions.getExtension(parsedRequest._headers["Content-Type"]);
+// 	fileToUpload.open(randomString() + extension, std::ios::trunc | std::ios::binary);
+// }
 
-	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++);
-	retString = new char[i + 1];
-	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++)
-		retString[i] = request[i];
-	retString[i] = '\0';
-	return retString;
-}
+// std::string Client::randomString( void )
+// {
+//     std::string tmp_s;
+//     const char alphanum[] =
+//         "0123456789"
+//         "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+//         "abcdefghijklmnopqrstuvwxyz";
 
-bool Client::isBoundary( char *ptr )
-{
-	int i;
-
-	i = 0;
-	while (i < bytesRead && ptr[i] == boundary[i])
-		i++;
-	return i == boundary.size();
-}
-
-void Client::parseMultipartBody( void )
-{
-	bool isFound;
-	int i;
-
-	isFound = false;
-	if (!isThereFilename(MULTIPART))
-		return ;
-	for (i = 0; i < bytesRead; i++)
-	{
-		if (request[i] == '\r' && i + 2 < bytesRead && request[i + 2] == '-')
-			isFound = isBoundary(&request[i + 2]);
-		if (isFound)
-			break;
-	}
-	if (!shouldSkip)
-		fileToUpload.write(request, i);
-	if (!isFound)
-	{
-		memset(request, 0, bytesRead);
-		bytesRead = 0;
-		return ;
-	}
-	i += 2;
-	bytesRead -= i;
-	shouldSkip = false;
-	gotFileName = false;
-	fileToUpload.close();
-	if (request[i + boundary.size()] == '-' && request[i + boundary.size() + 1] == '-')
-	{
-		finishedBody = true;
-		return ;
-	}
-	memmove(request, &request[i], bytesRead + 1);
-	parseMultipartBody();
-}
+// 	srand(time(NULL));
+//     tmp_s.reserve(8);
+//     for (int i = 0; i < 8; ++i)
+//         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+//     return tmp_s;
+// }
 
 // void Client::parseChunkedMultipart( void )
 // {
@@ -303,122 +251,57 @@ void Client::parseMultipartBody( void )
 // 	parseChunkedMultipart();
 // }
 
-size_t Client::giveDecimal( const std::string &hexaString )
-{
-	std::stringstream ss;
-	size_t ret;
+// char *Client::giveBody( char *limiter )
+// {
+// 	int i;
+// 	char *retString;
 
-	ss << std::hex << hexaString;
-	ss >> ret;
-	return ret;
-}
+// 	for (i = 0; request + i != limiter; i++);
+// 	retString = new char[i + 1];
+// 	for (i = 0; request + i != limiter; i++)
+// 		retString[i] = request[i];
+// 	retString[i] = '\0';
+// 	return retString;
+// }
 
-void Client::parseChunkedBody( void )
-{
-	size_t i;
-	size_t index2;
+// char *Client::giveDelimiter( void )
+// {
+// 	char *retString;
+// 	int i;
 
-	i = 0;
-	if (bytesToRead == 0)
-	{
-		for (; request[i] != '\r'; i++);
-		bytesToRead = giveDecimal(std::string(request, request + i));
-		i += 2;
-		if (bytesToRead == 0)
-		{
-			finishedBody = true;
-			fileToUpload.close();
-			return ;
-		}
-	}
-	index2 = i;
-	for (; index2 < bytesToRead + i && index2 < bytesRead; index2++);
-	fileToUpload.write(request + i, index2 - i);
-	bytesToRead -= index2 - i;
-	bytesCounter += index2 - i;
-	if (contentLength > 0 && bytesCounter == contentLength)
-	{
-		finishedBody = true;
-		fileToUpload.close();
-	}
-	else if (index2 == bytesRead)
-	{
-		memset(request, 0, MAX_RQ);
-		bytesRead = 0;
-	}
-	else
-	{
-		memmove(request, &request[index2 + 2], (bytesRead - (index2 + 2)) + 1);
-		bytesRead -= (index2 + 2);
-		parseChunkedBody();
-	}
-}
+// 	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++);
+// 	retString = new char[i + 1];
+// 	for (i = 0; request[i] != '\0' && request[i] != '\r'; i++)
+// 		retString[i] = request[i];
+// 	retString[i] = '\0';
+// 	return retString;
+// }
 
-bool Client::isEndOfBody( void )
-{
-	std::string hexStr;
-	size_t decimal;
+// bool Client::isEndOfBody( void )
+// {
+// 	std::string hexStr;
+// 	size_t decimal;
 
-	if (stringRequest.size() <= 9)
-		return false;
-	if (stringRequest[0] == '\r' && stringRequest[1] == '\n')
-		hexStr = stringRequest.substr(2, stringRequest.find('\r', 2) - 2);
-	decimal = giveDecimal(hexStr);
-	if (decimal == 2 && stringRequest.substr(5, 4) == "\r\n\r\n")
-	{
-		stringRequest.erase(0, 9);
-		return true;
-	}
-	else if (decimal == (boundary.size() + 6))
-	{
-		decimal = stringRequest.find('\r', 2);
-		if (stringRequest.substr(decimal + 4, stringRequest.find('\r', decimal + 4) - (decimal + 4))
-			== (boundary + "--"))
-		{
-			std::cout << "Finished Body" << std::endl;
-			finishedBody = true;
-		}
-		return true;
-	}
-	return false;
-}
-
-void Client::parseNormalData( void )
-{
-	int i;
-
-	for (i = 0; i < bytesRead; i++);
-	bytesCounter += i;
-	fileToUpload.write(request, i);
-	if (bytesCounter == contentLength)
-	{
-		fileToUpload.close();
-		finishedBody = true;
-		return ;
-	}
-	memset(request, 0, MAX_RQ);
-	bytesRead = 0;
-}
-
-void Client::openWithProperExtension( void )
-{
-	std::string extension;
-
-	extension = extensions.getExtension(parsedRequest._headers["Content-Type"]);
-	fileToUpload.open(randomString() + extension, std::ios::trunc | std::ios::binary);
-}
-
-std::string Client::randomString( void )
-{
-    std::string tmp_s;
-    const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-
-	srand(time(NULL));
-    tmp_s.reserve(8);
-    for (int i = 0; i < 8; ++i)
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-    return tmp_s;
-}
+// 	if (stringRequest.size() <= 9)
+// 		return false;
+// 	if (stringRequest[0] == '\r' && stringRequest[1] == '\n')
+// 		hexStr = stringRequest.substr(2, stringRequest.find('\r', 2) - 2);
+// 	decimal = giveDecimal(hexStr);
+// 	if (decimal == 2 && stringRequest.substr(5, 4) == "\r\n\r\n")
+// 	{
+// 		stringRequest.erase(0, 9);
+// 		return true;
+// 	}
+// 	else if (decimal == (boundary.size() + 6))
+// 	{
+// 		decimal = stringRequest.find('\r', 2);
+// 		if (stringRequest.substr(decimal + 4, stringRequest.find('\r', decimal + 4) - (decimal + 4))
+// 			== (boundary + "--"))
+// 		{
+// 			std::cout << "Finished Body" << std::endl;
+// 			finishedBody = true;
+// 		}
+// 		return true;
+// 	}
+// 	return false;
+// }

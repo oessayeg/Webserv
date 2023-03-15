@@ -1,5 +1,6 @@
 #include "MainHeader.hpp"
 #include "Block.tmp.hpp"
+#include "Webserver.class.hpp"
 
 // Temporary function
 std::list < Blocks > giveList( void )

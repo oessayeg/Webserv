@@ -26,10 +26,13 @@
 
 #define CHUNKED_MULTIPART 1
 #define MULTIPART 2
+#define CHUNKED 3
+#define OTHER 4
 
 // Classes header files
 #include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"
 #include "Client.class.hpp"
-#include "Webserver.class.hpp"
+#include "BodyParser.class.hpp"
+// #include "Webserver.class.hpp"

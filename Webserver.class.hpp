@@ -13,6 +13,7 @@ class Webserver
 		std::list < Client > _pendingClients;
 		std::list < int > _listeningSockets;
 		pollfd *_fdToCheck;
+		BodyParser parser;
 
 	public :
 		// Webserver Constructors
