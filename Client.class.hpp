@@ -28,6 +28,8 @@ class Client
 		ErrorString errString;
 		int bodyType;
 		size_t bytesCounter;
+		size_t contentLength;
+		MimeTypes extensions;
 
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
@@ -59,7 +61,6 @@ class Client
 		// void parseChunkedMultipart( void );
 
 		// Utils
-		// Give decimal should be optimized
 		size_t giveDecimal( const std::string &hexaString );
 		bool isEndOfBody( void );
 		void openFile( char *name );
@@ -70,4 +71,6 @@ class Client
 		void parseChunkedBody( void );
 		void parseNormalData( void );
 		std::string generateRandomString( void );
+		void openWithProperExtension( void );
+		std::string randomString( void );
 };

@@ -28,8 +28,8 @@
 #define MULTIPART 2
 
 // Classes header files
+#include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"
 #include "Client.class.hpp"
 #include "Webserver.class.hpp"
-#include "MimeTypes.class.hpp"

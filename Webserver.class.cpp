@@ -177,8 +177,7 @@ void Webserver::_readRequest( Client &client )
 	{
 		client.stringRequest = client.request;
 		client.bytesRead -= (ptrToEnd - client.request + 4);
-		if (*(ptrToEnd + 4) != '\0')
-			memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
+		memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
 		client.isRead = true;
 	}
 }
@@ -240,22 +239,15 @@ void Webserver::_parseHeaders( Client &client )
 	if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
 		&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked" && client.boundary.empty())
 	{
-		client.fileToUpload.open("binaryFile", std::ios::trunc | std::ios::binary);
+		std::cout << "CHUNKED" << std::endl;
+		client.openWithProperExtension();
 		client.parseChunkedBody();
 	}
 	else if (client.parsedRequest._headers["Content-Type"].find("multipart") != std::string::npos)
-	{
-		std::istringstream ss(client.parsedRequest._headers["Content-Length"]);
-		size_t len;
-
-		ss >> len;
-		if (len == client.bytesRead)
-			client.parseMultipartBody();	
-	}
+		client.parseMultipartBody();	
 	else
 	{
-		// client.openWithProperExtension();
-		client.fileToUpload.open("normalData", std::ios::trunc | std::ios::binary);
+		client.openWithProperExtension();
 		client.parseNormalData();
 	}
 	// The the files that I opened in the first and third condition will 
@@ -300,7 +292,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 	client.bytesRead += r;
 	if (!client.boundary.empty())
 		client.parseMultipartBody();
-	else if (client.boundary.empty() && client.parsedRequest._headers["Tranfer-Encoding"] == "chunked")
+	else if (client.boundary.empty() && client.parsedRequest._headers["Transfer-Encoding"] == "chunked")
 		client.parseChunkedBody();
 	else
 		client.parseNormalData();
@@ -332,7 +324,6 @@ void Webserver::_prepareGetResponse( Client &client )
 void Client::checkBody( const std::string &key, const std::string &value )
 {
 	int index;
-	size_t contentLen;
 
 	if (parsedRequest._method != "POST")
 		return ;
@@ -341,8 +332,9 @@ void Client::checkBody( const std::string &key, const std::string &value )
 	else if (key == "Content-Length")
 	{
 		std::istringstream s(value);
-		s >> contentLen;
-		if (contentLen > 0)
+
+		s >> contentLength;
+		if (contentLength > 0)
 			this->shouldReadBody = true;
 	}
 	else if (key == "Content-Type" && value.find("multipart/form-data;") != std::string::npos)

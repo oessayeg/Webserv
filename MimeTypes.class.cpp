@@ -28,7 +28,7 @@ MimeTypes::MimeTypes( void )
 		std::make_pair("image/vnd.microsoft.icon", ".ico"),
 		std::make_pair("text/calendar", ".ics"),
 		std::make_pair("application/java-archive", ".jar"),
-		std::make_pair("image.jpeg", ".jpeg"),
+		std::make_pair("image/jpeg", ".jpeg"),
 		std::make_pair("text/javascript", ".js"),
 		std::make_pair("application/json", ".json"),
 		std::make_pair("application/ld+json", ".jsonld"),
@@ -93,3 +93,10 @@ MimeTypes &MimeTypes::operator=( const MimeTypes &rhs )
 }
 
 MimeTypes::~MimeTypes( void ) { }
+
+
+
+std::string MimeTypes::getExtension( std::string contentType )
+{
+	return types[contentType];
+}

@@ -6,7 +6,7 @@ Client::Client( void ) : _socket(0), bytesRead(0),\
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
 		finishedBody(false), gotFileName(false), shouldSkip(false), \
-		bytesToRead(0), bytesCounter(0) { }
+		bytesToRead(0), bytesCounter(0), contentLength(0) { }
 
 Client::Client( const Client &rhs )
 {
@@ -36,6 +36,7 @@ Client &Client::operator=( const Client &rhs )
 		this->boundary = rhs.boundary;
 		this->body = rhs.body;
 		this->errString = rhs.errString;
+		this->contentLength = rhs.contentLength;
 		this->parsedRequest = rhs.parsedRequest;
 		this->bodyType = rhs.bodyType;
 	}
@@ -76,11 +77,7 @@ void Client::checkRequestLine( void )
 
 void Client::checkHeaders( void )
 {
-	size_t contentLen;
-	std::istringstream s(parsedRequest._headers["Content-Length"]);
-
-	s >> contentLen;
-	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end() && contentLen > correspondingBlock->maxBodySize)
+	if (parsedRequest._headers.find("Content-Length") != parsedRequest._headers.end() && contentLength > correspondingBlock->maxBodySize)
 	{
 		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
 		clientResponse.setBool(true);
@@ -93,7 +90,7 @@ void Client::checkHeaders( void )
 	}
 	else if (parsedRequest._method == "POST" && ((parsedRequest._headers.find("Content-Length")
 		== parsedRequest._headers.end() && parsedRequest._headers.find("Transfer-Encoding")
-		== parsedRequest._headers.end()) || contentLen == 0))
+		== parsedRequest._headers.end()) || contentLength == 0))
 	{
 		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 		clientResponse.setBool(true);
@@ -333,7 +330,7 @@ void Client::parseChunkedBody( void )
 	fileToUpload.write(request + i, index2 - i);
 	bytesToRead -= index2 - i;
 	bytesCounter += index2 - i;
-	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
+	if (bytesCounter == contentLength)
 	{
 		finishedBody = true;
 		fileToUpload.close();
@@ -387,8 +384,7 @@ void Client::parseNormalData( void )
 	for (i = 0; i < bytesRead; i++);
 	bytesCounter += i;
 	fileToUpload.write(request, i);
-	// Should change atoi
-	if (bytesCounter == atoi(parsedRequest._headers["Content-Length"].c_str()))
+	if (bytesCounter == contentLength)
 	{
 		fileToUpload.close();
 		finishedBody = true;
@@ -396,4 +392,27 @@ void Client::parseNormalData( void )
 	}
 	memset(request, 0, MAX_RQ);
 	bytesRead = 0;
+}
+
+void Client::openWithProperExtension( void )
+{
+	std::string extension;
+
+	extension = extensions.getExtension(parsedRequest._headers["Content-Type"]);
+	fileToUpload.open(randomString() + extension, std::ios::trunc | std::ios::binary);
+}
+
+std::string Client::randomString( void )
+{
+    std::string tmp_s;
+    const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+
+	srand(time(NULL));
+    tmp_s.reserve(8);
+    for (int i = 0; i < 8; ++i)
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+    return tmp_s;
 }
