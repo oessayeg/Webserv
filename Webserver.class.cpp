@@ -90,23 +90,11 @@ void Webserver::readAndRespond( void )
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
 		if (_fdToCheck[i].revents & POLLIN)
-		{
-			this->_readBodyIfPossible(*b);
-			this->_readRequest(*b);
-			this->_parseRequestLine(*b);
-			this->_parseHeaders(*b);
-			this->_prepareResponse(*b);
-		}
-		if (b->clientResponse.getBool() && _fdToCheck[i].revents & POLLOUT)
-		{
-			if (b->clientResponse.getBool())
-				b->clientResponse.sendResponse(b->getSocket());
-			else
-				send(_fdToCheck[i].fd, "HTTP/1.1 200 OK\r\n\r\n<h1>Welcome !</h1>", 37, 0);
-			close(_fdToCheck[i].fd);
-			b = _pendingClients.erase(b);
-			increment = false;
-		}
+			this->_readAndParse(*b);
+		if (!b->isConnected)
+			_dropClient(b, &increment, 0);
+		else if (b->clientResponse.getBool() && _fdToCheck[i].revents & POLLOUT)
+			_dropClient(b, &increment, 1);
 		if (increment)
 			b++;
 		increment = true;
@@ -156,9 +144,7 @@ void Webserver::_readRequest( Client &client )
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
 	if (r <= 0)
 	{
-		// Need to drop the client in this case 
-		client.clientResponse.setResponse(client.formError(459, "HTTP/1.1 459 Client Error\r\n", "Closed Connection !"));
-		client.clientResponse.setBool(true);
+		client.isConnected = false;
 		return ;
 	}
 	client.bytesRead += r;
@@ -270,8 +256,8 @@ void Webserver::_readBodyIfPossible( Client &client )
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	if (r <= 0)
 	{
-		std::cout << "r = -1" << std::endl;
-		exit(0);
+		client.isConnected = false;
+		return ;
 	}
 	buff[r] = '\0';
 	// Should change this
@@ -298,4 +284,22 @@ void Webserver::_prepareGetResponse( Client &client )
 	// Here's an example of the end of this code
 	client.clientResponse.setResponse(response);
 	client.clientResponse.setBool(true);
+}
+
+void Webserver::_readAndParse( Client &client )
+{
+	this->_readBodyIfPossible(client);
+	this->_readRequest(client);
+	this->_parseRequestLine(client);
+	this->_parseHeaders(client);
+	this->_prepareResponse(client);
+}
+
+void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
+{
+	if (shouldSend)
+		it->clientResponse.sendResponse(it->getSocket());
+	close(it->getSocket());
+	it = _pendingClients.erase(it);
+	*inc = false;
 }

@@ -19,6 +19,7 @@ class Client
 		bool finishedBody;
 		bool gotFileName;
 		bool shouldSkip;
+		bool isConnected;
 		size_t bytesToRead;
 		struct sockaddr_in *clientStruct;
 		std::ofstream fileToUpload;

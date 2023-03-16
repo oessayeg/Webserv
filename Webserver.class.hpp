@@ -31,12 +31,14 @@ class Webserver
 
 	private :
 		void _acceptNewClients( void );
+		void _readAndParse( Client &client );
 		void _readRequest( Client &client );
 		void _parseRequestLine( Client &client );
 		void _parseHeaders( Client &client );
 		void _readBodyIfPossible( Client &client );
 		void _prepareResponse( Client &client );
 		void _prepareGetResponse( Client &client );
+		void _dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend );
 		// void _preparePostResponse( Client &client );
 		// void _prepareDeleteResponse( Client &client );
 };
