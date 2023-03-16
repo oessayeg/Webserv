@@ -232,14 +232,7 @@ void Webserver::_parseHeaders( Client &client )
 	// Here I should check the type of reading (chunked, normal, multipart)
 	if (client.clientResponse.getBool() || !client.shouldReadBody)
 		return ;
-	// parser.chooseCorrectMode(client);
-	if (client.parsedRequest._headers.find("Transfer-Encoding") != client.parsedRequest._headers.end()
-		&& client.parsedRequest._headers["Transfer-Encoding"] == "chunked" && client.boundary.empty())
-		parser.parseChunkedData(client);
-	else if (client.parsedRequest._headers["Content-Type"].find("multipart") != std::string::npos)
-		parser.parseMultipartData(client);	
-	else
-		parser.parseNormalData(client);
+	parser.chooseCorrectParsingMode(client);
 }
 
 // Temporary function
@@ -279,12 +272,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 		client.request[b++] = buff[i];
 	client.request[b] = '\0';
 	client.bytesRead += r;
-	if (!client.boundary.empty())
-		parser.parseMultipartData(client);
-	else if (client.boundary.empty() && client.parsedRequest._headers["Transfer-Encoding"] == "chunked")
-		parser.parseChunkedData(client);
-	else
-		parser.parseNormalData(client);
+	parser.chooseCorrectParsingMode(client);
 }
 
 void Webserver::_prepareGetResponse( Client &client )

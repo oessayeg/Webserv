@@ -16,12 +16,16 @@ void BodyParser::parseChunkedData( Client &client )
 	size_t i;
 	size_t index2;
 
+	i = 0;
 	if (!client.gotFileName)
 		this->_openWithProperExtension(client.parsedRequest._headers["Content-Type"], client);
-	i = 0;
 	if (client.bytesToRead == 0)
 	{
-		for (; client.request[i] != '\r'; i++);
+		if (!_isHexaReadable(client))
+			return ;
+		for (; client.request[i] != '\r' && i < client.bytesRead; i++);
+		if (i == client.bytesRead || client.request[i + 1] != '\n')
+			return ;
 		client.bytesToRead = _giveDecimal(std::string(client.request, client.request + i));
 		i += 2;
 		if (client.bytesToRead == 0)
@@ -48,11 +52,9 @@ void BodyParser::parseChunkedData( Client &client )
 	}
 	else
 	{
-		memmove(client.request, &client.request[index2 + 2], (client.bytesRead - (index2 + 2)) + 1);
-		client.bytesRead -= (index2 + 2);
+		this->_moveRequest(index2, client);
 		if (client.bytesRead == 0)
 			return ;
-		std::cout << client.bytesRead << std::endl;
 		this->parseChunkedData(client);
 	}
 }
@@ -213,4 +215,44 @@ std::string BodyParser::_randomString( void )
     for (int i = 0; i < 8; ++i)
         tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
     return tmp_s;
+}
+
+bool BodyParser::_isHexaReadable( Client &client )
+{
+	int i;
+
+	for (i = 0; client.request[i] != '\r' && i < client.bytesRead; i++);
+	if (i == client.bytesRead)
+		return false;
+	if (i == 0 && client.request[i] == '\r' && client.request[i + 1] == '\n')
+	{
+		memmove(client.request, client.request + 2, client.bytesRead - 1);
+		client.bytesRead -= 2;
+	}
+	if (client.bytesRead == 0)
+		return false;
+	return true;
+}
+
+void BodyParser::_moveRequest( int index2, Client &client )
+{
+	int i;
+
+	i = 0;
+	if (index2 + 1 == client.bytesRead)
+		i = 1;
+	else
+		i = 2;
+	memmove(client.request, &client.request[index2 + i], (client.bytesRead - (index2 + i)) + 1);
+	client.bytesRead -= (index2 + i);
+}
+
+void BodyParser::chooseCorrectParsingMode( Client &client )
+{
+	if (client.bodyType == CHUNKED)
+		this->parseChunkedData(client);
+	else if (client.bodyType == MULTIPART)
+		this->parseMultipartData(client);
+	else if (client.bodyType == OTHER)
+		this->parseNormalData(client);
 }

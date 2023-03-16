@@ -29,10 +29,10 @@
 #define CHUNKED 3
 #define OTHER 4
 
+//Should consider changing the int to short (if I don't need the whole bytes)
 // Classes header files
 #include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"
 #include "Client.class.hpp"
 #include "BodyParser.class.hpp"
-// #include "Webserver.class.hpp"
