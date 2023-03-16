@@ -155,20 +155,20 @@ void Webserver::_readRequest( Client &client )
 	r = recv(client.getSocket(), client.request + client.bytesRead, MIN_TO_READ, 0);
 	if (r <= 0)
 	{
-		// Need to set 2 responses, one for error -1, and one for 0 error (closed connection)
+		// Need to drop the client in this case 
 		client.clientResponse.setResponse(client.formError(459, "HTTP/1.1 459 Client Error\r\n", "Closed Connection !"));
 		client.clientResponse.setBool(true);
 		return ;
 	}
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
-	if (client.bytesRead == MAX_RQ && !strstr(client.request + client.bytesRead - 5, "\r\n\r\n"))
+	ptrToEnd = strstr(client.request, "\r\n\r\n");
+	if (client.bytesRead == MAX_RQ && !ptrToEnd)
 	{
 		client.clientResponse.setResponse(client.formError(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large"));
 		client.clientResponse.setBool(true);
 		return ;
 	}
-	ptrToEnd = strstr(client.request, "\r\n\r\n");
 	if (ptrToEnd)
 	{
 		client.stringRequest = client.request;
@@ -267,6 +267,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	buff[r] = '\0';
+	// Should change this
 	int b = client.bytesRead;
 	for (int i = 0; i < r; i++)
 		client.request[b++] = buff[i];

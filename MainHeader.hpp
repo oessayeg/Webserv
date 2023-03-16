@@ -19,7 +19,8 @@
 
 // The first macro is used when using recv function
 // The second one is for the size of request line + headers
-#define MIN_TO_READ 2048
+#define MIN_TO_READ 8192
+#define BUFF_SIZE 17825
 #define MAX_RQ 8192
 
 // Body type macros

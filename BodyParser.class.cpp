@@ -126,8 +126,6 @@ bool BodyParser::_isThereFilename( int bodyType, Client &client )
 	{
 		if (bodyType == MULTIPART)
 			crlfIndex = strstr(client.request, "\r\n\r\n");
-		else if (bodyType == CHUNKED_MULTIPART)
-			crlfIndex = strstr(client.request, "\r\n\r\n\r\n");
 		if (crlfIndex == NULL)
 			return false;
 		else
@@ -141,18 +139,9 @@ bool BodyParser::_isThereFilename( int bodyType, Client &client )
 			}
 			else
 				client.shouldSkip = true;
-			if (bodyType == MULTIPART)
-			{
-				for (i = 0; client.request + i < crlfIndex + 4; i++);
-				memmove(client.request, crlfIndex + 4, (client.bytesRead - i) + 1);
-				client.bytesRead -= i;
-			}
-			else if (bodyType == CHUNKED_MULTIPART)
-			{
-				for (i = 0; client.request + i < crlfIndex + 6; i++);
-				memmove(client.request, crlfIndex + 6, (client.bytesRead - i) + 1);
-				client.bytesRead -= i;
-			}
+			for (i = 0; client.request + i < crlfIndex + 4; i++);
+			memmove(client.request, crlfIndex + 4, (client.bytesRead - i) + 1);
+			client.bytesRead -= i;
 		}
 	}
 	return true;
