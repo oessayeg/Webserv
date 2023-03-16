@@ -65,10 +65,11 @@ void Webserver::setReadyFds( void )
 	for (cIter = _pendingClients.begin(); cIter != _pendingClients.end(); cIter++)
 	{
 		_fdToCheck[i].fd = cIter->getSocket();
-		_fdToCheck[i].events = POLLIN | POLLOUT;
+		_fdToCheck[i].events = cIter->typeCheck;
 		_fdToCheck[i].revents = 0;
 		i++;
 	}
+	// std::cout << std::endl;
 }
 
 void Webserver::readAndRespond( void )
@@ -96,7 +97,7 @@ void Webserver::readAndRespond( void )
 			this->_parseHeaders(*b);
 			this->_prepareResponse(*b);
 		}
-		if ((_fdToCheck[i].revents & POLLOUT) && b->clientResponse.getBool())
+		if (b->clientResponse.getBool() && _fdToCheck[i].revents & POLLOUT)
 		{
 			if (b->clientResponse.getBool())
 				b->clientResponse.sendResponse(b->getSocket());
@@ -242,6 +243,7 @@ void Webserver::_prepareResponse( Client &client )
 	if (client.clientResponse.getBool() || !client.isHeaderParsed
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
+	client.typeCheck = POLLOUT;
 	if (client.parsedRequest._method == "GET")
 		this->_prepareGetResponse(client);
 	else if (client.parsedRequest._method == "POST" && client.finishedBody)
@@ -266,6 +268,11 @@ void Webserver::_readBodyIfPossible( Client &client )
 		return ;
 	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
+	if (r <= 0)
+	{
+		std::cout << "r = -1" << std::endl;
+		exit(0);
+	}
 	buff[r] = '\0';
 	// Should change this
 	int b = client.bytesRead;

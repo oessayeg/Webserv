@@ -5,7 +5,8 @@ Client::Client( void ) : _socket(0), bytesRead(0),\
 		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
 		isHeaderParsed(false), shouldReadBody(false), errString(), \
 		finishedBody(false), gotFileName(false), shouldSkip(false), \
-		bytesToRead(0), bytesCounter(0), contentLength(0), bodyType(0) { }
+		bytesToRead(0), bytesCounter(0), contentLength(0), bodyType(0), \
+		typeCheck(POLLIN) { }
 
 Client::Client( const Client &rhs )
 {
@@ -37,6 +38,7 @@ Client &Client::operator=( const Client &rhs )
 		this->contentLength = rhs.contentLength;
 		this->parsedRequest = rhs.parsedRequest;
 		this->bodyType = rhs.bodyType;
+		this->typeCheck = rhs.typeCheck;
 	}
 	return *this;
 }

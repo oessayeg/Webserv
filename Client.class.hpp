@@ -11,7 +11,7 @@ class Client
 
 	public :
 		int bytesRead;
-		char request[MAX_RQ + 1];
+		char request[BUFF_SIZE + 1];
 		bool isRead;
 		bool isRqLineParsed;
 		bool isHeaderParsed;
@@ -28,7 +28,7 @@ class Client
 		int bodyType;
 		size_t bytesCounter;
 		size_t contentLength;
-
+		short typeCheck;
 		// These are the three attributes that you need
 		Blocks *correspondingBlock;
 		Response clientResponse;
