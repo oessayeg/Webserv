@@ -12,6 +12,7 @@ class Location
     private:
         bool                                     _auto_index;
         std::string                              _root;
+        std::string                              _upload_dir;
         std::string                              _redirection[2];
         std::list<std::string>                 _accept_list;
         std::list<std::string>                 _path_location;
@@ -31,6 +32,7 @@ class Location
         void                        set_accept_list_location(std::string    accept_list);
         void                        set_indexes_location(std::string        indexes_location);
         void                        set_redirection(std::string             redirection);
+        void                        set_upload_dir(std::string              path);
 
         bool                        get_autoindex() const;
         std::string                 get_root_location() const;

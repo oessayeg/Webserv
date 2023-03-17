@@ -33,6 +33,8 @@ Location::Location(std::string &location):_count_auto_index(0),_count_allow_meth
             set_indexes_location(line.substr(5));
         else if(line.substr(0, 6) == "return")
             set_redirection(line.substr(6));
+        else if(line.substr(0,10) == "upload_dir")
+            set_upload_dir(line.substr(10));
         else
             throw NotFoundError("'Location block' Name Not Found");
         check_duplicate();
@@ -88,6 +90,7 @@ void        Location::set_root_location(std::string root_location)
     if (found_t != std::string::npos)
         throw LogicError("invalid root arg");
     this->_root = name;
+    std::cout<<"my root"<<std::endl;
     this->_countroot++;
 }
 
@@ -148,7 +151,6 @@ void        Location::set_indexes_location(std::string        indexes_location)
     while(getline(paths, line, ' '))
         this->_indexes_location.push_back(line);
     std::list<std::string>::iterator it = this->_indexes_location.begin();
-    std::cout<<*it<<std::endl;
 }
 
 
@@ -181,8 +183,23 @@ void        Location::set_redirection(std::string             redirection)
         throw LogicError("'return' invalid value");
     _redirection[0] = key;
     _redirection[1] = data;
-    std::cout<<_redirection[0]<<std::endl;
     this->_count_return++;
+}
+
+
+void        Location::set_upload_dir(std::string             path)
+{
+   size_t found = path.find_first_not_of(" \t\f\v\n\r");
+   size_t found_t = path.find_first_of(";");
+   if (found_t == std::string::npos)
+        throw SyntaxError("'location block' 'upload_dir' value should be closed by ';'");
+    std::string name = path.substr(found, found_t - found);
+    found = name.find_first_of(" \t\f\v\n\r");
+    found_t = name.find_first_not_of(" \t\f\v\n\r", found);
+    if (found_t != std::string::npos)
+        throw LogicError("invalid 'upload_dir' arg");
+    this->_upload_dir = path;
+    std::cout<<path<<std::endl;
 }
 
 bool    Location::get_autoindex() const
