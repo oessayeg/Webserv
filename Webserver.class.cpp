@@ -79,13 +79,12 @@ void Webserver::readAndRespond( void )
 	int i;
 	bool increment;
 
+	increment = true;
 	sizeOfSocketsAndClients = this->_listeningSockets.size() + this->_pendingClients.size();
-	// Need to check for nbFds when iterating through fds for optimization
+	// Need to check for nbFds when iterating through fds for optimization or for an error
 	nbFds = poll(_fdToCheck, sizeOfSocketsAndClients, -1);
-	// Should not forget to try https
 	this->_acceptNewClients();
 	b = _pendingClients.begin();
-	increment = true;
 	for (i = _listeningSockets.size(); i < sizeOfSocketsAndClients; i++)
 	{
 		if (_fdToCheck[i].revents & POLLIN)
@@ -97,7 +96,6 @@ void Webserver::readAndRespond( void )
 		if (increment)
 			b++;
 		increment = true;
-		i++;
 	}
 }
 
@@ -163,7 +161,6 @@ void Webserver::_readRequest( Client &client )
 		memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
 		client.isRead = true;
 	}
-	// std::cout << std::endl;
 }
 
 void Webserver::_parseRequestLine( Client &client )
