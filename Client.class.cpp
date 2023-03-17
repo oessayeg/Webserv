@@ -64,6 +64,7 @@ void Client::checkRequestLine( void )
 	std::string errorResponse;
 
 	this->clientResponse.setBool(true);
+	this->typeCheck = POLLOUT;
 	if (!parsedRequest.hasAllowedChars())
 		this->clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 	else if (!parsedRequest.hasGoodSize())
@@ -73,7 +74,10 @@ void Client::checkRequestLine( void )
 	else if (!parsedRequest.isGoodVersion())
 		this->clientResponse.setResponse(formError(505, "HTTP/1.1 505 Version Not Supported\r\n", "Error 505 Version Not Supported"));
 	else
+	{
 		this->clientResponse.setBool(false);
+		this->typeCheck = POLLIN;
+	}
 }
 
 void Client::checkHeaders( void )
@@ -87,6 +91,7 @@ void Client::checkHeaders( void )
 	transferEnc = parsedRequest._headers["Transfer-Encoding"];
 	contentType = parsedRequest._headers["Content-Type"];
 	clientResponse.setBool(true);
+	this->typeCheck = POLLOUT;
 	if (contentLength > correspondingBlock->maxBodySize)
 		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
@@ -95,7 +100,10 @@ void Client::checkHeaders( void )
 	else if (parsedRequest._method == "POST" && contentLength == 0 && transferEnc.empty())
 		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
 	else
+	{
 		clientResponse.setBool(false);
+		this->typeCheck = POLLIN;
+	}
 	if (clientResponse.getBool() || parsedRequest._method != "POST")
 		return ;
 	// This second part will set some useful variables for the type of body reading

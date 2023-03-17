@@ -69,7 +69,6 @@ void Webserver::setReadyFds( void )
 		_fdToCheck[i].revents = 0;
 		i++;
 	}
-	// std::cout << std::endl;
 }
 
 void Webserver::readAndRespond( void )
@@ -154,6 +153,7 @@ void Webserver::_readRequest( Client &client )
 	{
 		client.clientResponse.setResponse(client.formError(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large"));
 		client.clientResponse.setBool(true);
+		client.typeCheck = POLLOUT;
 		return ;
 	}
 	if (ptrToEnd)
@@ -163,6 +163,7 @@ void Webserver::_readRequest( Client &client )
 		memmove(client.request, ptrToEnd + 4, client.bytesRead + 1);
 		client.isRead = true;
 	}
+	// std::cout << std::endl;
 }
 
 void Webserver::_parseRequestLine( Client &client )
