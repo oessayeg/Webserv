@@ -4,6 +4,32 @@ Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_method
 {
 }
 
+Location::Location(const Location &opt)
+{
+    *this = opt;
+}
+
+Location & Location::operator=(const Location &opt)
+{
+    if(this != &opt)
+    {
+        this->_auto_index = opt._auto_index;
+        this->_root = opt._root;
+        this->_upload_dir = opt._upload_dir;
+        this->_accept_list = opt._accept_list;
+        this->_path_location = opt._path_location;
+        this->_indexes_location = opt._indexes_location;
+        this->_countroot = opt._countroot;
+        this->_count_allow_methode = opt._count_allow_methode;
+        this->_count_auto_index = opt._count_auto_index;
+        this->_count_return = opt._count_return;
+        this->_isThereCgi = opt._isThereCgi;
+        for(int i = 0; i < 2; i++)
+            this->_redirection[i] = opt._redirection[i];
+    }
+    return (*this);
+}
+
 Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false)
 {
     init_list();

@@ -25,6 +25,8 @@ class Location
     public:
         Location();
         Location(std::string &location);
+        Location(const Location &);
+        Location &operator=(const Location&);
 
 
         void                        set_path_location(std::string           path_location);

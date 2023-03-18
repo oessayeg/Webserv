@@ -4,6 +4,20 @@ Configfile::Configfile()
 
 }
 
+Configfile::Configfile(const Configfile &opt)
+{
+    *this = opt;
+}
+
+Configfile & Configfile::operator=(const Configfile &opt)
+{
+    if(this != &opt)
+    {
+        this->server = opt.server;
+    }
+    return (*this);
+}
+
 std::string     Configfile::get_contentfile(std::ifstream &infile)
 {
     std::stringstream buffer;
@@ -69,7 +83,7 @@ void    Configfile::parse_configfile(std::string &configfile)
 
 
 
-std::vector<Serverblock>      Configfile::get_serverblocks()
+std::list<Serverblock>      Configfile::get_serverblocks()
 {
     return (this->server);
 }

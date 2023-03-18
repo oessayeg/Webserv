@@ -7,6 +7,7 @@
 #include <sstream>
 #include <unistd.h>
 #include <vector>
+#include <netinet/in.h>
 #include <map>
 #include "Exception.hpp"
 #include "location.hpp"
@@ -21,12 +22,14 @@ private:
     int                     _countbodysize;
     int                     _count_location;
     bool                    _found;
+    struct sockaddr_in      socketNeeds;
     std::list<Location>     _location;
     std::map<int, std::string> _error_page;
 public:
     Serverblock();
     Serverblock(std::string &block);
-
+    Serverblock(const Serverblock &);
+    Serverblock &operator=(const Serverblock &);
 //***********************************Set Artibiout function****************************************//
     void                        set_port_and_ip(std::string line);
     void                        set_body_size(std::string   line);
@@ -51,6 +54,7 @@ public:
     void                       check_valid_config();
     void                       check_duplicate();
     void                       check_valid_status_code(std::string key);
+    ~Serverblock();
 };
 
 
