@@ -1,61 +1,43 @@
+#include "ParseConfigfile/Configfile.hpp"
 #include "MainHeader.hpp"
-#include "Block.tmp.hpp"
 #include "Webserver.class.hpp"
 
-// Temporary function
-std::list < Blocks > giveList( void )
+int main(int ac, char **av)
 {
-	std::list < Blocks > list;
-	Blocks ins1;
-	ins1.index.push_back("index1.html");
-	ins1.port = 8080;
-	ins1.ip = 0;
-	ins1.maxBodySize = 1000000000;
-	ins1.root = "./";
-	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
+    std::string file;
+    try
+    {
+        Configfile Config;
+        if (av[1])
+        {
+            file = av[1];
+            Config.check_errors(file);
+            std::ifstream infile;
+            infile.open(av[1]);
+            std::string content = Config.get_contentfile(infile);
+            Config.parse_configfile(content);
+        }
 
-	list.push_back(ins1);
-	ins1.index[0] = "index2.html";
-	ins1.port = 9090;
-	ins1.ip = 0;
-	ins1.maxBodySize = 1000000000;
-	ins1.root = "./";
-	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
-	list.push_back(ins1);
-
-	ins1.index[0] = "index3.html";
-	ins1.port = 7070;
-	ins1.ip = 0;
-	ins1.maxBodySize = 1000000000;
-	ins1.root = "./";
-	// ins1.errorMap.insert(std::make_pair(413, "413.html"));
-	list.push_back(ins1);
-
-	return list;
-}
-
-// Main
-int main( void )
-{
-	Webserver mainServer;
-
-	try
-	{
-		mainServer.setServerBlocks(giveList());
+		mainServer.setServerBlocks(Config.get_serverblocks());
 		mainServer.createSockets();
 		while (1)
 		{
 			mainServer.setReadyFds();
 			mainServer.readAndRespond();
 		}
-	}
-	catch( const char *msg )
-	{
-		std::cout << msg << std::endl;
-	}
-	catch ( std::exception &rhs )
+
+    }
+    catch(OurException &e)
+    {
+        std::cout<<e.what()<<std::endl;
+    }
+    catch(const char *str)
+    {
+        std::cout<<str<<std::endl;
+    }
+   	catch ( std::exception &rhs )
 	{
 		std::cout << rhs.what() << std::endl;
-	}
-	return (0);
+	} 
 }
+>>>>>>> ConfigBranch
