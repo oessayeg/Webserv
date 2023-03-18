@@ -17,9 +17,12 @@ Client &Client::operator=( const Client &rhs )
 {
 	if (this != &rhs)
 	{
-		this->_socket = rhs._socket;
-		this->bytesRead = rhs.bytesRead;
+		this->clientStruct = new struct sockaddr_in;
+		*this->clientStruct = *rhs.clientStruct;
 		*this->request = *rhs.request;
+		this->bytesRead = rhs.bytesRead;
+		this->bodyType = rhs.bodyType;
+		this->_socket = rhs._socket;
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
@@ -27,19 +30,17 @@ Client &Client::operator=( const Client &rhs )
 		this->finishedBody = rhs.finishedBody;
 		this->gotFileName = rhs.gotFileName;
 		this->shouldSkip = rhs.shouldSkip;
+		this->isConnected = rhs.isConnected;
+		this->typeCheck = rhs.typeCheck;
 		this->bytesToRead = rhs.bytesToRead;
-		this->correspondingBlock = rhs.correspondingBlock;
 		this->bytesCounter = rhs.bytesCounter;
-		this->clientStruct = new struct sockaddr_in;
-		*this->clientStruct = *rhs.clientStruct;
+		this->contentLength = rhs.contentLength;
 		this->stringRequest = rhs.stringRequest;
 		this->boundary = rhs.boundary;
+		this->correspondingBlock = rhs.correspondingBlock;
+		this->clientResponse = rhs.clientResponse;
 		this->errString = rhs.errString;
-		this->contentLength = rhs.contentLength;
 		this->parsedRequest = rhs.parsedRequest;
-		this->bodyType = rhs.bodyType;
-		this->typeCheck = rhs.typeCheck;
-		this->isConnected = rhs.isConnected;
 	}
 	return *this;
 }
@@ -106,24 +107,7 @@ void Client::checkHeaders( void )
 	}
 	if (clientResponse.getBool() || parsedRequest._method != "POST")
 		return ;
-	// This second part will set some useful variables for the type of body reading
-	if (transferEnc == "chunked")
-	{
-		this->shouldReadBody = true;
-		this->bodyType = CHUNKED;
-	}
-	else if (contentType.find("multipart/form-data;") != std::string::npos)
-	{
-		int index = contentType.find("boundary=") + 9;
-		this->boundary = "--" + contentType.substr(index, contentType.size() - index);
-		this->shouldReadBody = true;
-		this->bodyType = MULTIPART;
-	}
-	else if (contentLength > 0)
-	{
-		this->shouldReadBody = true;
-		this->bodyType = OTHER;
-	}
+	this->setType(transferEnc, contentType);
 }
 
 // This function forms the whole response when an error happens
@@ -157,4 +141,25 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
 	returnString += "\r\n\r\n";
 	return (returnString + errString.getFileInString());
+}
+
+void Client::setType( std::string transferEnc, std::string contentType )
+{
+	if (transferEnc == "chunked")
+	{
+		this->shouldReadBody = true;
+		this->bodyType = CHUNKED;
+	}
+	else if (contentType.find("multipart/form-data;") != std::string::npos)
+	{
+		int index = contentType.find("boundary=") + 9;
+		this->boundary = "--" + contentType.substr(index, contentType.size() - index);
+		this->shouldReadBody = true;
+		this->bodyType = MULTIPART;
+	}
+	else if (contentLength > 0)
+	{
+		this->shouldReadBody = true;
+		this->bodyType = OTHER;
+	}
 }
