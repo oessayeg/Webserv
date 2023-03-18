@@ -4,7 +4,7 @@ Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_method
 {
 }
 
-Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0)
+Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false)
 {
     init_list();
     size_t find = location.find_first_of("/");
@@ -35,6 +35,8 @@ Location::Location(std::string &location):_count_auto_index(0),_count_allow_meth
             set_redirection(line.substr(6));
         else if(line.substr(0,10) == "upload_dir")
             set_upload_dir(line.substr(10));
+        else if(line.substr(0, 7) == "run_cgi")
+            set_cgi(line.substr(7));
         else
             throw NotFoundError("'Location block' Name Not Found");
         check_duplicate();
@@ -203,6 +205,22 @@ void        Location::set_upload_dir(std::string             path)
     size_t found = value.find_first_of(" \t\f\v\n\r;");
     std::string name = value.substr(0, found);
     this->_upload_dir = name;
+}
+
+void        Location::set_cgi(std::string             path)
+{
+    std::string value;
+    check_valid_value(path, value);
+    check_value_arg(value);
+
+    size_t found = value.find_first_of(" \t\f\v\n\r;");
+    std::string name = value.substr(0, found);
+    if (name  == "on")
+        this->_isThereCgi = true;
+    else if (name == "off")
+        this->_isThereCgi = false;
+    else
+        throw LogicError("'autoindex' : invalid arg");
 }
 
 bool    Location::get_autoindex() const

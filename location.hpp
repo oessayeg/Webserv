@@ -21,6 +21,7 @@ class Location
         int                                      _count_allow_methode;
         int                                      _count_auto_index;
         int                                      _count_return;
+        bool                                     _isThereCgi;
     public:
         Location();
         Location(std::string &location);
@@ -33,6 +34,7 @@ class Location
         void                        set_indexes_location(std::string        indexes_location);
         void                        set_redirection(std::string             redirection);
         void                        set_upload_dir(std::string              path);
+        void                        set_cgi(std::string                     path);
 
         bool                        get_autoindex() const;
         std::string                 get_root_location() const;
