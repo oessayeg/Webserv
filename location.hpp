@@ -44,6 +44,7 @@ class Location
         void                        check_duplicate();
         void                        check_valid_value(std::string buffer, std::string &value);
         void                        check_valid_status_code(std::string key);
+        void                        check_value_arg(std::string value);
 
         bool                        is_Number(std::string  str);
         ~Location();

@@ -52,9 +52,9 @@ void        Location::check_valid_value(std::string buffer, std::string &value)
     value = buffer.substr(found, found_t - found + 1);
 }
 
-void        Location::set_path_location(std::string path_location)
+void        Location::set_path_location(std::string path_location)//should skipp withspace in path location
 {
-    size_t find = path_location.find_first_not_of(" \t\f\v\n\r");
+    size_t find = path_location.find_first_not_of(" \t\f\v\n\r;");
     if(find == std::string::npos)
         throw SyntaxError("Invalid argument in location path");
     std::string name = path_location.substr(find);
@@ -65,6 +65,7 @@ void        Location::set_path_location(std::string path_location)
         if(line[0] != '/')
             throw SyntaxError("'" + line + "' path should start with '/'");
         _path_location.push_back(line);   
+        std::cout<<line<<std::endl;
     }
 }
 
@@ -78,20 +79,27 @@ bool Location::is_Number(std::string  str)
     return true;
 }
  
+void        Location::check_value_arg(std::string value)
+{
+    size_t  found = value.find_first_not_of(" \t\f\v\n\r;");
+    size_t found_t = value.find_first_of(" \t\f\v\n\r;", found);
+    size_t found_tt = value.find_first_not_of(" \t\f\v\n\r;", found_t);
+    if (found_tt != std::string::npos)
+        throw LogicError("Invalid Arg");
+}
+
 void        Location::set_root_location(std::string root_location)
 {
-    size_t found = root_location.find_first_not_of(" \t\f\v\n\r");
-    size_t found_t = root_location.find_first_of(";");
-    if (found_t == std::string::npos)
-            throw SyntaxError("'location block' root value should be closed by ';'");
-    std::string name = root_location.substr(found, found_t - found);
-    found = name.find_first_of(" \t\f\v\n\r");
-    found_t = name.find_first_not_of(" \t\f\v\n\r", found);
-    if (found_t != std::string::npos)
-        throw LogicError("invalid root arg");
-    this->_root = name;
-    std::cout<<"my root"<<std::endl;
-    this->_countroot++;
+    std::string value;
+
+    check_valid_value(root_location, value);
+    check_value_arg(value);
+    size_t found = value.find_first_of(" \t\f\v\n\r;");
+    std::string name = value.substr(0, found);
+    if(name[name.length() - 1] != '/')
+        this->_root = name + '/';
+    else
+        this->_root = name;
 }
 
 void    Location::set_accept_list_location(std::string accept_list)
@@ -189,17 +197,13 @@ void        Location::set_redirection(std::string             redirection)
 
 void        Location::set_upload_dir(std::string             path)
 {
-   size_t found = path.find_first_not_of(" \t\f\v\n\r");
-   size_t found_t = path.find_first_of(";");
-   if (found_t == std::string::npos)
-        throw SyntaxError("'location block' 'upload_dir' value should be closed by ';'");
-    std::string name = path.substr(found, found_t - found);
-    found = name.find_first_of(" \t\f\v\n\r");
-    found_t = name.find_first_not_of(" \t\f\v\n\r", found);
-    if (found_t != std::string::npos)
-        throw LogicError("invalid 'upload_dir' arg");
-    this->_upload_dir = path;
-    std::cout<<path<<std::endl;
+    std::string value;
+
+    check_valid_value(path, value);
+    check_value_arg(value);
+    size_t found = value.find_first_of(" \t\f\v\n\r;");
+    std::string name = value.substr(0, found);
+    this->_upload_dir = name;
 }
 
 bool    Location::get_autoindex() const
