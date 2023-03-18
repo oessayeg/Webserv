@@ -122,7 +122,7 @@ void Webserver::_acceptNewClients( void )
 			if (newFd == -1)
 				throw "Accept function failed";
 			fcntl(newFd, F_SETFL, O_NONBLOCK);
-			newClient.correspondingBlock = &(*blIter);
+			newClient.correspondingBlock = new Serverblock(*blIter);
 			newClient.setSocket(newFd);
 			_pendingClients.push_back(newClient);
 		}
@@ -267,21 +267,78 @@ void Webserver::_readBodyIfPossible( Client &client )
 	parser.chooseCorrectParsingMode(client);
 }
 
+void	replaceString(std::string &str, const std::string &oldstring, const std::string &newString)
+{
+	size_t startPos = 0;
+	startPos = str.find(oldstring, startPos);
+	if(startPos != std::string::npos)
+		str.replace(startPos + 1, oldstring.length(), newString);
+}
+
+std::list<Location>::iterator	Webserver::ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri)
+{
+	bool			isFound = false;
+	std::string	matcheLocation = "";
+	std::list<std::string>::iterator it1;
+	std::list<Location>::iterator it = list.begin();
+	std::list<Location>::iterator returnBlock;
+	std::string str = uri;
+
+	std::list<std::string> my_list;
+	for(; it != list.end(); ++it)
+	{
+		my_list = it->get_path_location();
+		it1 = my_list.begin();
+		for(; it1 != my_list.end(); ++it1)
+		{
+			if(uri.find(*it1)  == 0 && (*it1).size() > matcheLocation.size())
+			{
+				matcheLocation = *it1;
+				isFound = true;
+				replaceString(str, *it1, it->get_root_location());
+				returnBlock = it;
+				returnBlock->_currentRoot  = str;
+			}
+		}
+	}
+	if(isFound == true)
+		return (returnBlock);
+	return (list.end());
+}
+
+bool	checkIfPathExist(std::string &path)
+{
+	std::ifstream file;
+
+	file.open(path);
+	if(file.good())
+		return (true);
+	return false;
+}
+
 void Webserver::_prepareGetResponse( Client &client )
 {
-	// This is temporary
-	std::string response;
-	std::ifstream fileToSend;
-	std::stringstream s, s2;
+	std::list<Location>::iterator currentList;
 
-	fileToSend.open("upload.html");
-	s << fileToSend.rdbuf();
-	s2 << s.str().size();
-	response = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
-	response +=  s2.str() + "\r\n\r\n" + s.str();
-	// Here's an example of the end of this code
-	client.clientResponse.setResponse(response);
+	currentList = ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
+	if(currentList != client.correspondingBlock->_location.end())
+	{
+		std::cout<<"currentRoot : "<<currentList->_currentRoot<<std::endl;
+		// if(currentList->get_isThereRedirection() == true)
+		// {
+		// 	return ;
+		// }
+		// if(checkIfPathExist(currentList->_currentRoot))
+		// {
+		
+		// }
+	}
+	else
+	{
+	client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
 	client.clientResponse.setBool(true);
+	}
+
 }
 
 void Webserver::_readAndParse( Client &client )

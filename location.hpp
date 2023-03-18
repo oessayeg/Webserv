@@ -15,14 +15,16 @@ class Location
         std::string                              _upload_dir;
         std::string                              _redirection[2];
         std::list<std::string>                 _accept_list;
-        std::list<std::string>                 _path_location;
         std::list<std::string>                 _indexes_location;
         int                                      _countroot;
         int                                      _count_allow_methode;
         int                                      _count_auto_index;
         int                                      _count_return;
         bool                                     _isThereCgi;
+        bool                                     _isThereRedirection;
+        std::list<std::string>                 _path_location;
     public:
+        std::string                              _currentRoot;
         Location();
         Location(std::string &location);
         Location(const Location &);
@@ -39,10 +41,12 @@ class Location
         void                        set_cgi(std::string                     path);
 
         bool                        get_autoindex() const;
-        std::string                 get_root_location() const;
+        std::string                 get_root_location() ;
         std::list<std::string>      get_acceptlist_location() const;
         std::list<std::string>      get_indexes_location() const;
-        std::list<std::string>      get_path_location() const;
+        std::list<std::string>      get_path_location() ;
+        bool                        get_cgi();
+        bool                        get_isThereRedirection();
 
         void                        init_list();
         void                        check_duplicate();

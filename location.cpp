@@ -266,9 +266,19 @@ std::list<std::string>    Location::get_acceptlist_location() const
     return (this->_accept_list);
 }
 
-std::list<std::string>    Location::get_path_location() const
+std::list<std::string>    Location::get_path_location() 
 {
     return (this->_path_location);
+}
+
+bool                        Location::get_isThereRedirection()
+{
+    return (this->_isThereRedirection);
+}
+
+bool                        Location::get_cgi()
+{
+    return (this->_isThereCgi);
 }
 
 std::list<std::string>    Location::get_indexes_location() const
@@ -276,6 +286,10 @@ std::list<std::string>    Location::get_indexes_location() const
     return (this->_indexes_location);
 }
 
+std::string Location::get_root_location()
+{
+    return (this->_root);
+}
 Location::~Location()
 {
 

@@ -12,22 +12,22 @@
 #include "Exception.hpp"
 #include "location.hpp"
 
-// Change body to size from long to size_t
 // Should also consider checking the default path for a config file if there is no path
 // Do not forget the comments in the config file
+// Body_size max 2500mb; 
 
 class Serverblock
 {
 private:
     int                     _port;
     std::string              _ip;
-    long                    _body_size;
+    size_t                   _body_size;
     int                     _countlisten;
     int                     _countbodysize;
     int                     _count_location;
     bool                    _found;
-    std::list<Location>     _location;
 public:
+    std::list<Location>     _location;
     Serverblock();
     Serverblock(std::string &block);
     Serverblock(const Serverblock &);
@@ -52,7 +52,7 @@ public:
     struct sockaddr_in         socketNeeds;
     int                        get_port() const;
     std::string                get_ip() const;
-    long                       get_body_size() const;
+    size_t                       get_body_size() const;
     std::list<Location>        get_locationblocks() const;
     void                       check_valid_config();
     void                       check_duplicate();

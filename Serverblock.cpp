@@ -245,13 +245,14 @@ std::string Serverblock::get_ip() const
     return (this->_ip);
 }
 
-long        Serverblock::get_body_size() const
+size_t        Serverblock::get_body_size() const
 {
     return(this->_body_size);
 }
 
 std::list<Location> Serverblock::get_locationblocks() const
 {
+    // std::cout 
     return(this->_location);
 }
 
