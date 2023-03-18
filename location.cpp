@@ -64,8 +64,7 @@ void        Location::set_path_location(std::string path_location)//should skipp
     {
         if(line[0] != '/')
             throw SyntaxError("'" + line + "' path should start with '/'");
-        _path_location.push_back(line);   
-        std::cout<<line<<std::endl;
+        _path_location.push_back(line);
     }
 }
 
