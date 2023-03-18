@@ -35,5 +35,6 @@
 #include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"
+#include "Serverblock.hpp"
 #include "Client.class.hpp"
 #include "BodyParser.class.hpp"

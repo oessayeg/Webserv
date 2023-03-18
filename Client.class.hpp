@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Block.tmp.hpp"
 #include "MainHeader.hpp"
 #include "ErrorString.class.hpp"
 
@@ -12,7 +11,6 @@ class Client
 	public :
 		struct sockaddr_in *clientStruct;
 		char request[BUFF_SIZE + 1];
-		int bytesRead;
 		int bodyType;
 		bool isRead;
 		bool isRqLineParsed;
@@ -23,6 +21,7 @@ class Client
 		bool shouldSkip;
 		bool isConnected;
 		short typeCheck;
+		size_t bytesRead;
 		size_t bytesToRead;
 		size_t bytesCounter;
 		size_t contentLength;
@@ -31,7 +30,7 @@ class Client
 		std::string boundary;
 
 	public :
-		Blocks *correspondingBlock;
+		Serverblock *correspondingBlock;
 		Response clientResponse;
 		ErrorString errString;
 		Request parsedRequest;

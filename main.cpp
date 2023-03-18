@@ -1,10 +1,11 @@
-#include "ParseConfigfile/Configfile.hpp"
 #include "MainHeader.hpp"
 #include "Webserver.class.hpp"
 
 int main(int ac, char **av)
 {
+    Webserver mainServer;
     std::string file;
+
     try
     {
         Configfile Config;
@@ -17,7 +18,6 @@ int main(int ac, char **av)
             std::string content = Config.get_contentfile(infile);
             Config.parse_configfile(content);
         }
-
 		mainServer.setServerBlocks(Config.get_serverblocks());
 		mainServer.createSockets();
 		while (1)
@@ -27,17 +27,20 @@ int main(int ac, char **av)
 		}
 
     }
-    catch(OurException &e)
+    catch (OurException &e)
     {
         std::cout<<e.what()<<std::endl;
     }
-    catch(const char *str)
+    catch (const char *str)
     {
         std::cout<<str<<std::endl;
     }
-   	catch ( std::exception &rhs )
+   	catch ( std::exception &rhs1 )
 	{
-		std::cout << rhs.what() << std::endl;
-	} 
+		std::cout << rhs1.what() << std::endl;
+	}
+    catch ( std::string &s )
+    {
+        std::cout << s << std::endl;
+    }
 }
->>>>>>> ConfigBranch

@@ -5,7 +5,7 @@
 Webserver::Webserver( void ) : _serverBlocks(), _pendingClients(), _listeningSockets(),\
 	_fdToCheck(NULL) { }
 
-Webserver::Webserver( std::list < Blocks > &rhs ) : _serverBlocks(rhs), _pendingClients(),\
+Webserver::Webserver( std::list < Serverblock > &rhs ) : _serverBlocks(rhs), _pendingClients(),\
 	_listeningSockets(), _fdToCheck(NULL) { }
 
 Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks), \
@@ -14,14 +14,14 @@ Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks),
 
 Webserver::~Webserver( void ) { }
 
-void Webserver::setServerBlocks( std::list < Blocks > list )
+void Webserver::setServerBlocks( std::list < Serverblock > list )
 {
 	this->_serverBlocks = list;
 }
 
 void Webserver::createSockets( void )
 {
-	std::list< Blocks >::iterator b;
+	std::list< Serverblock >::iterator b;
 	int sock;
 	int tmp;
 
@@ -36,9 +36,9 @@ void Webserver::createSockets( void )
 			throw "Socket function failed";
 		if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &tmp, sizeof(int)) == -1)
 			throw "Setsockopt function failed";
-		b->socketNeeds.sin_port = htons(b->port);
+		b->socketNeeds.sin_port = htons(b->get_port());
 		b->socketNeeds.sin_family = PF_INET;
-		b->socketNeeds.sin_addr.s_addr = b->ip;
+		b->socketNeeds.sin_addr.s_addr = 0; // Temporary
 		if (bind(sock, (struct sockaddr *)&b->socketNeeds, sizeof(sockaddr_in)) == -1)
 			throw "Bind function failed";
 		if (listen(sock, 0) == -1)
@@ -102,7 +102,7 @@ void Webserver::readAndRespond( void )
 void Webserver::_acceptNewClients( void )
 {
 	std::list< int >::iterator sockIter;
-	std::list< Blocks >::iterator blIter;
+	std::list< Serverblock >::iterator blIter;
 	socklen_t sizeOfSockaddr_in;
 	int newFd;
 	int i;

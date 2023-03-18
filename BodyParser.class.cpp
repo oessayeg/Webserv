@@ -2,10 +2,11 @@
 
 BodyParser::BodyParser( void ) { }
 
-BodyParser::BodyParser( const BodyParser &rhs ) { }
+BodyParser::BodyParser( const BodyParser &rhs ) { *this = rhs; }
 
 BodyParser &BodyParser::operator=( const BodyParser &rhs )
 {
+	this->_extensions= rhs._extensions;
 	return *this;
 }
 
@@ -61,7 +62,7 @@ void BodyParser::parseChunkedData( Client &client )
 
 void BodyParser::parseNormalData( Client &client )
 {
-	int i;
+	size_t i;
 
 	if (!client.gotFileName)
 		this->_openWithProperExtension(client.parsedRequest._headers["Content-Type"], client);
@@ -81,8 +82,8 @@ void BodyParser::parseNormalData( Client &client )
 
 void BodyParser::parseMultipartData( Client &client )
 {
+	size_t i;
 	bool isFound;
-	int i;
 
 	isFound = false;
 	if (!this->_isThereFilename(MULTIPART, client))
@@ -122,6 +123,8 @@ bool BodyParser::_isThereFilename( int bodyType, Client &client )
 	char *fileIndex;
 	int i;
 
+	crlfIndex = NULL;
+	fileIndex = NULL;
 	if (!client.gotFileName)
 	{
 		if (bodyType == MULTIPART)
@@ -149,7 +152,7 @@ bool BodyParser::_isThereFilename( int bodyType, Client &client )
 
 bool BodyParser::_isBoundary( char *ptr, Client &client )
 {
-	int i;
+	size_t i;
 
 	i = 0;
 	while (i < client.bytesRead && ptr[i] == client.boundary[i])
@@ -208,7 +211,7 @@ std::string BodyParser::_randomString( void )
 
 bool BodyParser::_isHexaReadable( Client &client )
 {
-	int i;
+	size_t i;
 
 	for (i = 0; client.request[i] != '\r' && i < client.bytesRead; i++);
 	if (i == client.bytesRead)
@@ -223,7 +226,7 @@ bool BodyParser::_isHexaReadable( Client &client )
 	return true;
 }
 
-void BodyParser::_moveRequest( int index2, Client &client )
+void BodyParser::_moveRequest( size_t index2, Client &client )
 {
 	int i;
 

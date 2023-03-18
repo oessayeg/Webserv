@@ -1,12 +1,11 @@
 #include "MainHeader.hpp"
 
-Client::Client( void ) : _socket(0), bytesRead(0),\
-		clientStruct(new struct sockaddr_in), parsedRequest(), \
-		correspondingBlock(NULL), isRead(false), isRqLineParsed(false), \
-		isHeaderParsed(false), shouldReadBody(false), errString(), \
-		finishedBody(false), gotFileName(false), shouldSkip(false), \
-		bytesToRead(0), bytesCounter(0), contentLength(0), bodyType(0), \
-		typeCheck(POLLIN), isConnected(true) { }
+Client::Client( void ) : _socket(0),\
+		clientStruct(new struct sockaddr_in), bodyType(0), isRead(false), \
+		isRqLineParsed(false), isHeaderParsed(false), shouldReadBody(false), \
+		finishedBody(false), gotFileName(false), shouldSkip(false), isConnected(true), \
+		typeCheck(POLLIN), bytesRead(0), bytesToRead(0), bytesCounter(0), contentLength(0), \
+		correspondingBlock(NULL), errString(), parsedRequest() { }
 
 Client::Client( const Client &rhs )
 {
@@ -20,7 +19,6 @@ Client &Client::operator=( const Client &rhs )
 		this->clientStruct = new struct sockaddr_in;
 		*this->clientStruct = *rhs.clientStruct;
 		*this->request = *rhs.request;
-		this->bytesRead = rhs.bytesRead;
 		this->bodyType = rhs.bodyType;
 		this->_socket = rhs._socket;
 		this->isRead = rhs.isRead;
@@ -32,6 +30,7 @@ Client &Client::operator=( const Client &rhs )
 		this->shouldSkip = rhs.shouldSkip;
 		this->isConnected = rhs.isConnected;
 		this->typeCheck = rhs.typeCheck;
+		this->bytesRead = rhs.bytesRead;
 		this->bytesToRead = rhs.bytesToRead;
 		this->bytesCounter = rhs.bytesCounter;
 		this->contentLength = rhs.contentLength;
@@ -93,7 +92,7 @@ void Client::checkHeaders( void )
 	contentType = parsedRequest._headers["Content-Type"];
 	clientResponse.setBool(true);
 	this->typeCheck = POLLOUT;
-	if (contentLength > correspondingBlock->maxBodySize)
+	if (contentLength > correspondingBlock->get_body_size())
 		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
@@ -118,10 +117,10 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	std::ifstream errorFile;
 	std::stringstream s;
 
-	b = correspondingBlock->errorMap.find(statusCode);
-	if (b != correspondingBlock->errorMap.end())
+	b = correspondingBlock->_error_page.find(statusCode);
+	if (b != correspondingBlock->_error_page.end())
 		errorFile.open(b->second);
-	if (b != correspondingBlock->errorMap.end() && !errorFile.is_open())
+	if (b != correspondingBlock->_error_page.end() && !errorFile.is_open())
 	{
 		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
 		errString.setErrorFile("Error 500 Internal Server Error");
@@ -129,7 +128,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
 		return (returnString + errString.getFileInString());
 	}
-	else if (b != correspondingBlock->errorMap.end() && errorFile.is_open())
+	else if (b != correspondingBlock->_error_page.end() && errorFile.is_open())
 	{
 		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
 		s << fileInString.size();

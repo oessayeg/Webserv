@@ -1,15 +1,15 @@
 #pragma once
 
 #include "MainHeader.hpp"
+#include "ParseConfigfile/Configfile.hpp"
 
-typedef struct Blocks Blocks;
 typedef struct pollfd pollfd;
 typedef struct sockaddr_in sockaddr_in;
 
 class Webserver
 {
 	private :
-		std::list < Blocks > _serverBlocks;
+		std::list < Serverblock > _serverBlocks;
 		std::list < Client > _pendingClients;
 		std::list < int > _listeningSockets;
 		pollfd *_fdToCheck;
@@ -20,11 +20,11 @@ class Webserver
 		Webserver( void );
 		Webserver( const Webserver &rhs );
 		Webserver &operator=( const Webserver &rhs );
-		Webserver( std::list < Blocks > &rhs );
+		Webserver( std::list < Serverblock > &rhs );
 		~Webserver( void );
 
 		// Need to change the list param to a reference
-		void setServerBlocks( std::list < Blocks > list );
+		void setServerBlocks( std::list < Serverblock > list );
 		void createSockets( void );
 		void setReadyFds( void );
 		void readAndRespond( void );

@@ -22,7 +22,7 @@ class BodyParser
 	private :
 		void _openWithProperExtension( const std::string &contentType, Client &client );
 		void _openFile( char *name, Client &client );
-		void _moveRequest( int index2, Client &client );
+		void _moveRequest( size_t index2, Client &client );
 		bool _isThereFilename( int bodyType, Client &client );
 		bool _isBoundary( char *ptr, Client &client );
 		bool _isHexaReadable( Client &client );

@@ -12,6 +12,30 @@ void        Serverblock::block_is_empty(std::string &block)
         throw EmptyError("'Server_Block' is Empty");
 }
 
+Serverblock::Serverblock(const Serverblock &opt)
+{
+    *this = opt;
+}
+
+Serverblock &Serverblock::operator=(const Serverblock &opt)
+{
+    if(this != &opt)
+    {
+        this->_port = opt._port;
+        this->_ip = opt._ip;
+        this->_body_size = opt._body_size;
+        this->_countlisten = opt._countlisten;
+        this->_countbodysize = opt._countbodysize;
+        this->_count_location = opt._count_location;
+        this->_found = opt._found;
+        this->_location = opt._location;
+        this->_error_page = opt._error_page;
+        this->socketNeeds = opt.socketNeeds;
+    }
+    return (*this);
+}
+
+
 
 Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),_count_location(0),_body_size(10)
 {
@@ -205,11 +229,6 @@ void        Serverblock::set_error_page(std::string line)
     _error_page[atoi(key.c_str())] = data;
 }
 
-std::map<int, std::string>  Serverblock::get_error_page(std::string line)
-{
-    return (this->_error_page);
-}
-
 void        Serverblock::check_duplicate()
 {
     if (this->_countbodysize > 1 || this->_countlisten > 1 )
@@ -234,4 +253,9 @@ long        Serverblock::get_body_size() const
 std::list<Location> Serverblock::get_locationblocks() const
 {
     return(this->_location);
+}
+
+Serverblock::~Serverblock()
+{
+
 }

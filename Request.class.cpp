@@ -60,8 +60,9 @@ bool Request::hasGoodSize( void ) const
 bool Request::hasAllowedChars( void ) const
 {
 	const char *ur = this->_uri.c_str();
+	size_t i;
 
-	for (int i = 0; i < this->_uri.size(); i++)
+	for (i = 0; i < this->_uri.size(); i++)
 		if (!isascii(ur[i]))
 			return (false);
 	return (true);

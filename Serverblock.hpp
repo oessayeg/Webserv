@@ -7,9 +7,14 @@
 #include <sstream>
 #include <unistd.h>
 #include <vector>
+#include <netinet/in.h>
 #include <map>
 #include "Exception.hpp"
 #include "location.hpp"
+
+// Change body to size from long to size_t
+// Should also consider checking the default path for a config file if there is no path
+// Do not forget the comments in the config file
 
 class Serverblock
 {
@@ -22,16 +27,16 @@ private:
     int                     _count_location;
     bool                    _found;
     std::list<Location>     _location;
-    std::map<int, std::string> _error_page;
 public:
     Serverblock();
     Serverblock(std::string &block);
-
-//***********************************Set Artibiout function****************************************//
+    Serverblock(const Serverblock &);
+    Serverblock &operator=(const Serverblock &);
+//***********************************Set Attributes functions****************************************//
     void                        set_port_and_ip(std::string line);
     void                        set_body_size(std::string   line);
     void                        set_error_page(std::string line);
-//**********************************Function_to_check_values*******************************//
+//**********************************Functions_to_check_values*******************************//
     void                        block_is_empty(std::string &block);
     void                        check_valid_value(std::string buffer,  std::string &value);
     void                        check_value_arg(std::string value);
@@ -42,15 +47,17 @@ public:
     bool                       is_Number(std::string buffer);
     void                       init_ip_and_port(std::string &ip, std::string &port);
     void                       check_valid_numIp(std::string &value);
-//**********************************Get Artibiout function *******************************//
+//**********************************Get Attributes functions*******************************//
+    std::map<int, std::string> _error_page;
+    struct sockaddr_in         socketNeeds;
     int                        get_port() const;
     std::string                get_ip() const;
     long                       get_body_size() const;
-    std::map<int, std::string> get_error_page(std::string line);
     std::list<Location>        get_locationblocks() const;
     void                       check_valid_config();
     void                       check_duplicate();
     void                       check_valid_status_code(std::string key);
+    ~Serverblock();
 };
 
 
