@@ -292,7 +292,6 @@ std::list<Location>::iterator	Serverblock::ifUriMatchLocationBlock(std::list<Loc
 				replaceString(str, *it1, it->get_root_location());
 				returnBlock = it;
 				returnBlock->_currentRoot  = str;
-                std::cout<<returnBlock->_currentRoot<<std::endl;
 			}
 		}
 	}

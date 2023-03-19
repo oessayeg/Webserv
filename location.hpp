@@ -5,6 +5,9 @@
 #include <vector>
 #include <sstream>
 #include <list>
+#include <fstream>
+#include <sys/stat.h>
+#include "Response.class.hpp"
 #include "Exception.hpp"
 
 class Location
@@ -56,6 +59,11 @@ class Location
         void                        check_value_arg(std::string value);
 
         bool                        is_Number(std::string  str);
+        bool                        isMethodAccepted( std::list< Location >::iterator location, std::string method ); 
+        bool                        checkIfPathExist(std::string &path);
+        bool                        ifRequestUriIsFolder( const std::string &uri);
+        bool                        checkIfPathIsValid(const std::string &path, const std::string &uri, Response &resp, const std::string &root);
+
         ~Location();
 };
 

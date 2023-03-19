@@ -294,3 +294,49 @@ Location::~Location()
 {
 
 }
+
+bool Location::isMethodAccepted( std::list< Location >::iterator location, std::string method )
+{
+	std::list< std::string >::iterator it1, it2;
+
+	it1 = location->_accept_list.begin();
+	it2 = location->_accept_list.end();
+	for (; it1 != it2; it1++)
+		if (*it1 == method)
+			return true;
+	return false;
+}
+
+bool	Location::checkIfPathExist(std::string &path)
+{
+	std::ifstream file;
+
+	file.open(path);
+	if(file.good())
+		return (true);
+	return false;
+}
+
+bool Location::ifRequestUriIsFolder( const std::string &uri )
+{
+    struct  stat buffer;
+
+    if(stat(uri.c_str(), &buffer) == 0)
+    {
+        if(S_ISDIR(buffer.st_mode))
+            return true;
+    }
+    return false;
+}
+
+bool Location::checkIfPathIsValid(const std::string &path, const std::string &uri, Response &resp, const std::string &root)
+{
+    std::string send;
+    if(path[path.length() - 1] == '/')
+        return true;
+    size_t found = uri.find(root);
+    send = path.substr(root.length() + 1);
+    resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + send + "/\r\nConnection : close\r\n\r\n");
+    resp.setBool(true);
+    return false;
+}

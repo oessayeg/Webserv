@@ -36,10 +36,12 @@ class Webserver
 		void _parseRequestLine( Client &client );
 		void _parseHeaders( Client &client );
 		void _readBodyIfPossible( Client &client );
-		void _prepareResponse( Client &client );
-		void _prepareGetResponse( Client &client );
 		void _dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend );
-
-		// void _preparePostResponse( Client &client );
-		// void _prepareDeleteResponse( Client &client );
+		void _prepareResponse( Client &client );
+		void _handleProperResponse( Client &client );
+		void _prepareGetResponse( Client &client );
+		void _preparePostResponse( Client &client );
+		void _prepareDeleteResponse( Client &client );
+		void _setBoolAndResponse( int sCode, const std::string s1, const std::string s2, Client &client );
+		void _handleHttpRedirection( std::list< Location >::iterator &currentList, Client &client );
 };
