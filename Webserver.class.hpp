@@ -39,7 +39,6 @@ class Webserver
 		void _prepareResponse( Client &client );
 		void _prepareGetResponse( Client &client );
 		void _dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend );
-		std::list<Location>::iterator	ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri);
 
 		// void _preparePostResponse( Client &client );
 		// void _prepareDeleteResponse( Client &client );

@@ -144,6 +144,19 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 
 void Client::setType( std::string transferEnc, std::string contentType )
 {
+	// if (!this->correspondingBlock->supportUpload && !this->correspondingBlock->get_locationblocks().begin()->)
+	// 	return ;
+	std::list< Location >::iterator currentList;
+	
+	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
+	// Here need to add if the location supports upload and if there is chunked transfer or not
+	if (currentList == correspondingBlock->_location.end())
+	{
+		clientResponse.setResponse(formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
+		clientResponse.setBool(true);
+		typeCheck = POLLOUT;
+		return ;
+	}
 	if (transferEnc == "chunked")
 	{
 		this->shouldReadBody = true;

@@ -57,6 +57,7 @@ public:
     void                       check_valid_config();
     void                       check_duplicate();
     void                       check_valid_status_code(std::string key);
+    std::list<Location>::iterator	ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri);
     ~Serverblock();
 };
 

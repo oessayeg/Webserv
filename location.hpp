@@ -13,8 +13,6 @@ class Location
         bool                                     _auto_index;
         std::string                              _root;
         std::string                              _upload_dir;
-        std::string                              _redirection[2];
-        std::list<std::string>                 _accept_list;
         std::list<std::string>                 _indexes_location;
         int                                      _countroot;
         int                                      _count_allow_methode;
@@ -22,8 +20,11 @@ class Location
         int                                      _count_return;
         bool                                     _isThereCgi;
         bool                                     _isThereRedirection;
+        bool                                     _supportUpload;
         std::list<std::string>                 _path_location;
     public:
+        std::list<std::string>                 _accept_list;
+        std::string                              _redirection[2];
         std::string                              _currentRoot;
         Location();
         Location(std::string &location);

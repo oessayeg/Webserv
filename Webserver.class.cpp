@@ -1,5 +1,10 @@
 #include "Webserver.class.hpp"
 
+bool isMethodAccepted( std::list< Location >::iterator location, std::string method );
+bool    checkIfPathExist(std::string &path);
+bool        ifReaquestUriIsFolder( const std::string &uri);
+bool    checkIfPathIsValid(const std::string &path, const std::string &uri, Client &client, const std::string &root);
+
 // Should not forget to change map to hashmap for efficiency
 
 Webserver::Webserver( void ) : _serverBlocks(), _pendingClients(), _listeningSockets(),\
@@ -220,27 +225,71 @@ void Webserver::_parseHeaders( Client &client )
 	parser.chooseCorrectParsingMode(client);
 }
 
-// Temporary function
+void    handleRedirectionHttp(std::list<Location>::iterator &currentList, Client &client)
+{
+    client.clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: "+ currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n");
+    client.clientResponse.setBool(true);
+}
+
+
 void Webserver::_prepareResponse( Client &client )
 {
+	std::list< Location >::iterator currentList;
+
 	// This condition checks if the response is ready or not
 	if (client.clientResponse.getBool() || !client.isHeaderParsed
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
+	// In setType, check it supports upload and if there the chunked transfer-encoding 
 	client.typeCheck = POLLOUT;
-	if (client.parsedRequest._method == "GET")
-		this->_prepareGetResponse(client);
-	else if (client.parsedRequest._method == "POST" && client.finishedBody)
+	currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
+	if (currentList == client.correspondingBlock->_location.end())
 	{
+		client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
 		client.clientResponse.setBool(true);
-		client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
-		// this->_preparePostResponse(client);
+		std::cout << "NO LOCATION FOUND" << std::endl;
+		return ;
 	}
-	else if (client.parsedRequest._method == "DELETE")
+	if (currentList->get_isThereRedirection())
 	{
-		std::cout << "Delete method should be handled here" << std::endl;
-		// this->_prepareDeleteResponse(client);
+		handleRedirectionHttp(currentList, client);
+		std::cout << "REDIRECTION" << std::endl;
+		return ;
 	}
+	if (!isMethodAccepted(currentList, client.parsedRequest._method))
+	{
+		client.clientResponse.setResponse(client.formError(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed"));
+		client.clientResponse.setBool(true);
+		std::cout << "METHOD NOT ACCEPTED" << std::endl;
+		return ;
+	}
+	if (!checkIfPathExist(currentList->_currentRoot))
+	{
+		client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 Not Found"));
+		client.clientResponse.setBool(true);
+		std::cout << "PATH DOES NOT EXIST" << std::endl;
+		return ;
+	}
+	if (ifReaquestUriIsFolder(currentList->_currentRoot)
+		&& !checkIfPathIsValid(currentList->_currentRoot, client.parsedRequest._uri, client, currentList->get_root_location()))
+		return ;
+
+	// Here beggins the methods implementations
+	client.clientResponse.setBool(true);
+	client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+	// if (client.parsedRequest._method == "GET")
+	// 	this->_prepareGetResponse(client);
+	// else if (client.parsedRequest._method == "POST" && client.finishedBody)
+	// {
+	// 	client.clientResponse.setBool(true);
+	// 	client.clientResponse.setResponse("HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 14\r\n\r\n<h1>HELLO</h1>");
+	// 	// this->_preparePostResponse(client);
+	// }
+	// else if (client.parsedRequest._method == "DELETE")
+	// {
+	// 	std::cout << "Delete method should be handled here" << std::endl;
+	// 	// this->_prepareDeleteResponse(client);
+	// }
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
@@ -267,45 +316,6 @@ void Webserver::_readBodyIfPossible( Client &client )
 	parser.chooseCorrectParsingMode(client);
 }
 
-void	replaceString(std::string &str, const std::string &oldstring, const std::string &newString)
-{
-	size_t startPos = 0;
-	startPos = str.find(oldstring, startPos);
-	if(startPos != std::string::npos)
-		str.replace(startPos + 1, oldstring.length(), newString);
-}
-
-std::list<Location>::iterator	Webserver::ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri)
-{
-	bool			isFound = false;
-	std::string	matcheLocation = "";
-	std::list<std::string>::iterator it1;
-	std::list<Location>::iterator it = list.begin();
-	std::list<Location>::iterator returnBlock;
-	std::string str = uri;
-
-	std::list<std::string> my_list;
-	for(; it != list.end(); ++it)
-	{
-		my_list = it->get_path_location();
-		it1 = my_list.begin();
-		for(; it1 != my_list.end(); ++it1)
-		{
-			if(uri.find(*it1)  == 0 && (*it1).size() > matcheLocation.size())
-			{
-				matcheLocation = *it1;
-				isFound = true;
-				replaceString(str, *it1, it->get_root_location());
-				returnBlock = it;
-				returnBlock->_currentRoot  = str;
-			}
-		}
-	}
-	if(isFound == true)
-		return (returnBlock);
-	return (list.end());
-}
-
 bool	checkIfPathExist(std::string &path)
 {
 	std::ifstream file;
@@ -320,7 +330,7 @@ void Webserver::_prepareGetResponse( Client &client )
 {
 	std::list<Location>::iterator currentList;
 
-	currentList = ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
+	currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if(currentList != client.correspondingBlock->_location.end())
 	{
 		std::cout<<"currentRoot : "<<currentList->_currentRoot<<std::endl;
@@ -357,4 +367,42 @@ void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool 
 	close(it->getSocket());
 	it = _pendingClients.erase(it);
 	*inc = false;
+}
+
+// Temporary function
+bool isMethodAccepted( std::list< Location >::iterator location, std::string method )
+{
+	std::list< std::string >::iterator it1, it2;
+
+	it1 = location->_accept_list.begin();
+	it2 = location->_accept_list.end();
+	for (; it1 != it2; it1++)
+		if (*it1 == method)
+			return true;
+	return false;
+}
+
+bool        ifReaquestUriIsFolder( const std::string &uri)
+{
+    struct  stat buffer;
+
+    if(stat(uri.c_str(), &buffer) == 0)
+    {
+        if(S_ISDIR(buffer.st_mode))
+            return true;
+    }
+    return false;
+}
+
+bool    checkIfPathIsValid(const std::string &path, const std::string &uri, Client &client, const std::string &root)
+{
+    std::string send;
+    if(path[path.length() - 1] == '/')
+        return true;
+    size_t found = uri.find(root);
+    send = path.substr(root.length() + 1);
+    client.clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + send + "/\r\nConnection : close\r\n\r\n");
+    client.clientResponse.setBool(true);
+	client.typeCheck = POLLOUT;
+    return false;
 }

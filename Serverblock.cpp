@@ -252,11 +252,51 @@ size_t        Serverblock::get_body_size() const
 
 std::list<Location> Serverblock::get_locationblocks() const
 {
-    // std::cout 
     return(this->_location);
 }
 
 Serverblock::~Serverblock()
 {
 
+}
+
+void	replaceString(std::string &str, const std::string &oldstring, const std::string &newString)
+{
+	size_t startPos = 0;
+	startPos = str.find(oldstring, startPos);
+	if(startPos != std::string::npos)
+		str.replace(startPos, oldstring.length(), newString);
+}
+
+std::list<Location>::iterator	Serverblock::ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri)
+{
+	bool			isFound = false;
+	std::string	matcheLocation = "";
+	std::list<std::string>::iterator it1;
+	std::list<Location>::iterator it = list.begin();
+	std::list<Location>::iterator returnBlock;
+	std::string str = uri;
+
+	std::list<std::string> my_list;
+	for(; it != list.end(); ++it)
+	{
+        str = uri;
+		my_list = it->get_path_location();
+		it1 = my_list.begin();
+		for(; it1 != my_list.end(); ++it1)
+		{
+			if(uri.find(*it1)  == 0 && (*it1).size() > matcheLocation.size())
+			{
+				matcheLocation = *it1;
+				isFound = true;
+				replaceString(str, *it1, it->get_root_location());
+				returnBlock = it;
+				returnBlock->_currentRoot  = str;
+                std::cout<<returnBlock->_currentRoot<<std::endl;
+			}
+		}
+	}
+	if(isFound == true)
+		return (returnBlock);
+	return (list.end());
 }
