@@ -16,6 +16,7 @@
 #include <poll.h>
 #include <vector>
 #include <list>
+#include <dirent.h>
 #include <map>
 
 // The first macro is used when using recv function

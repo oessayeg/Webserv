@@ -16,7 +16,6 @@ class Location
         bool                                     _auto_index;
         std::string                              _root;
         std::string                              _upload_dir;
-        std::list<std::string>                 _indexes_location;
         int                                      _countroot;
         int                                      _count_allow_methode;
         int                                      _count_auto_index;
@@ -26,6 +25,7 @@ class Location
         bool                                     _supportUpload;
         std::list<std::string>                 _path_location;
     public:
+        std::list<std::string>                 _indexes_location;
         std::list<std::string>                 _accept_list;
         std::string                              _redirection[2];
         std::string                              _currentRoot;

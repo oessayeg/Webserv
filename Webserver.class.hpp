@@ -45,4 +45,10 @@ class Webserver
 		void _setBoolAndResponse( int sCode, const std::string s1, const std::string s2, Client &client );
 		void _handleHttpRedirection( std::list< Location >::iterator &currentList, Client &client );
 		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
+		void _handelFolderRequest(Client &);
+		std::string 	_getSizeOfFile(std::ifstream &file);
+		std::string 	_getContentFile(std::ifstream &file);
+		std::string		_handleAutoindexFolder(const std::string &uri);
+		void			_handelFileRequest(Client &);
+		void			_runCgi(std::string nameFile, Client &);
 };

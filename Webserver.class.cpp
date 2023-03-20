@@ -278,6 +278,24 @@ void Webserver::_prepareResponse( Client &client )
 	this->_handleProperResponse(client);
 }
 
+std::string	Webserver::_getSizeOfFile(std::ifstream &file)
+{
+	std::stringstream size;
+	file.seekg(0, std::ios::end);
+	int file_size = file.tellg();
+	file.seekg(0, std::ios::beg);
+	size << file_size;
+	return (size.str());
+}
+
+std::string Webserver::_getContentFile(std::ifstream &file)
+{
+	std::stringstream buffer;
+
+	buffer << file.rdbuf();
+	return (buffer.str());
+}
+
 void Webserver::_handleProperResponse( Client &client )
 {
 	// Here beggins the methods implementations
@@ -289,17 +307,125 @@ void Webserver::_handleProperResponse( Client &client )
 		this->_prepareDeleteResponse(client);
 }
 
+std::string	Webserver::_handleAutoindexFolder(const std::string &uri)
+{
+	DIR *dir;
+	struct dirent *folder;
+	std::stringstream response;
+	response << "<html><body><ul>"<<std::endl;
+	if((dir = opendir(uri.c_str())) != NULL)
+	{
+		while((folder = readdir (dir)) != NULL)
+		{
+			if(folder->d_name[0] != '.')
+				response << "<li><a href=\"" << folder->d_name <<"\">"<< folder->d_name << "</a></li>" << std::endl;
+		}
+		closedir(dir);
+	}
+	response <<"</ul></body></html>"<<std::endl;
+	return (response.str());	
+}
+
+void Webserver::_handelFolderRequest(Client &client)
+{
+	DIR *dir;
+	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
+	std::string joinPath;
+	std::ifstream file;
+
+	for(; index != client.currentList->_indexes_location.end(); ++index)
+	{
+		joinPath = client.currentList->_currentRoot + (*index);
+		file.open(joinPath);
+		if(file.good())
+		{
+			std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+			response += _getContentFile(file);
+			client.clientResponse.setResponse(response);
+			client.clientResponse.setBool(true);
+			return ;
+		}
+	}
+		if(client.currentList->get_autoindex())
+		{
+			if((dir = opendir(client.currentList->_currentRoot.c_str())))
+			{
+				std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+				response += _handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
+				client.clientResponse.setResponse(response);
+				client.clientResponse.setBool(true);
+			}
+		}
+		else
+		{
+			if(client.currentList->_indexes_location.empty())
+			{
+				client.clientResponse.setResponse(client.formError(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error"));
+				client.clientResponse.setBool(true);
+			}
+			else
+			{
+				client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
+				client.clientResponse.setBool(true);
+			}
+	}
+
+}
+
+void	Webserver::_handelFileRequest(Client &client)
+{
+	std::ifstream file;
+	file.open(client.currentList->_currentRoot);
+	if(file.is_open())
+	{
+		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + _getSizeOfFile(file) + "\r\n\r\n";
+		response += _getContentFile(file);
+		client.clientResponse.setResponse(response);
+		client.clientResponse.setBool(true);
+	}
+	else
+	{
+		client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
+		client.clientResponse.setBool(true);
+	}
+}
+
+void Webserver::_runCgi(std::string name, Client &)
+{
+	// int fd;
+	// char *args[3];
+
+
+	// fd = open(name.c_str(), O_CREAT | O_RDWR);
+	// if(fork() == 0)
+	// {
+	// 	dup2(fd, STDOUT_FILENO);
+	// 	close(fd);
+	// 	if(execve())
+	// }
+
+}
+
 void Webserver::_prepareGetResponse( Client &client )
 {
-	client.clientResponse.setResponse("HTTP/1.1 OK 200\r\nContent-Type: text/html\r\nContent-Length: 25!\r\n\r\n<h1>Hello from GET !</h1>");
-	client.clientResponse.setBool(true);
+	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
+	{
+		_handelFolderRequest(client);
+	}
+	else
+	{
+		if(client.currentList->get_cgi())
+			_runCgi(client.currentList->_currentRoot, client);
+		else
+			_handelFileRequest(client);
+	}
 }
 
 void Webserver::_preparePostResponse( Client &client )
 {
 	// Should check if body reading has finished
 	// std::cout << client.currentList->_currentRoot << std::endl;
-	if (!client.currentList->get_cgi() || (client.currentList->_currentRoot.back() == '/' && !client.currentList->get_indexes_location().size()))
+	if (!client.currentList->get_cgi() || (client.currentList->_currentRoot.back() == '/' && !client.currentList->get_indexes_location().size()))//we should work with public indexes
 		return _setBoolAndResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
 	// else
 	// 	return _handleCgi(client.currentList, client, client.currentList->_currentRoot);
