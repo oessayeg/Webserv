@@ -230,7 +230,6 @@ void Webserver::_readBodyIfPossible( Client &client )
 
 	if (!client.shouldReadBody || client.finishedBody)
 		return ;
-	// Should protect recv here
 	r = recv(client.getSocket(), buff, MIN_TO_READ, 0);
 	if (r <= 0)
 	{
@@ -264,17 +263,17 @@ void Webserver::_prepareResponse( Client &client )
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
 	client.typeCheck = POLLOUT;
-	currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
-	if (currentList == client.correspondingBlock->_location.end())
+	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
+	if (client.currentList == client.correspondingBlock->_location.end())
 		return _setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
-	else if (currentList->get_isThereRedirection())
-		return _handleHttpRedirection(currentList, client);
-	else if (!currentList->isMethodAccepted(currentList, client.parsedRequest._method))
+	else if (client.currentList->get_isThereRedirection())
+		return _handleHttpRedirection(client.currentList, client);
+	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
 		return _setBoolAndResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
-	else if (!currentList->checkIfPathExist(currentList->_currentRoot))
+	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
 		return _setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", client);
-	else if (currentList->ifRequestUriIsFolder(currentList->_currentRoot)
-		&& !currentList->checkIfPathIsValid(currentList->_currentRoot, client.parsedRequest._uri, client.clientResponse, currentList->get_root_location()))
+	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
+		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.parsedRequest._uri, client.clientResponse, client.currentList->get_root_location()))
 		return ;
 	this->_handleProperResponse(client);
 }
@@ -299,6 +298,11 @@ void Webserver::_prepareGetResponse( Client &client )
 void Webserver::_preparePostResponse( Client &client )
 {
 	// Should check if body reading has finished
+	// std::cout << client.currentList->_currentRoot << std::endl;
+	if (!client.currentList->get_cgi() || (client.currentList->_currentRoot.back() == '/' && !client.currentList->get_indexes_location().size()))
+		return _setBoolAndResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
+	// else
+	// 	return _handleCgi(client.currentList, client, client.currentList->_currentRoot);
 	client.clientResponse.setResponse("HTTP/1.1 OK 201\r\nContent-Type: text/html\r\nContent-Length: 26!\r\n\r\n<h1>Hello from POST !</h1>");
 	client.clientResponse.setBool(true);
 }
@@ -320,3 +324,54 @@ void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentLis
     client.clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n");
     client.clientResponse.setBool(true);
 }
+
+// void    Webserver::_handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root )
+// {
+//     int fd;
+//     pid_t pid;
+
+//     fd = open("temp", O_CREAT | O_RDWR);
+//     pid = fork();
+//     if(pid < 0)
+//     {
+//         perror("Fork");
+//         exit(1);
+//     }
+//     else if(pid == 0)
+//     {
+//         dup2(fd, STDOUT_FILENO);
+//         close(fd);
+//         char args[] = {"/Users/ytijani/Desktop/Webserver-SocketBranch/php-cgi","lolo/teek/cgi/hello.php", NULL};
+//          char envp[] = {
+//                 (char*)"PATH_INFO=/Users/ytijani/Desktop/Webserver-SocketBranch/lolo/teek/cgi/hello.php",
+//                 NULL
+//             };
+//         if(execve(args[0], args, NULL) < 0)
+//         {
+//             perror("exec Cgi problem");
+//             return ;
+//         }
+//     }
+//     wait(NULL);
+
+//     std::ifstream ifs("temp");
+//     std::stringstream ff;
+//     std::string response;
+//     std::string str;
+//     ff << ifs.rdbuf();
+//     str = ff.str();
+//     ff.clear();
+//     ff.str("");
+//     std::string res = str;
+//     size_t pos = str.find("\r\n\r\n");
+//     if(pos != std::string::npos)
+//         res = str.substr(pos + 4, str.length() - (pos + 4));
+//     ff << res.length();
+//     response = "HTTP/1.1 200 OK\r\n";
+//     response += "Content-Length: " + ff.str() + "\r\n";
+//     response += str;
+//     client.clientResponse.setResponse(response);
+//     client.clientResponse.setBool(true);
+//     close(fd);
+//     unlink("temp");
+// }

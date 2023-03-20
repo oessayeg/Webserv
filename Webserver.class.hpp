@@ -44,4 +44,5 @@ class Webserver
 		void _prepareDeleteResponse( Client &client );
 		void _setBoolAndResponse( int sCode, const std::string s1, const std::string s2, Client &client );
 		void _handleHttpRedirection( std::list< Location >::iterator &currentList, Client &client );
+		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
 };

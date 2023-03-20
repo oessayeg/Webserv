@@ -28,6 +28,7 @@ class Client
 		std::ofstream fileToUpload;
 		std::string stringRequest;
 		std::string boundary;
+		std::list< Location >::iterator currentList;
 
 	public :
 		Serverblock *correspondingBlock;
