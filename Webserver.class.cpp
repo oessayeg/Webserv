@@ -423,6 +423,7 @@ void Webserver::_prepareGetResponse( Client &client )
 
 void Webserver::_preparePostResponse( Client &client )
 {
+<<<<<<< HEAD
 	// Should check if body reading has finished
 	// std::cout << client.currentList->_currentRoot << std::endl;
 	if (!client.currentList->get_cgi() || (client.currentList->_currentRoot.back() == '/' && !client.currentList->get_indexes_location().size()))//we should work with public indexes
@@ -430,6 +431,13 @@ void Webserver::_preparePostResponse( Client &client )
 	// else
 	// 	return _handleCgi(client.currentList, client, client.currentList->_currentRoot);
 	client.clientResponse.setResponse("HTTP/1.1 OK 201\r\nContent-Type: text/html\r\nContent-Length: 26!\r\n\r\n<h1>Hello from POST !</h1>");
+=======
+	// _handleCgi(client.currentList, client, client.currentList->_currentRoot);
+	std::cout << client.isThereCgi << std::endl;
+	if (client.isThereCgi)
+		std::cout << client.nameForCgi << std::endl;
+	client.clientResponse.setResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 26\r\n\r\n<h1>Hello from POST !</h1>");
+>>>>>>> 0f880c5ba18f61a1f2a40b6a682fb8760fd78095
 	client.clientResponse.setBool(true);
 }
 

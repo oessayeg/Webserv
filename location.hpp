@@ -15,15 +15,14 @@ class Location
     private:
         bool                                     _auto_index;
         std::string                              _root;
-        std::string                              _upload_dir;
         int                                      _countroot;
         int                                      _count_allow_methode;
         int                                      _count_auto_index;
         int                                      _count_return;
         bool                                     _isThereCgi;
         bool                                     _isThereRedirection;
-        bool                                     _supportUpload;
         std::list<std::string>                 _path_location;
+
     public:
         std::list<std::string>                 _indexes_location;
         std::list<std::string>                 _accept_list;
