@@ -24,7 +24,9 @@ class Location
         std::list<std::string>                 _path_location;
 
     public:
+        std::string                            _upload_dir;
         std::list<std::string>                 _indexes_location;
+        bool                                   _supportUpload;
         std::list<std::string>                 _accept_list;
         std::string                              _redirection[2];
         std::string                              _currentRoot;
