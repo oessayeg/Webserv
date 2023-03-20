@@ -297,13 +297,11 @@ void Webserver::_prepareGetResponse( Client &client )
 
 void Webserver::_preparePostResponse( Client &client )
 {
-	// Should check if body reading has finished
-	// std::cout << client.currentList->_currentRoot << std::endl;
-	if (!client.currentList->get_cgi() || (client.currentList->_currentRoot.back() == '/' && !client.currentList->get_indexes_location().size()))
-		return _setBoolAndResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
-	// else
-	// 	return _handleCgi(client.currentList, client, client.currentList->_currentRoot);
-	client.clientResponse.setResponse("HTTP/1.1 OK 201\r\nContent-Type: text/html\r\nContent-Length: 26!\r\n\r\n<h1>Hello from POST !</h1>");
+	// _handleCgi(client.currentList, client, client.currentList->_currentRoot);
+	std::cout << client.isThereCgi << std::endl;
+	if (client.isThereCgi)
+		std::cout << client.nameForCgi << std::endl;
+	client.clientResponse.setResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 26\r\n\r\n<h1>Hello from POST !</h1>");
 	client.clientResponse.setBool(true);
 }
 

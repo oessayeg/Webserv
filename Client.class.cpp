@@ -1,11 +1,19 @@
 #include "MainHeader.hpp"
 
+//Need to put this into a utils class
+
+void setBoolAndResponse( int sCode, const std::string &s1, const std::string &s2, Client &client )
+{
+	client.clientResponse.setResponse(client.formError(sCode, s1, s2));
+	client.clientResponse.setBool(true);
+	client.typeCheck = POLLOUT;
+}
 Client::Client( void ) : _socket(0),\
 		clientStruct(new struct sockaddr_in), bodyType(0), isRead(false), \
 		isRqLineParsed(false), isHeaderParsed(false), shouldReadBody(false), \
 		finishedBody(false), gotFileName(false), shouldSkip(false), isConnected(true), \
-		typeCheck(POLLIN), bytesRead(0), bytesToRead(0), bytesCounter(0), contentLength(0), \
-		correspondingBlock(NULL), errString(), parsedRequest() { }
+		isThereCgi(false), typeCheck(POLLIN), bytesRead(0), bytesToRead(0), bytesCounter(0), \
+		contentLength(0), correspondingBlock(NULL), errString(), parsedRequest() { }
 
 Client::Client( const Client &rhs )
 {
@@ -28,7 +36,8 @@ Client &Client::operator=( const Client &rhs )
 		this->finishedBody = rhs.finishedBody;
 		this->gotFileName = rhs.gotFileName;
 		this->shouldSkip = rhs.shouldSkip;
-		this->isConnected = rhs.isConnected;
+        this->isConnected = rhs.isConnected;
+		this->isThereCgi = rhs.isThereCgi;
 		this->typeCheck = rhs.typeCheck;
 		this->bytesRead = rhs.bytesRead;
 		this->bytesToRead = rhs.bytesToRead;
@@ -36,6 +45,8 @@ Client &Client::operator=( const Client &rhs )
 		this->contentLength = rhs.contentLength;
 		this->stringRequest = rhs.stringRequest;
 		this->boundary = rhs.boundary;
+		this->filePath = rhs.filePath;
+		this->nameForCgi = rhs.nameForCgi;
 		this->correspondingBlock = rhs.correspondingBlock;
 		this->clientResponse = rhs.clientResponse;
 		this->errString = rhs.errString;
@@ -142,21 +153,21 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	return (returnString + errString.getFileInString());
 }
 
+bool isAccepted( std::string method, std::list< std::string > list )
+{
+	std::list< std::string >::iterator it1;
+
+	it1 = list.begin();
+	for (; it1 != list.end(); it1++)
+		if (method == *it1)
+			return true;
+	return false;
+}
+
 void Client::setType( std::string transferEnc, std::string contentType )
 {
-	// if (!this->correspondingBlock->supportUpload && !this->correspondingBlock->get_locationblocks().begin()->)
-	// 	return ;
-	std::list< Location >::iterator currentList;
-	
-	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
-	// Here need to add if the location supports upload and if there is chunked transfer or not
-	if (currentList == correspondingBlock->_location.end())
-	{
-		clientResponse.setResponse(formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
-		clientResponse.setBool(true);
-		typeCheck = POLLOUT;
+	if (!this->isLocationFormedWell(transferEnc))
 		return ;
-	}
 	if (transferEnc == "chunked")
 	{
 		this->shouldReadBody = true;
@@ -174,4 +185,47 @@ void Client::setType( std::string transferEnc, std::string contentType )
 		this->shouldReadBody = true;
 		this->bodyType = OTHER;
 	}
+}
+
+bool Client::isLocationFormedWell( std::string &transferEnc )
+{
+	std::list< Location >::iterator currentList;
+	
+	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
+	if (currentList == correspondingBlock->_location.end()
+		|| (currentList->_supportUpload && !currentList->checkIfPathExist(currentList->_upload_dir) && !currentList->ifRequestUriIsFolder(currentList->_upload_dir)))
+	{
+		setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "405 Not Found", *this);
+		return false;
+	}
+	else if (!isAccepted("POST", currentList->_accept_list))
+	{
+		setBoolAndResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", *this);
+		return false;
+	}
+	else if (currentList->get_isThereRedirection())
+	{
+	    clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n");
+	    clientResponse.setBool(true);
+		typeCheck = POLLOUT;
+		return false;
+	}
+	else if ((currentList->_currentRoot.back() == '/' && !currentList->get_indexes_location().size()
+		&& !currentList->_supportUpload) || (!currentList->get_cgi() && !currentList->_supportUpload))
+	{
+		setBoolAndResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", *this);
+		return false;
+	}
+	else if (currentList->get_cgi() && !currentList->_supportUpload && contentLength > 0)
+	{
+		this->shouldReadBody = true;
+		this->bodyType = OTHER;
+		if (transferEnc == "chunked")
+			this->bodyType = CHUNKED;
+		this->isThereCgi = true;
+		this->filePath = "/tmp/";
+		return false;
+	}
+	this->filePath = currentList->_upload_dir;
+	return true;
 }

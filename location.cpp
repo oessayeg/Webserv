@@ -1,6 +1,6 @@
 #include "location.hpp"
 
-Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0)
+Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0), _supportUpload(false)
 {
 }
 
@@ -24,13 +24,14 @@ Location & Location::operator=(const Location &opt)
         this->_count_auto_index = opt._count_auto_index;
         this->_count_return = opt._count_return;
         this->_isThereCgi = opt._isThereCgi;
+        this->_supportUpload = opt._supportUpload;
         for(int i = 0; i < 2; i++)
             this->_redirection[i] = opt._redirection[i];
     }
     return (*this);
 }
 
-Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false)
+Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false),_supportUpload(false)
 {
     init_list();
     size_t find = location.find_first_of("/");
@@ -231,6 +232,7 @@ void        Location::set_upload_dir(std::string             path)
     size_t found = value.find_first_of(" \t\f\v\n\r;");
     std::string name = value.substr(0, found);
     this->_upload_dir = name;
+    this->_supportUpload = true;
 }
 
 void        Location::set_cgi(std::string             path)
@@ -313,7 +315,10 @@ bool	Location::checkIfPathExist(std::string &path)
 
 	file.open(path);
 	if(file.good())
+    {
+        file.close();
 		return (true);
+    }
 	return false;
 }
 

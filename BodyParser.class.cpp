@@ -180,7 +180,8 @@ void BodyParser::_openFile( char *name, Client &client )
 	for (i = 0; name[i] != '\"'; i++)
 		fileName[i] = name[i];
 	fileName[i] = '\0';
-	client.fileToUpload.open(fileName, std::ios::trunc | std::ios::binary);
+	client.nameForCgi = client.filePath + "/" + fileName;
+	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
 	delete fileName;
 	return ;
 }
@@ -190,7 +191,8 @@ void BodyParser::_openWithProperExtension( const std::string &contentType, Clien
 	std::string extension;
 
 	extension = this->_extensions.getExtension(contentType);
-	client.fileToUpload.open(this->_randomString() + extension, std::ios::trunc | std::ios::binary);
+	client.nameForCgi = client.filePath + "/" + this->_randomString() + extension;
+	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
 	client.gotFileName = true;
 }
 

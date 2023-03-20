@@ -20,6 +20,7 @@ class Client
 		bool gotFileName;
 		bool shouldSkip;
 		bool isConnected;
+		bool isThereCgi;
 		short typeCheck;
 		size_t bytesRead;
 		size_t bytesToRead;
@@ -28,6 +29,8 @@ class Client
 		std::ofstream fileToUpload;
 		std::string stringRequest;
 		std::string boundary;
+		std::string filePath;
+		std::string nameForCgi;
 		std::list< Location >::iterator currentList;
 
 	public :
@@ -55,5 +58,5 @@ class Client
 
 		// This function forms the correct error response in case of an error
 		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
-
+		bool isLocationFormedWell( std::string &transferEnc );
 };
