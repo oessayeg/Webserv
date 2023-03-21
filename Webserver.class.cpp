@@ -20,8 +20,7 @@ void Webserver::setServerBlocks( std::list < Serverblock > list )
 void Webserver::createSockets( void )
 {
 	std::list< Serverblock >::iterator b;
-	int sock;
-	int tmp;
+	int sock, tmp;
 
 	sock = 0;
 	tmp = 1;
@@ -198,7 +197,6 @@ void Webserver::_parseHeaders( Client &client )
 		index = client.stringRequest.find(':');
 		first = client.stringRequest.substr(0, index);
 		second = client.stringRequest.substr(index + 2, client.stringRequest.find('\r') - index - 2);
-		// client.checkBody(first, second);
 		client.parsedRequest.insertHeader(std::make_pair(first, second));
 		if (isHeader)
 		{
@@ -212,7 +210,6 @@ void Webserver::_parseHeaders( Client &client )
 	}
 	client.checkHeaders();
 	client.isHeaderParsed = true;
-	// Here I should check the type of reading (chunked, normal, multipart)
 	if (client.clientResponse.getBool() || !client.shouldReadBody)
 		return ;
 	parser.chooseCorrectParsingMode(client);
@@ -220,7 +217,7 @@ void Webserver::_parseHeaders( Client &client )
 
 void Webserver::_readBodyIfPossible( Client &client )
 {
-	int r;
+	int r, b;
 	char buff[MIN_TO_READ + 1];
 
 	if (!client.shouldReadBody || client.finishedBody)
@@ -232,8 +229,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 		return ;
 	}
 	buff[r] = '\0';
-	// Should change this
-	int b = client.bytesRead;
+	b = client.bytesRead;
 	for (int i = 0; i < r; i++)
 		client.request[b++] = buff[i];
 	client.request[b] = '\0';
@@ -273,24 +269,6 @@ void Webserver::_prepareResponse( Client &client )
 	this->_handleProperResponse(client);
 }
 
-std::string	Webserver::_getSizeOfFile(std::ifstream &file)
-{
-	std::stringstream size;
-	file.seekg(0, std::ios::end);
-	int file_size = file.tellg();
-	file.seekg(0, std::ios::beg);
-	size << file_size;
-	return (size.str());
-}
-
-std::string Webserver::_getContentFile(std::ifstream &file)
-{
-	std::stringstream buffer;
-
-	buffer << file.rdbuf();
-	return (buffer.str());
-}
-
 void Webserver::_handleProperResponse( Client &client )
 {
 	// Here beggins the methods implementations
@@ -300,25 +278,6 @@ void Webserver::_handleProperResponse( Client &client )
 		this->_preparePostResponse(client);
 	else if (client.parsedRequest._method == "DELETE")
 		this->_prepareDeleteResponse(client);
-}
-
-std::string	Webserver::_handleAutoindexFolder(const std::string &uri)
-{
-	DIR *dir;
-	struct dirent *folder;
-	std::stringstream response;
-	response << "<html><body><ul>"<<std::endl;
-	if((dir = opendir(uri.c_str())) != NULL)
-	{
-		while((folder = readdir (dir)) != NULL)
-		{
-			if(folder->d_name[0] != '.')
-				response << "<li><a href=\"" << folder->d_name <<"\">"<< folder->d_name << "</a></li>" << std::endl;
-		}
-		closedir(dir);
-	}
-	response <<"</ul></body></html>"<<std::endl;
-	return (response.str());	
 }
 
 void Webserver::_handelFolderRequest(Client &client)
@@ -331,35 +290,35 @@ void Webserver::_handelFolderRequest(Client &client)
 	for(; index != client.currentList->_indexes_location.end(); ++index)
 	{
 		joinPath = client.currentList->_currentRoot + (*index);
-		file.open(joinPath);
+		file.open(joinPath, std::ios::binary);
 		if(file.good())
 		{
 			if(client.currentList->get_cgi())
 				_runCgi(joinPath, client);
 			else
 			{
-				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
-				response += _getContentFile(file);
+				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(file) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+				response += Utils::getFileContent(file);
 				Utils::setGoodResponse(response, client);
 			}
 			return ;
 		}
 	}
-		if(client.currentList->get_autoindex())
+	if(client.currentList->get_autoindex())
+	{
+		if((dir = opendir(client.currentList->_currentRoot.c_str())))
 		{
-			if((dir = opendir(client.currentList->_currentRoot.c_str())))
-			{
-				std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
-				response += _handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
-				Utils::setGoodResponse(response, client);
-			}
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(file) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+			response += Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
+			Utils::setGoodResponse(response, client);
 		}
+	}
+	else
+	{
+		if(client.currentList->_indexes_location.empty())
+			Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
 		else
-		{
-			if(client.currentList->_indexes_location.empty())
-				Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
-			else
-				Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+			Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 	}
 
 }
@@ -368,23 +327,15 @@ void	Webserver::_handelFileRequest(Client &client)
 {
 	std::ifstream file;
 
-	file.open(client.currentList->_currentRoot);
+	file.open(client.currentList->_currentRoot, std::ios::binary);
 	if(file.is_open())
 	{
-		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + _getSizeOfFile(file) + "\r\n\r\n";
-		response += _getContentFile(file);
+		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + Utils::getSizeOfFile(file) + "\r\n\r\n";
+		response += Utils::getFileContent(file);
 		Utils::setGoodResponse(response, client);
 	}
 	else
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
-}
-
-std::string Webserver::_getPathInfo()
-{
-	char currentPath[FILENAME_MAX];
-	if(getcwd(currentPath, sizeof(currentPath)) != NULL)
-		return (std::string(currentPath));
-	return (NULL);
 }
 
 void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
@@ -416,14 +367,14 @@ void Webserver::_runCgi(std::string &name, Client &client)
 {
 	int fd;
 	char *args[3];
-	char *env[] = {(char *)("PATH_INFO=" + _getPathInfo() + name).c_str(), NULL};
+	char *env[] = {(char *)("PATH_INFO=" + Utils::getPathInfo() + name).c_str(), NULL};
 	std::string path = "/tmp/temp";
 	
 	fd = open(path.c_str(), O_CREAT | O_RDWR, 0664);
 	size_t findFileExtension = name.find_last_of(".");
 	if(findFileExtension != std::string::npos)
 	{
-		args[0] = strdup((_getPathInfo() + "/" + "php-cgi").c_str());
+		args[0] = strdup((Utils::getPathInfo() + "/" + "php-cgi").c_str());
 		if(name.substr(findFileExtension + 1, name.length()) == "py")
 		{
 			free(args[0]);

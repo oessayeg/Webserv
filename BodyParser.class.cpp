@@ -27,7 +27,7 @@ void BodyParser::parseChunkedData( Client &client )
 		for (; client.request[i] != '\r' && i < client.bytesRead; i++);
 		if (i == client.bytesRead || client.request[i + 1] != '\n')
 			return ;
-		client.bytesToRead = _giveDecimal(std::string(client.request, client.request + i));
+		client.bytesToRead = Utils::giveDecimal(std::string(client.request, client.request + i));
 		i += 2;
 		if (client.bytesToRead == 0)
 		{
@@ -75,7 +75,6 @@ void BodyParser::parseNormalData( Client &client )
 		client.finishedBody = true;
 		return ;
 	}
-	// Need to change MAX_RQ to bytes read
 	memset(client.request, 0, MAX_RQ);
 	client.bytesRead = 0;
 }
@@ -86,7 +85,7 @@ void BodyParser::parseMultipartData( Client &client )
 	bool isFound;
 
 	isFound = false;
-	if (!this->_isThereFilename(MULTIPART, client))
+	if (!this->_isThereFilename(client))
 		return ;
 	for (i = 0; i < client.bytesRead; i++)
 	{
@@ -117,7 +116,7 @@ void BodyParser::parseMultipartData( Client &client )
 	this->parseMultipartData(client);
 }
 
-bool BodyParser::_isThereFilename( int bodyType, Client &client )
+bool BodyParser::_isThereFilename( Client &client )
 {
 	char *crlfIndex;
 	char *fileIndex;
@@ -127,8 +126,7 @@ bool BodyParser::_isThereFilename( int bodyType, Client &client )
 	fileIndex = NULL;
 	if (!client.gotFileName)
 	{
-		if (bodyType == MULTIPART)
-			crlfIndex = strstr(client.request, "\r\n\r\n");
+		crlfIndex = strstr(client.request, "\r\n\r\n");
 		if (crlfIndex == NULL)
 			return false;
 		else
@@ -160,16 +158,6 @@ bool BodyParser::_isBoundary( char *ptr, Client &client )
 	return i == client.boundary.size();
 }
 
-size_t BodyParser::_giveDecimal( const std::string &hexaString )
-{
-	std::stringstream ss;
-	size_t ret;
-
-	ss << std::hex << hexaString;
-	ss >> ret;
-	return ret;
-}
-
 void BodyParser::_openFile( char *name, Client &client )
 {
 	char *fileName;
@@ -191,24 +179,9 @@ void BodyParser::_openWithProperExtension( const std::string &contentType, Clien
 	std::string extension;
 
 	extension = this->_extensions.getExtension(contentType);
-	client.nameForCgi = client.filePath + "/" + this->_randomString() + extension;
+	client.nameForCgi = client.filePath + "/" + Utils::generateRandomString() + extension;
 	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
 	client.gotFileName = true;
-}
-
-std::string BodyParser::_randomString( void )
-{
-    std::string tmp_s;
-    const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-
-	srand(time(NULL));
-    tmp_s.reserve(8);
-    for (int i = 0; i < 8; ++i)
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-    return tmp_s;
 }
 
 bool BodyParser::_isHexaReadable( Client &client )

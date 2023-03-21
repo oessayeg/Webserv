@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Client.class.hpp"
+#include "Utils.class.hpp"
 
 class Client;
 
@@ -25,9 +26,7 @@ class BodyParser
 		void _openWithProperExtension( const std::string &contentType, Client &client );
 		void _openFile( char *name, Client &client );
 		void _moveRequest( size_t index2, Client &client );
-		bool _isThereFilename( int bodyType, Client &client );
+		bool _isThereFilename( Client &client );
 		bool _isBoundary( char *ptr, Client &client );
 		bool _isHexaReadable( Client &client );
-		size_t _giveDecimal( const std::string &hexaString );
-		std::string _randomString( void );
 };
