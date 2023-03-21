@@ -1,13 +1,5 @@
 #include "MainHeader.hpp"
 
-//Need to put this into a utils class
-
-void setBoolAndResponse( int sCode, const std::string &s1, const std::string &s2, Client &client )
-{
-	client.clientResponse.setResponse(client.formError(sCode, s1, s2));
-	client.clientResponse.setBool(true);
-	client.typeCheck = POLLOUT;
-}
 Client::Client( void ) : _socket(0),\
 		clientStruct(new struct sockaddr_in), bodyType(0), isRead(false), \
 		isRqLineParsed(false), isHeaderParsed(false), shouldReadBody(false), \
@@ -72,23 +64,14 @@ void Client::setSocket( int s )
 
 void Client::checkRequestLine( void )
 {
-	std::string errorResponse;
-
-	this->clientResponse.setBool(true);
-	this->typeCheck = POLLOUT;
 	if (!parsedRequest.hasAllowedChars())
-		this->clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
+		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request", *this);
 	else if (!parsedRequest.hasGoodSize())
-		this->clientResponse.setResponse(formError(414, "HTTP/1.1 414 Request-URI too long\r\n", "Error 414 Uri Too Long"));
+		Utils::setErrorResponse(414, "HTTP/1.1 414 Request-URI too long\r\n", "Error 414 Uri Too Long", *this);
 	else if (!parsedRequest.isSupported())
-		this->clientResponse.setResponse(formError(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Error 405 Method Not Allowed"));
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Error 405 Method Not Allowed", *this);
 	else if (!parsedRequest.isGoodVersion())
-		this->clientResponse.setResponse(formError(505, "HTTP/1.1 505 Version Not Supported\r\n", "Error 505 Version Not Supported"));
-	else
-	{
-		this->clientResponse.setBool(false);
-		this->typeCheck = POLLIN;
-	}
+		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Error 505 Version Not Supported", *this);
 }
 
 void Client::checkHeaders( void )
@@ -101,22 +84,16 @@ void Client::checkHeaders( void )
 	s >> contentLength;
 	transferEnc = parsedRequest._headers["Transfer-Encoding"];
 	contentType = parsedRequest._headers["Content-Type"];
-	clientResponse.setBool(true);
-	this->typeCheck = POLLOUT;
 	if (contentLength > correspondingBlock->get_body_size())
-		clientResponse.setResponse(formError(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large"));
+		Utils::setErrorResponse(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large", *this);
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
-		clientResponse.setResponse(formError(501, "HTTP/1.1 501 Not Implemented\r\n", "Error 501 Not Implemented"));
+		Utils::setErrorResponse(501, "HTTP/1.1 501 Not Implemented\r\n", "Error 501 Not Implemented", *this);
 	else if (parsedRequest._method == "POST" && contentLength == 0 && transferEnc.empty())
-		clientResponse.setResponse(formError(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request"));
-	else
-	{
-		clientResponse.setBool(false);
-		this->typeCheck = POLLIN;
-	}
+		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request", *this);
 	if (clientResponse.getBool() || parsedRequest._method != "POST")
 		return ;
+	// This part will set the correct reading mode for the body
 	this->setType(transferEnc, contentType);
 }
 
@@ -195,34 +172,32 @@ bool Client::isLocationFormedWell( std::string &transferEnc )
 	if (currentList == correspondingBlock->_location.end()
 		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))
 	{
-		setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", *this);
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", *this);
 		return false;
 	}
 	else if (!isAccepted("POST", currentList->_accept_list))
 	{
-		setBoolAndResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", *this);
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", *this);
 		return false;
 	}
 	else if (currentList->get_isThereRedirection())
 	{
-	    clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n");
-	    clientResponse.setBool(true);
-		typeCheck = POLLOUT;
+		Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n", *this);
 		return false;
 	}
 	else if ((currentList->_currentRoot.back() == '/' && !currentList->get_indexes_location().size()
 		&& !currentList->_supportUpload) || (!currentList->get_cgi() && !currentList->_supportUpload))
 	{
-		setBoolAndResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", *this);
+		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", *this);
 		return false;
 	}
 	else if (currentList->get_cgi() && !currentList->_supportUpload && contentLength > 0)
 	{
+		this->isThereCgi = true;
 		this->shouldReadBody = true;
 		this->bodyType = OTHER;
 		if (transferEnc == "chunked")
 			this->bodyType = CHUNKED;
-		this->isThereCgi = true;
 		this->filePath = "/tmp/";
 		return false;
 	}

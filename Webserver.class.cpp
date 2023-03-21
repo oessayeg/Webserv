@@ -154,12 +154,7 @@ void Webserver::_readRequest( Client &client )
 	client.request[client.bytesRead] = '\0';
 	ptrToEnd = strstr(client.request, "\r\n\r\n");
 	if (client.bytesRead == MAX_RQ && !ptrToEnd)
-	{
-		client.clientResponse.setResponse(client.formError(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large"));
-		client.clientResponse.setBool(true);
-		client.typeCheck = POLLOUT;
-		return ;
-	}
+		return Utils::setErrorResponse(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large", client);
 	if (ptrToEnd)
 	{
 		client.stringRequest = client.request;
@@ -265,13 +260,13 @@ void Webserver::_prepareResponse( Client &client )
 	client.typeCheck = POLLOUT;
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if (client.currentList == client.correspondingBlock->_location.end())
-		return _setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 	else if (client.currentList->get_isThereRedirection())
 		return _handleHttpRedirection(client.currentList, client);
 	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
-		return _setBoolAndResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
+		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
 	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
-		return _setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", client);
 	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
 		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.parsedRequest._uri, client.clientResponse, client.currentList->get_root_location()))
 		return ;
@@ -339,15 +334,13 @@ void Webserver::_handelFolderRequest(Client &client)
 		file.open(joinPath);
 		if(file.good())
 		{
-
 			if(client.currentList->get_cgi())
 				_runCgi(joinPath, client);
 			else
 			{
-				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " Content-Type : " + client.	parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
 				response += _getContentFile(file);
-				client.clientResponse.setResponse(response);
-				client.clientResponse.setBool(true);
+				Utils::setGoodResponse(response, client);
 			}
 			return ;
 		}
@@ -358,22 +351,15 @@ void Webserver::_handelFolderRequest(Client &client)
 			{
 				std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
 				response += _handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
-				client.clientResponse.setResponse(response);
-				client.clientResponse.setBool(true);
+				Utils::setGoodResponse(response, client);
 			}
 		}
 		else
 		{
 			if(client.currentList->_indexes_location.empty())
-			{
-				client.clientResponse.setResponse(client.formError(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error"));
-				client.clientResponse.setBool(true);
-			}
+				Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
 			else
-			{
-				client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
-				client.clientResponse.setBool(true);
-			}
+				Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 	}
 
 }
@@ -381,19 +367,16 @@ void Webserver::_handelFolderRequest(Client &client)
 void	Webserver::_handelFileRequest(Client &client)
 {
 	std::ifstream file;
+
 	file.open(client.currentList->_currentRoot);
 	if(file.is_open())
 	{
 		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + _getSizeOfFile(file) + "\r\n\r\n";
 		response += _getContentFile(file);
-		client.clientResponse.setResponse(response);
-		client.clientResponse.setBool(true);
+		Utils::setGoodResponse(response, client);
 	}
 	else
-	{
-		client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 404 Not Found", "404 File Not Found"));
-		client.clientResponse.setBool(true);
-	}
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 }
 
 std::string Webserver::_getPathInfo()
@@ -426,8 +409,7 @@ void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
 		response += "Content-Type: text/html\r\n\r\n";
 	response += str;
-	client.clientResponse.setResponse(response);
-	client.clientResponse.setBool(true);
+	Utils::setGoodResponse(response, client);
 }
 
 void Webserver::_runCgi(std::string &name, Client &client)
@@ -456,11 +438,8 @@ void Webserver::_runCgi(std::string &name, Client &client)
 	{
 		dup2(fd, STDOUT_FILENO);
 		close(fd);
-		if(execve(args[0], args, env) < 0)
-		{
-			client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error"));
-			client.clientResponse.setBool(true);
-		}	
+		if(execve(args[0], args, NULL) < 0)
+			Utils::setErrorResponse(404, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
 	}
 
 	while(wait(NULL) != -1);
@@ -474,9 +453,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 void Webserver::_prepareGetResponse( Client &client )
 {
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-	{
 		_handelFolderRequest(client);
-	}
 	else
 	{
 		if(client.currentList->get_cgi())
@@ -492,27 +469,16 @@ void Webserver::_preparePostResponse( Client &client )
 	if (client.isThereCgi)
 		_runCgi(client.currentList->_currentRoot, client);
 	else
-	{
-		client.clientResponse.setResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 26\r\n\r\n<h1>Hello from POST !</h1>");
-		client.clientResponse.setBool(true);
-	}
+		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }
 
 void Webserver::_prepareDeleteResponse( Client &client )
 {
-	client.clientResponse.setResponse("HTTP/1.1 OK 200\r\nContent-Type: text/html\r\nContent-Length: 28!\r\n\r\n<h1>Hello from DELETE !</h1>");
-	client.clientResponse.setBool(true);
-}
-
-void Webserver::_setBoolAndResponse( int sCode, const std::string s1, const std::string s2, Client &client )
-{
-	client.clientResponse.setBool(true);
-	client.clientResponse.setResponse(client.formError(sCode, s1, s2));
+	Utils::setGoodResponse("HTTP/1.1 OK 200\r\nContent-Type: text/html\r\nContent-Length: 28\r\n\r\n<h1>Hello from DELETE !</h1>", client);
 }
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
 {
-    client.clientResponse.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n");
-    client.clientResponse.setBool(true);
+	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n", client);
 }
 
