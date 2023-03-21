@@ -50,9 +50,9 @@ class Webserver
 		std::string 	_getContentFile(std::ifstream &file);
 		std::string		_handleAutoindexFolder(const std::string &uri);
 		void			_handelFileRequest(Client &);
-		void			_runCgi(std::string nameFile, Client &);
+		void			_runCgi(std::string &nameFile, Client &);
 		std::string 	_getPathInfo();
-		void			_readFile(std::string &path, Client &);
+		void			_readFile(std::string &path, Client &, std::string &name);
 
 
 };

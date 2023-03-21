@@ -339,10 +339,16 @@ void Webserver::_handelFolderRequest(Client &client)
 		file.open(joinPath);
 		if(file.good())
 		{
-			std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
-			response += _getContentFile(file);
-			client.clientResponse.setResponse(response);
-			client.clientResponse.setBool(true);
+
+			if(client.currentList->get_cgi())
+				_runCgi(joinPath, client);
+			else
+			{
+				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + _getSizeOfFile(file) +  " Content-Type : " + client.	parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+				response += _getContentFile(file);
+				client.clientResponse.setResponse(response);
+				client.clientResponse.setBool(true);
+			}
 			return ;
 		}
 	}
@@ -398,55 +404,59 @@ std::string Webserver::_getPathInfo()
 	return (NULL);
 }
 
-void	Webserver::_readFile(std::string &path, Client &client)
+void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 {
 	std::ifstream file(path.c_str());
 	std::stringstream buffer;
 	std::string 	  str;
 	std::string       body;
 	std::string 	  response;
+	size_t 			  find;
 
+	find = name.find_last_of(".");
 	buffer << file.rdbuf();
 	str = buffer.str();
 	buffer.str("");
 	size_t findBody = str.find("\r\n\r\n");
+	body = str;
 	if(findBody != std::string::npos)
 		body = str.substr(findBody + 4, str.length() - (findBody + 4));
 	buffer << body.length();
 	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
+	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
+		response += "Content-Type: text/html\r\n\r\n";
 	response += str;
 	client.clientResponse.setResponse(response);
 	client.clientResponse.setBool(true);
 }
 
-void Webserver::_runCgi(std::string name, Client &client)
+void Webserver::_runCgi(std::string &name, Client &client)
 {
 	int fd;
 	char *args[3];
 	char *env[] = {(char *)("PATH_INFO=" + _getPathInfo() + name).c_str(), NULL};
 	std::string path = "/tmp/temp";
+	
 	fd = open(path.c_str(), O_CREAT | O_RDWR, 0664);
 	size_t findFileExtension = name.find_last_of(".");
 	if(findFileExtension != std::string::npos)
 	{
-		if(name.substr(findFileExtension + 1, name.length()) == "php")
+		args[0] = strdup((_getPathInfo() + "/" + "php-cgi").c_str());
+		if(name.substr(findFileExtension + 1, name.length()) == "py")
 		{
-			args[0] = strdup((_getPathInfo() + "/" + "php-cgi").c_str());
+			free(args[0]);
+			args[0] = strdup("/usr/bin/python");
 		}
-		else if(name.substr(findFileExtension + 1, name.length()) == "py")
-		{
-
-		}
-		args[1] = strdup((name).c_str());
 		if (!client.nameForCgi.empty() && client.isThereCgi	)
-			args[1] = strdup(client.nameForCgi.c_str());
+			name = client.nameForCgi;
+		args[1] = strdup((name).c_str());
 		args[2] = NULL;
 	}
 	if(fork() == 0)
 	{
 		dup2(fd, STDOUT_FILENO);
 		close(fd);
-		if(execve(args[0], args, NULL) < 0)
+		if(execve(args[0], args, env) < 0)
 		{
 			client.clientResponse.setResponse(client.formError(404, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error"));
 			client.clientResponse.setBool(true);
@@ -454,8 +464,10 @@ void Webserver::_runCgi(std::string name, Client &client)
 	}
 
 	while(wait(NULL) != -1);
-	_readFile(path, client);
+	_readFile(path, client, name);
 	close(fd);
+	if (!client.nameForCgi.empty() && client.isThereCgi	)
+		unlink(name.c_str());
 	unlink(path.c_str());
 }
 
@@ -468,10 +480,7 @@ void Webserver::_prepareGetResponse( Client &client )
 	else
 	{
 		if(client.currentList->get_cgi())
-		{
-			std::cout<<"HE   : "<<client.currentList->_currentRoot<<std::endl;
 			_runCgi(client.currentList->_currentRoot, client);
-		}
 		else
 			_handelFileRequest(client);
 	}
