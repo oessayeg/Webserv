@@ -45,13 +45,12 @@ class Webserver
 		void _handleHttpRedirection( std::list< Location >::iterator &currentList, Client &client );
 		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
 		void _handelFolderRequest(Client &);
-		void			_handelFileRequest(Client &);
-		void			_runCgi(std::string nameFile, Client &);
-		void			_readFile(std::string &path, Client &);
-		std::string 	_getPathInfo();
-		std::string 	_getSizeOfFile(std::ifstream &file);
-		std::string 	_getContentFile(std::ifstream &file);
-		std::string		_handleAutoindexFolder(const std::string &uri);
-
+		void _handelFileRequest(Client &);
+		void _runCgi(const std::string &nameFile, Client &);
+		void _readFile(const std::string &path, Client &);
+		std::string	_getPathInfo();
+		std::string _getSizeOfFile(std::ifstream &file);
+		std::string _getContentFile(std::ifstream &file);
+		std::string	_handleAutoindexFolder(const std::string &uri);
 
 };

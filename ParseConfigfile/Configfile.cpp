@@ -26,13 +26,13 @@ std::string     Configfile::get_contentfile(std::ifstream &infile)
     return (buffer.str());
 }
 
-void            Configfile::check_errors(std::string    &namefile)
+void            Configfile::check_errors(const std::string    &namefile)
 {
     std::ifstream file;
 
     file.open(namefile);
     if (!file)
-        throw FileError("does Not Exist");
+        throw FileError("Does Not Exist");
     size_t found = namefile.find(".conf");
     if(found != std::string::npos)
     {
@@ -59,7 +59,7 @@ void    Configfile::parse_configfile(std::string &configfile)
             size_t start = found + 6;
             size_t first_bracket = configfile.find_first_not_of(" \t\f\v\n\r", start);
             if (configfile[first_bracket] != '{')
-                throw SyntaxError("'block' should be start white '}'");
+                throw SyntaxError("'block' should start with '}'");
             size_t last_bracket = configfile.find_first_of("{}", first_bracket + 1);
             while (last_bracket != std::string::npos && pos != 0)
             {

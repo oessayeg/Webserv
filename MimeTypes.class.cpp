@@ -94,9 +94,7 @@ MimeTypes &MimeTypes::operator=( const MimeTypes &rhs )
 
 MimeTypes::~MimeTypes( void ) { }
 
-
-
-std::string MimeTypes::getExtension( std::string contentType )
+std::string MimeTypes::getExtension( const std::string &contentType )
 {
 	return types[contentType];
 }

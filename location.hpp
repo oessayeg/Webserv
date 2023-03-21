@@ -36,14 +36,14 @@ class Location
         Location &operator=(const Location&);
 
 
-        void                        set_path_location(std::string           path_location);
-        void                        set_root_location(std::string           root_location);
-        void                        set_autoindex_location(std::string      index_location);
-        void                        set_accept_list_location(std::string    accept_list);
-        void                        set_indexes_location(std::string        indexes_location);
-        void                        set_redirection(std::string             redirection);
-        void                        set_upload_dir(std::string              path);
-        void                        set_cgi(std::string                     path);
+        void                        set_path_location(const std::string           &path_location);
+        void                        set_root_location(const std::string           &root_location);
+        void                        set_autoindex_location(const std::string      &index_location);
+        void                        set_accept_list_location(const std::string    &accept_list);
+        void                        set_indexes_location(const std::string        &indexes_location);
+        void                        set_redirection(const std::string             &redirection);
+        void                        set_upload_dir(const std::string              &path);
+        void                        set_cgi(const std::string                     &path);
 
         bool                        get_autoindex() const;
         std::string                 get_root_location() ;
@@ -55,13 +55,13 @@ class Location
 
         void                        init_list();
         void                        check_duplicate();
-        void                        check_valid_value(std::string buffer, std::string &value);
-        void                        check_valid_status_code(std::string key);
-        void                        check_value_arg(std::string value);
+        void                        check_valid_value(const std::string &buffer, std::string &value);
+        void                        check_valid_status_code(const std::string &key);
+        void                        check_value_arg(const std::string &value);
 
-        bool                        is_Number(std::string  str);
-        bool                        isMethodAccepted( std::list< Location >::iterator location, std::string method ); 
-        bool                        checkIfPathExist(std::string &path);
+        bool                        is_Number(const std::string  &str);
+        bool                        isMethodAccepted( std::list< Location >::iterator location, const std::string &method ); 
+        bool                        checkIfPathExist(const std::string &path);
         bool                        ifRequestUriIsFolder( const std::string &uri);
         bool                        checkIfPathIsValid(const std::string &path, const std::string &uri, Response &resp, const std::string &root);
 

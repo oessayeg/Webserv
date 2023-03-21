@@ -382,7 +382,7 @@ std::string Webserver::_getPathInfo()
 	return (NULL);
 }
 
-void	Webserver::_readFile(std::string &path, Client &client)
+void	Webserver::_readFile(const std::string &path, Client &client)
 {
 	std::ifstream file(path.c_str());
 	std::stringstream buffer;
@@ -402,7 +402,7 @@ void	Webserver::_readFile(std::string &path, Client &client)
 	Utils::setGoodResponse(response, client);
 }
 
-void Webserver::_runCgi(std::string name, Client &client)
+void Webserver::_runCgi(const std::string &name, Client &client)
 {
 	int fd;
 	char *args[3];

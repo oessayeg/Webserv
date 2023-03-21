@@ -20,7 +20,7 @@ class Configfile
         Configfile();
         Configfile(const Configfile &);
         Configfile & operator=(const Configfile &);
-        void                check_errors(std::string &namefile);
+        void                check_errors(const std::string &namefile);
         std::string         get_contentfile(std::ifstream &file);
         void                parse_configfile(std::string        &configfile);
         void                skip_comments(std::string& configfile);
@@ -29,4 +29,5 @@ class Configfile
 
         std::list<Serverblock>      get_serverblocks();
 };
+
 #endif

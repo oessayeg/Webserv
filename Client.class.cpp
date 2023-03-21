@@ -141,7 +141,7 @@ bool isAccepted( std::string method, std::list< std::string > list )
 	return false;
 }
 
-void Client::setType( std::string transferEnc, std::string contentType )
+void Client::setType( const std::string &transferEnc, const std::string &contentType )
 {
 	if (!this->isLocationFormedWell(transferEnc))
 		return ;
@@ -164,7 +164,7 @@ void Client::setType( std::string transferEnc, std::string contentType )
 	}
 }
 
-bool Client::isLocationFormedWell( std::string &transferEnc )
+bool Client::isLocationFormedWell( const std::string &transferEnc )
 {
 	std::list< Location >::iterator currentList;
 	

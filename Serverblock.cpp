@@ -5,7 +5,7 @@ Serverblock::Serverblock():_ip(0), _port(0),_countbodysize(0), _countlisten(0),_
 
 }
 
-void        Serverblock::block_is_empty(std::string &block)
+void        Serverblock::block_is_empty(const std::string &block)
 {
     size_t found = block.find_first_not_of(" \t\f\v\n\r");
     if (found == std::string::npos)
@@ -90,7 +90,7 @@ void        Serverblock::check_valid_config()
         throw LogicError("configfile Error");
 }
 
-void        Serverblock::check_valid_value(std::string buffer, std::string &value)
+void        Serverblock::check_valid_value(const std::string &buffer, std::string &value)
 {
     size_t found = buffer.find_first_not_of("  \t\f\v\n\r;");
     if(found == std::string::npos)
@@ -101,7 +101,7 @@ void        Serverblock::check_valid_value(std::string buffer, std::string &valu
     value = buffer.substr(found, found_t - found + 1);
 }
 
-void        Serverblock::check_value_arg(std::string value)
+void        Serverblock::check_value_arg(const std::string &value)
 {
     size_t  found = value.find_first_not_of(" \t\f\v\n\r");
     size_t found_t = value.find_first_of(" \t\f\v\n\r;", found);
@@ -110,13 +110,11 @@ void        Serverblock::check_value_arg(std::string value)
         throw LogicError("Invalid Arg");
 }
 
-bool Serverblock::is_Number(std::string  str)
+bool Serverblock::is_Number(const std::string &str)
 {
     for(int i = 0; i < str.length(); i++)
-    {
         if (std::isdigit(str[i]) == 0)
             return false;
-    }
     return true;
 }
 
@@ -133,7 +131,7 @@ bool        Serverblock::check_valid_port(std::string &port)
     return (true);
 }
 
-bool        Serverblock::check_valid_ip(std::string    &ip)
+bool        Serverblock::check_valid_ip(const std::string    &ip)
 {
     std::string value  = "127.0.0.1";
     if(ip != value)
@@ -141,7 +139,7 @@ bool        Serverblock::check_valid_ip(std::string    &ip)
     return (1);
 }
 
-bool        Serverblock::check_valid_listen(std::string value, std::string &ip, std::string &port)
+bool        Serverblock::check_valid_listen(const std::string &value, std::string &ip, std::string &port)
 {
     std::string str[2];
     int i = 0;
@@ -164,7 +162,7 @@ bool        Serverblock::check_valid_listen(std::string value, std::string &ip, 
 }
 
 
-void        Serverblock::set_port_and_ip(std::string line)
+void        Serverblock::set_port_and_ip(const std::string &line)
 {
     std::string ip;
     std::string port;
@@ -184,7 +182,7 @@ void        Serverblock::set_port_and_ip(std::string line)
     this->_countlisten++;
 }
 
-void    Serverblock::set_body_size(std::string body_size)
+void    Serverblock::set_body_size(const std::string &body_size)
 {
     std::string value;
     check_valid_value(body_size, value);
@@ -197,7 +195,7 @@ void    Serverblock::set_body_size(std::string body_size)
     this->_countbodysize++;
 }
 
-void        Serverblock::check_valid_status_code(std::string key)
+void        Serverblock::check_valid_status_code(const std::string &key)
 {
     if (!is_Number(key))
         throw LogicError("Status code not valid : '" + key + "'");
@@ -206,7 +204,7 @@ void        Serverblock::check_valid_status_code(std::string key)
         throw LogicError("Status code is out of range : '" + key + "'");
 }
 
-void        Serverblock::set_error_page(std::string line)
+void        Serverblock::set_error_page(const std::string &line)
 {
     std::string value;
     std::string key;

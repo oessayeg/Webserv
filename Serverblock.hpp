@@ -33,20 +33,18 @@ public:
     Serverblock(const Serverblock &);
     Serverblock &operator=(const Serverblock &);
 //***********************************Set Attributes functions****************************************//
-    void                        set_port_and_ip(std::string line);
-    void                        set_body_size(std::string   line);
-    void                        set_error_page(std::string line);
+    void                        set_port_and_ip(const std::string &line);
+    void                        set_body_size(const std::string   &line);
+    void                        set_error_page(const std::string &line);
 //**********************************Functions_to_check_values*******************************//
-    void                        block_is_empty(std::string &block);
-    void                        check_valid_value(std::string buffer,  std::string &value);
-    void                        check_value_arg(std::string value);
+    void                        block_is_empty(const std::string &block);
+    void                        check_valid_value(const std::string &buffer,  std::string &value);
+    void                        check_value_arg(const std::string &value);
 //**********************************Function_to_check_valid_ip_and_port*******************************//
     bool                       check_valid_port(std::string &port);
-    bool                       check_valid_ip(std::string    &ip);
-    bool                       check_valid_listen(std::string buffer, std::string &ip, std::string &port);
-    bool                       is_Number(std::string buffer);
-    void                       init_ip_and_port(std::string &ip, std::string &port);
-    void                       check_valid_numIp(std::string &value);
+    bool                       check_valid_ip(const std::string    &ip);
+    bool                       check_valid_listen(const std::string &value, std::string &ip, std::string &port);
+    bool                       is_Number(const std::string &buffer);
 //**********************************Get Attributes functions*******************************//
     std::map<int, std::string> _error_page;
     struct sockaddr_in         socketNeeds;
@@ -56,7 +54,7 @@ public:
     std::list<Location>        get_locationblocks() const;
     void                       check_valid_config();
     void                       check_duplicate();
-    void                       check_valid_status_code(std::string key);
+    void                       check_valid_status_code(const std::string &key);
     std::list<Location>::iterator	ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri);
     ~Serverblock();
 };

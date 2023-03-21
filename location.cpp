@@ -70,7 +70,7 @@ Location::Location(std::string &location):_count_auto_index(0),_count_allow_meth
     }
 }
 
-void        Location::check_valid_value(std::string buffer, std::string &value)
+void        Location::check_valid_value(const std::string &buffer, std::string &value)
 {
     size_t found = buffer.find_first_not_of("  \t\f\v\n\r;");
     if(found == std::string::npos)
@@ -81,7 +81,7 @@ void        Location::check_valid_value(std::string buffer, std::string &value)
     value = buffer.substr(found, found_t - found + 1);
 }
 
-void        Location::set_path_location(std::string path_location)//should skipp withspace in path location
+void        Location::set_path_location(const std::string &path_location)//should skipp withspace in path location
 {
     size_t find = path_location.find_first_not_of(" \t\f\v\n\r;");
     if(find == std::string::npos)
@@ -97,7 +97,7 @@ void        Location::set_path_location(std::string path_location)//should skipp
     }
 }
 
-bool Location::is_Number(std::string  str)
+bool Location::is_Number(const std::string  &str)
 {
     for(int i = 0; i < str.length(); i++)
     {
@@ -107,7 +107,7 @@ bool Location::is_Number(std::string  str)
     return true;
 }
  
-void        Location::check_value_arg(std::string value)
+void        Location::check_value_arg(const std::string &value)
 {
     size_t  found = value.find_first_not_of(" \t\f\v\n\r;");
     size_t found_t = value.find_first_of(" \t\f\v\n\r;", found);
@@ -116,7 +116,7 @@ void        Location::check_value_arg(std::string value)
         throw LogicError("Invalid Arg");
 }
 
-void        Location::set_root_location(std::string root_location)
+void        Location::set_root_location(const std::string &root_location)
 {
     std::string value;
 
@@ -130,7 +130,7 @@ void        Location::set_root_location(std::string root_location)
         this->_root = name;
 }
 
-void    Location::set_accept_list_location(std::string accept_list)
+void    Location::set_accept_list_location(const std::string &accept_list)
 {
     if (!_accept_list.empty())
         _accept_list.clear();
@@ -146,7 +146,7 @@ void    Location::set_accept_list_location(std::string accept_list)
     this->_count_allow_methode++;
 }
 
-void        Location::set_autoindex_location(std::string index_location)
+void        Location::set_autoindex_location(const std::string &index_location)
 {
     size_t found = index_location.find_first_not_of("  \t\f\v\n\r");
     size_t found_t = index_location.find_first_of(";");
@@ -166,7 +166,7 @@ void        Location::set_autoindex_location(std::string index_location)
     this->_count_auto_index++;
 }
 
-void        Location::check_valid_status_code(std::string key)
+void        Location::check_valid_status_code(const std::string &key)
 {
     if (!is_Number(key))
         throw LogicError("Status code not valid : '" + key + "'");
@@ -175,7 +175,7 @@ void        Location::check_valid_status_code(std::string key)
         throw LogicError("Status code is out of range : '" + key + "'");
 }
 
-void        Location::set_indexes_location(std::string        indexes_location)
+void        Location::set_indexes_location(const std::string        &indexes_location)
 {
     size_t found = indexes_location.find_first_not_of("  \t\f\v\n\r");
     size_t found_t = indexes_location.find_first_of(";");
@@ -197,7 +197,7 @@ void        Location::check_duplicate()
         throw SyntaxError("'Location block' Duplicate name");
 }
 
-void        Location::set_redirection(std::string             redirection)
+void        Location::set_redirection(const std::string             &redirection)
 {
     std::string value;
     std::string key;
@@ -223,7 +223,7 @@ void        Location::set_redirection(std::string             redirection)
 }
 
 
-void        Location::set_upload_dir(std::string             path)
+void        Location::set_upload_dir(const std::string             &path)
 {
     std::string value;
 
@@ -235,7 +235,7 @@ void        Location::set_upload_dir(std::string             path)
     this->_supportUpload = true;
 }
 
-void        Location::set_cgi(std::string             path)
+void        Location::set_cgi(const std::string             &path)
 {
     std::string value;
     check_valid_value(path, value);
@@ -297,7 +297,7 @@ Location::~Location()
 
 }
 
-bool Location::isMethodAccepted( std::list< Location >::iterator location, std::string method )
+bool Location::isMethodAccepted( std::list< Location >::iterator location, const std::string &method )
 {
 	std::list< std::string >::iterator it1, it2;
 
@@ -309,7 +309,7 @@ bool Location::isMethodAccepted( std::list< Location >::iterator location, std::
 	return false;
 }
 
-bool	Location::checkIfPathExist(std::string &path)
+bool	Location::checkIfPathExist(const std::string &path)
 {
 	std::ifstream file;
 

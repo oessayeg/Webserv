@@ -14,5 +14,5 @@ class MimeTypes
 		MimeTypes &operator=( const MimeTypes &rhs );
 		~MimeTypes( void );
 
-		std::string getExtension( std::string contentType );
+		std::string getExtension( const std::string &contentType );
 };
