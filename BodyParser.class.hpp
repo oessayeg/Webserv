@@ -2,6 +2,8 @@
 
 #include "Client.class.hpp"
 
+class Client;
+
 class BodyParser
 {
 	private :

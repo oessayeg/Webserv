@@ -1,6 +1,7 @@
 SRCS = main.cpp Webserver.class.cpp Request.class.cpp Client.class.cpp \
 	Response.class.cpp ErrorString.class.cpp MimeTypes.class.cpp \
-	BodyParser.class.cpp ParseConfigfile/Configfile.cpp Serverblock.cpp location.cpp
+	BodyParser.class.cpp ParseConfigfile/Configfile.cpp Serverblock.cpp \
+	location.cpp Utils.class.cpp
 
 HEADER = ParseConfigfile/Configfile.hpp Serverblock.hpp
 

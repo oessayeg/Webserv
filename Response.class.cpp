@@ -23,7 +23,7 @@ void Response::sendResponse( int socket ) const
 	send(socket, _response.c_str(), _response.size(), 0);
 }
 
-void Response::setResponse( std::string resp )
+void Response::setResponse( const std::string &resp )
 {
 	_response = resp;
 }

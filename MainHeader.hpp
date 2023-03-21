@@ -41,3 +41,4 @@
 #include "Serverblock.hpp"
 #include "Client.class.hpp"
 #include "BodyParser.class.hpp"
+#include "Utils.class.hpp"

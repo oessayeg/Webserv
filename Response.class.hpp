@@ -19,5 +19,5 @@ class Response
 		bool getBool( void ) const;
 		void setBool( bool isReady );
 		void sendResponse( int socket ) const;
-		void setResponse( std::string resp );
+		void setResponse( const std::string &resp );
 };
