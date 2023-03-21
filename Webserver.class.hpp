@@ -46,8 +46,8 @@ class Webserver
 		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
 		void _handelFolderRequest(Client &);
 		void			_handelFileRequest(Client &);
-		void			_runCgi(std::string nameFile, Client &);
-		void			_readFile(std::string &path, Client &);
+		void			_runCgi(std::string &nameFile, Client &);
+		void			_readFile(std::string &path, Client &, std::string &name);
 		std::string 	_getPathInfo();
 		std::string 	_getSizeOfFile(std::ifstream &file);
 		std::string 	_getContentFile(std::ifstream &file);
