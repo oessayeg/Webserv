@@ -25,7 +25,7 @@
 #define MIN_TO_READ 8192
 #define BUFF_SIZE 17825
 #define MAX_RQ 8192
-
+#define ROOTFOLDER -42
 // Body type macros
 
 #define CHUNKED_MULTIPART 1

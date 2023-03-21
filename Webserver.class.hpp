@@ -48,4 +48,6 @@ class Webserver
 		void _handelFileRequest(Client &);
 		void _runCgi( std::string &nameFile, Client & );
 		void _readFile( std::string &path, Client &client, std::string &name );
+		void _handelDeleteFolderRequest( Client &client );
+		void _removeContent(const std::string &, Client &, int & );
 };
