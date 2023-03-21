@@ -261,7 +261,7 @@ void Webserver::_prepareResponse( Client &client )
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if (client.currentList == client.correspondingBlock->_location.end())
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
-	else if (client.currentList->get_isThereRedirection())
+	else if (client.currentList->get_isThereRedirection() && client.parsedRequest._method != "DELETE")
 		return _handleHttpRedirection(client.currentList, client);
 	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
 		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
@@ -331,7 +331,7 @@ void Webserver::_handelFolderRequest(Client &client)
 	for(; index != client.currentList->_indexes_location.end(); ++index)
 	{
 		joinPath = client.currentList->_currentRoot + (*index);
-		file.open(joinPath);
+		file.open(joinPath, std::ios::binary);
 		if(file.good())
 		{
 			if(client.currentList->get_cgi())
@@ -368,7 +368,7 @@ void	Webserver::_handelFileRequest(Client &client)
 {
 	std::ifstream file;
 
-	file.open(client.currentList->_currentRoot);
+	file.open(client.currentList->_currentRoot, std::ios::binary); 
 	if(file.is_open())
 	{
 		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + _getSizeOfFile(file) + "\r\n\r\n";
@@ -472,9 +472,71 @@ void Webserver::_preparePostResponse( Client &client )
 		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }
 
+
+void 			Webserver::_removeContent(const std::string &path, Client &client, int &status)
+{
+	DIR *dir;
+    DIR *dir1;
+
+	struct dirent *opt;
+	if((dir = opendir(path.c_str())) != NULL)
+	{
+		while((opt = readdir(dir)) != NULL)
+        {
+            std::string fullPath = (path + "/" + std::string(opt->d_name)).c_str();
+            if((dir1= opendir(fullPath.c_str())) != NULL && strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
+                _removeContent(fullPath, client, status);
+			if(strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
+            {
+				if(access(fullPath.c_str(), X_OK | R_OK) == -1 )
+					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
+                status = remove(fullPath.c_str());
+                if(status != 0)
+					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+            }
+	    }
+		closedir(dir);
+		closedir(dir1);
+	}
+}
+
+void Webserver::_handelDeleteFolderRequest(Client &client)
+{
+	int status = -1;
+	DIR *dir;
+	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
+	std::string joinPath;
+	std::ifstream file;
+
+	if(client.currentList->_currentRoot[client.currentList->_currentRoot.length() - 1] != '/')
+		Utils::setErrorResponse(409, "HTTP/1.1 409 Conflict", "409 Conflict", client);
+	else if(client.currentList->get_cgi())			
+	{
+		for(; index != client.currentList->_indexes_location.end(); ++index)
+		{
+			joinPath = client.currentList->_currentRoot + (*index);
+			file.open(joinPath);
+			if(file.good())
+				return _runCgi(joinPath, client);
+		}
+		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
+	}
+	else
+	{
+		_removeContent(client.currentList->_currentRoot, client , status);
+		std::cout<<status<<std::endl;
+		if(status == 0)
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
+		else if(status == -1)
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+	}
+}
+
 void Webserver::_prepareDeleteResponse( Client &client )
 {
-	Utils::setGoodResponse("HTTP/1.1 OK 200\r\nContent-Type: text/html\r\nContent-Length: 28\r\n\r\n<h1>Hello from DELETE !</h1>", client);
+	int status = -1;
+	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
+		_handelDeleteFolderRequest(client);
 }
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
