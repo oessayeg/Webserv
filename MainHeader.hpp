@@ -16,6 +16,7 @@
 #include <poll.h>
 #include <vector>
 #include <list>
+#include <limits.h>
 #include <dirent.h>
 #include <map>
 

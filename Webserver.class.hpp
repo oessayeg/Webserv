@@ -51,4 +51,8 @@ class Webserver
 		std::string		_handleAutoindexFolder(const std::string &uri);
 		void			_handelFileRequest(Client &);
 		void			_runCgi(std::string nameFile, Client &);
+		std::string 	_getPathInfo();
+		void			_readFile(std::string &path, Client &);
+
+
 };

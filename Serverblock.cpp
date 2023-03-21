@@ -280,11 +280,11 @@ std::list<Location>::iterator	Serverblock::ifUriMatchLocationBlock(std::list<Loc
 	std::list<std::string> my_list;
 	for(; it != list.end(); ++it)
 	{
-        str = uri;
 		my_list = it->get_path_location();
 		it1 = my_list.begin();
 		for(; it1 != my_list.end(); ++it1)
 		{
+        str = uri;
 			if(uri.find(*it1)  == 0 && (*it1).size() > matcheLocation.size())
 			{
 				matcheLocation = *it1;

@@ -193,9 +193,9 @@ bool Client::isLocationFormedWell( std::string &transferEnc )
 	
 	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
 	if (currentList == correspondingBlock->_location.end()
-		|| (currentList->_supportUpload && !currentList->checkIfPathExist(currentList->_upload_dir) && !currentList->ifRequestUriIsFolder(currentList->_upload_dir)))
+		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))
 	{
-		setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "405 Not Found", *this);
+		setBoolAndResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", *this);
 		return false;
 	}
 	else if (!isAccepted("POST", currentList->_accept_list))
