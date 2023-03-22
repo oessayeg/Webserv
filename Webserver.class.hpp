@@ -48,6 +48,7 @@ class Webserver
 		void _readFile( std::string &path, Client &client, std::string &name );
 		void _removeContent( const std::string &, Client &, int & );
 		void _handleDeleteFolderRequest( Client &client );
+		void _handleDeleteFile( Client &client );
 		void _handleFolderRequest( Client & );
 		void _handleFileRequest( Client & );
 };
