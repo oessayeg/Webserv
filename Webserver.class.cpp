@@ -12,7 +12,7 @@ Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks),
 
 Webserver::~Webserver( void ) { }
 
-void Webserver::setServerBlocks( std::list < Serverblock > list )
+void Webserver::setServerBlocks( std::list < Serverblock > &list )
 {
 	this->_serverBlocks = list;
 }
@@ -280,7 +280,7 @@ void Webserver::_handleProperResponse( Client &client )
 		this->_prepareDeleteResponse(client);
 }
 
-void Webserver::_handelFolderRequest(Client &client)
+void Webserver::_handleFolderRequest(Client &client)
 {
 	DIR *dir;
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
@@ -297,7 +297,7 @@ void Webserver::_handelFolderRequest(Client &client)
 				_runCgi(joinPath, client);
 			else
 			{
-				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(file) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(joinPath) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
 				response += Utils::getFileContent(file);
 				Utils::setGoodResponse(response, client);
 			}
@@ -308,7 +308,7 @@ void Webserver::_handelFolderRequest(Client &client)
 	{
 		if((dir = opendir(client.currentList->_currentRoot.c_str())))
 		{
-			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(file) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(joinPath) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
 			response += Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
 			Utils::setGoodResponse(response, client);
 		}
@@ -323,14 +323,14 @@ void Webserver::_handelFolderRequest(Client &client)
 
 }
 
-void	Webserver::_handelFileRequest(Client &client)
+void	Webserver::_handleFileRequest(Client &client)
 {
 	std::ifstream file;
 
 	file.open(client.currentList->_currentRoot, std::ios::binary); 
 	if(file.is_open())
 	{
-		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + Utils::getSizeOfFile(file) + "\r\n\r\n";
+		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + Utils::getSizeOfFile(client.currentList->_currentRoot) + "\r\n\r\n";
 		response += Utils::getFileContent(file);
 		Utils::setGoodResponse(response, client);
 	}
@@ -404,13 +404,13 @@ void Webserver::_runCgi(std::string &name, Client &client)
 void Webserver::_prepareGetResponse( Client &client )
 {
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-		_handelFolderRequest(client);
+		_handleFolderRequest(client);
 	else
 	{
 		if(client.currentList->get_cgi())
 			_runCgi(client.currentList->_currentRoot, client);
 		else
-			_handelFileRequest(client);
+			_handleFileRequest(client);
 	}
 }
 
@@ -451,7 +451,7 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 	}
 }
 
-void Webserver::_handelDeleteFolderRequest(Client &client)
+void Webserver::_handleDeleteFolderRequest(Client &client)
 {
 	int status = -1;
 	DIR *dir;
@@ -485,9 +485,11 @@ void Webserver::_handelDeleteFolderRequest(Client &client)
 
 void Webserver::_prepareDeleteResponse( Client &client )
 {
-	int status = -1;
+	int status;
+
+	status = -1;
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-		_handelDeleteFolderRequest(client);
+		_handleDeleteFolderRequest(client);
 }
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)

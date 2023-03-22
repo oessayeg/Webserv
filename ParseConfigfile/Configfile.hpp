@@ -27,7 +27,7 @@ class Configfile
 
 
 
-        std::list<Serverblock>      get_serverblocks();
+        std::list<Serverblock>      &get_serverblocks();
 };
 
 #endif

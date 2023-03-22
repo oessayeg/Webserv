@@ -1,13 +1,15 @@
 #include "Response.class.hpp"
 
-Response::Response( void ) : _response(), _canBeSent(false) { }
+Response::Response( void ) : _response(), _canBeSent(false), _nameOfFile(), _shouldReadFromFile(false) { }
 
 Response::Response( const Response &rhs ) { *this = rhs; }
 
 Response &Response::operator=( const Response &rhs )
 {
+	_nameOfFile = rhs._nameOfFile;
 	_response = rhs._response;
 	_canBeSent = rhs._canBeSent;
+	_shouldReadFromFile = rhs._shouldReadFromFile;
 	return *this;
 }
 
