@@ -291,15 +291,17 @@ void Webserver::_handleFolderRequest(Client &client)
 	{
 		joinPath = client.currentList->_currentRoot + (*index);
 		file.open(joinPath, std::ios::binary);
-		if(file.good())
+		if(file.is_open())
 		{
 			if(client.currentList->get_cgi())
 				_runCgi(joinPath, client);
 			else
 			{
 				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(joinPath) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
-				response += Utils::getFileContent(file);
-				Utils::setGoodResponse(response, client);
+				client.clientResponse._shouldReadFromFile = true;
+				client.clientResponse._nameOfFile =  joinPath;
+				client.typeCheck = POLLOUT;
+				// Utils::setGoodResponse(response, client);
 			}
 			return ;
 		}
@@ -330,8 +332,10 @@ void	Webserver::_handleFileRequest(Client &client)
 	if(file.is_open())
 	{
 		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + Utils::getSizeOfFile(client.currentList->_currentRoot) + "\r\n\r\n";
-		response += Utils::getFileContent(file);
-		Utils::setGoodResponse(response, client);
+		client.clientResponse._shouldReadFromFile = true;
+		client.clientResponse._nameOfFile =  client.currentList->_currentRoot;
+		client.typeCheck = POLLOUT;
+		// Utils::setGoodResponse(response, client);
 	}
 	else
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
