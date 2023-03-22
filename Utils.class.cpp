@@ -1,4 +1,5 @@
 #include "Utils.class.hpp"
+#include "sys/stat.h"
 
 Utils::Utils( void ) { }
 
@@ -44,14 +45,13 @@ size_t Utils::giveDecimal( const std::string &hexaString )
 	return ret;
 }
 
-std::string	Utils::getSizeOfFile( std::ifstream &file )
+std::string	Utils::getSizeOfFile( const std::string &file )
 {
 	std::stringstream size;
+	struct stat fileInfo;
 
-	file.seekg(0, std::ios::end);
-	int file_size = file.tellg();
-	file.seekg(0, std::ios::beg);
-	size << file_size;
+	stat(file.c_str(), &fileInfo);
+	size << fileInfo.st_size;
 	return (size.str());
 }
 

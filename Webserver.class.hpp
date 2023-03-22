@@ -24,7 +24,7 @@ class Webserver
 		~Webserver( void );
 
 		// Need to change the list param to a reference
-		void setServerBlocks( std::list < Serverblock > list );
+		void setServerBlocks( std::list < Serverblock > &list );
 		void createSockets( void );
 		void setReadyFds( void );
 		void readAndRespond( void );
@@ -44,10 +44,10 @@ class Webserver
 		void _prepareDeleteResponse( Client &client );
 		void _handleHttpRedirection( std::list< Location >::iterator &currentList, Client &client );
 		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
-		void _handelFolderRequest(Client &);
-		void _handelFileRequest(Client &);
 		void _runCgi( std::string &nameFile, Client & );
 		void _readFile( std::string &path, Client &client, std::string &name );
-		void _handelDeleteFolderRequest( Client &client );
-		void _removeContent(const std::string &, Client &, int & );
+		void _removeContent( const std::string &, Client &, int & );
+		void _handleDeleteFolderRequest( Client &client );
+		void _handleFolderRequest( Client & );
+		void _handleFileRequest( Client & );
 };

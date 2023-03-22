@@ -6,8 +6,10 @@
 class Response
 {
 	public :
+		std::string _nameOfFile;
 		std::string _response;
 		bool _canBeSent;
+		bool _shouldReadFromFile;
 
 	public :
 		Response( void );

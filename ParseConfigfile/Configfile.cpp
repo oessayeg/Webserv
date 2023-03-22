@@ -83,7 +83,7 @@ void    Configfile::parse_configfile(std::string &configfile)
 
 
 
-std::list<Serverblock>      Configfile::get_serverblocks()
+std::list<Serverblock>      &Configfile::get_serverblocks()
 {
     return (this->server);
 }
