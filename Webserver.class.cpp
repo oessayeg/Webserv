@@ -320,7 +320,6 @@ void Webserver::_handelFolderRequest(Client &client)
 		else
 			Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 	}
-
 }
 
 void	Webserver::_handelFileRequest(Client &client)

@@ -191,7 +191,10 @@ void    Serverblock::set_body_size(const std::string &body_size)
     value = value.substr(0, found);
     if (!is_Number(value))
         throw LogicError("'Body_Size' Value not Valid");
-    this->_body_size = atol(value.c_str());
+    std::stringstream ff(value);
+    ff >> this->_body_size;
+    if(this->_body_size > 2500)
+        throw LogicError("'Body_Size' value : '" + ff.str() + "' is big");
     this->_countbodysize++;
 }
 
