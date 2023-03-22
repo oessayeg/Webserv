@@ -45,6 +45,14 @@ size_t Utils::giveDecimal( const std::string &hexaString )
 	return ret;
 }
 
+size_t Utils::getSize( const std::string &file )
+{
+	struct stat fileInfo;
+
+	stat(file.c_str(), &fileInfo);
+	return (fileInfo.st_size);
+}
+
 std::string	Utils::getSizeOfFile( const std::string &file )
 {
 	std::stringstream size;

@@ -15,6 +15,7 @@ class Utils
 		static void setGoodResponse( const std::string &s, Client &client );
 		static std::string generateRandomString( void );
 		static size_t giveDecimal( const std::string &hexaString );
+		static size_t getSize( const std::string &file);
 		static std::string getSizeOfFile( const std::string &file );
 		static std::string getPathInfo( void );
 		static std::string getFileContent( std::ifstream &file );

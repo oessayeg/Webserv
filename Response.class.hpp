@@ -14,6 +14,7 @@ class Response
 		bool _canBeSent;
 		bool _shouldReadFromFile;
 		bool _isStatusSent;
+		size_t _fileSize;
 		size_t r;
 
 	public :

@@ -21,6 +21,7 @@ class BodyParser
 		void parseChunkedData( Client &client );
 		void parseNormalData( Client &client );
 		void chooseCorrectParsingMode( Client &client );
+		std::string getContentType( const std::string & );
 
 	private :
 		void _openWithProperExtension( const std::string &contentType, Client &client );

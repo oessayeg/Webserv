@@ -223,3 +223,8 @@ void BodyParser::chooseCorrectParsingMode( Client &client )
 	else if (client.bodyType == OTHER)
 		this->parseNormalData(client);
 }
+
+std::string BodyParser::getContentType( const std::string &file )
+{
+	return this->_extensions.getContentType(file);
+}

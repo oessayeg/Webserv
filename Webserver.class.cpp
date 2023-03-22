@@ -245,7 +245,6 @@ bool sendFile( std::list< Client >::iterator &it )
 	it->clientResponse.file.read(buff, 2048);
 	bytes = it->clientResponse.file.gcount();
 	it->clientResponse.r += bytes;
-	// std::cout << it->clientResponse.r << std::endl;
 	if (!it->clientResponse._isStatusSent)	
 	{
 		char buff2[2048 + 1 + it->clientResponse._status.size()];
@@ -262,18 +261,17 @@ bool sendFile( std::list< Client >::iterator &it )
 		}
 		if (send(it->getSocket(), buff2, i, 0) <= 0)
 			return true;
-		if (atoi(Utils::getSizeOfFile(it->clientResponse._nameOfFile).c_str()) == it->clientResponse.r)
+		if (it->clientResponse._fileSize == it->clientResponse.r)
 		{
 			it->clientResponse.file.close();
 			return true;
 		}
 		return false;
 	}
-	send(it->getSocket(), buff, bytes, 0);
-	if (atoi(Utils::getSizeOfFile(it->clientResponse._nameOfFile).c_str()) == it->clientResponse.r)
+	if (send(it->getSocket(), buff, bytes, 0) <= 0)
+		return true;
+	if (it->clientResponse._fileSize == it->clientResponse.r)
 	{
-		std::cout << it->clientResponse._nameOfFile << std::endl;
-		std::cout << "Ended 2" << std::endl;
 		it->clientResponse.file.close();
 		return true;
 	}
@@ -319,7 +317,6 @@ void Webserver::_prepareResponse( Client &client )
 
 void Webserver::_handleProperResponse( Client &client )
 {
-	// Here beggins the methods implementations
 	if (client.parsedRequest._method == "GET")
 		this->_prepareGetResponse(client);
 	else if (client.parsedRequest._method == "POST")
@@ -333,7 +330,6 @@ void Webserver::_handleFolderRequest(Client &client)
 	DIR *dir;
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
 	std::string joinPath;
-	// std::ifstream file;
 
 	for(; index != client.currentList->_indexes_location.end(); ++index)
 	{
@@ -349,8 +345,9 @@ void Webserver::_handleFolderRequest(Client &client)
 				client.clientResponse._nameOfFile =  joinPath;
 				client.typeCheck = POLLOUT;
 				client.clientResponse.setBool(true);
-				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: video/mp4\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
-				// Utils::setGoodResponse(response, client);
+				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: " + parser.getContentType(joinPath);
+				client.clientResponse._status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
+				client.clientResponse._fileSize = Utils::getSize(joinPath);
 			}
 			return ;
 		}
@@ -359,8 +356,8 @@ void Webserver::_handleFolderRequest(Client &client)
 	{
 		if((dir = opendir(client.currentList->_currentRoot.c_str())))
 		{
-			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(joinPath) +  client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
-			response += Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str()); 
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot) + "\r\nContent-Type: text/html\r\n\r\n";
+			response += Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
 			Utils::setGoodResponse(response, client);
 		}
 	}
@@ -375,16 +372,16 @@ void Webserver::_handleFolderRequest(Client &client)
 
 void	Webserver::_handleFileRequest(Client &client)
 {
-	std::ifstream file;
-
-	file.open(client.currentList->_currentRoot, std::ios::binary); 
-	if(file.is_open())
+	client.clientResponse.file.open(client.currentList->_currentRoot, std::ios::binary); 
+	if(client.clientResponse.file.is_open())
 	{
-		std::string response = "HTTP/1.1 200 Ok\r\nContent-Length :" + Utils::getSizeOfFile(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
+		client.clientResponse._status += "Content-Type: " + parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
 		client.clientResponse._shouldReadFromFile = true;
+		client.clientResponse.setBool(true);
+		client.clientResponse._fileSize = Utils::getSize(client.currentList->_currentRoot);
 		client.clientResponse._nameOfFile =  client.currentList->_currentRoot;
 		client.typeCheck = POLLOUT;
-		// Utils::setGoodResponse(response, client);
 	}
 	else
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
@@ -467,7 +464,6 @@ void Webserver::_prepareGetResponse( Client &client )
 
 void Webserver::_preparePostResponse( Client &client )
 {
-	// _handleCgi(client.currentList, client, client.currentList->_currentRoot);
 	if (client.isThereCgi)
 		_runCgi(client.currentList->_currentRoot, client);
 	else
@@ -525,7 +521,6 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	else
 	{
 		_removeContent(client.currentList->_currentRoot, client , status);
-		std::cout<<status<<std::endl;
 		if(status == 0)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 		else if(status == -1)
@@ -544,7 +539,7 @@ void Webserver::_handleDeleteFile(Client &client)
 		if(client.currentList->get_cgi())
 			return _runCgi(client.currentList->_currentRoot, client);
 		status = remove(client.currentList->_currentRoot.c_str());
-		if(status = 0)
+		if(status == 0)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 	}
 	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
@@ -558,7 +553,7 @@ void Webserver::_prepareDeleteResponse( Client &client )
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
 		_handleDeleteFolderRequest(client);
 	else
-		_hanldeDeleteFile(client);
+		_handleDeleteFile(client);
 
 }
 
@@ -566,4 +561,3 @@ void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentLis
 {
 	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n", client);
 }
-
