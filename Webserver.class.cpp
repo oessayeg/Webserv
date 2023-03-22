@@ -411,9 +411,8 @@ void Webserver::_prepareGetResponse( Client &client )
 	else
 	{
 		if(client.currentList->get_cgi())
-			_runCgi(client.currentList->_currentRoot, client);
-		else
-			_handleFileRequest(client);
+			return _runCgi(client.currentList->_currentRoot, client);
+		return _handleFileRequest(client);
 	}
 }
 
@@ -486,6 +485,23 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	}
 }
 
+void Webserver::_handleDeleteFile(Client &client)
+{
+	std::ifstream file;
+	int status;
+
+	file.open(client.currentList->_currentRoot, std::ios::binary);
+	if(file.is_open())
+	{
+		if(client.currentList->get_cgi())
+			return _runCgi(client.currentList->_currentRoot, client);
+		status = remove(client.currentList->_currentRoot.c_str());
+		if(status = 0)
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
+	}
+	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
+}
+
 void Webserver::_prepareDeleteResponse( Client &client )
 {
 	int status;
@@ -493,6 +509,9 @@ void Webserver::_prepareDeleteResponse( Client &client )
 	status = -1;
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
 		_handleDeleteFolderRequest(client);
+	else
+		_hanldeDeleteFile(client);
+
 }
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
