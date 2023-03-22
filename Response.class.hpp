@@ -2,14 +2,19 @@
 
 #include <iostream>
 #include <sys/socket.h>
+#include <fstream>
 
 class Response
 {
 	public :
+		std::ifstream file;
 		std::string _nameOfFile;
 		std::string _response;
+		std::string _status;
 		bool _canBeSent;
 		bool _shouldReadFromFile;
+		bool _isStatusSent;
+		size_t r;
 
 	public :
 		Response( void );

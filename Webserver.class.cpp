@@ -86,7 +86,7 @@ void Webserver::readAndRespond( void )
 	{
 		if (_fdToCheck[i].revents & POLLIN)
 			this->_readAndParse(*b);
-		if (!b->isConnected)
+		if (!b->isConnected || _fdToCheck[i].revents & POLLHUP)
 			_dropClient(b, &increment, 0);
 		else if (b->clientResponse.getBool() && _fdToCheck[i].revents & POLLOUT)
 			_dropClient(b, &increment, 1);
@@ -101,7 +101,7 @@ void Webserver::_acceptNewClients( void )
 	std::list< Serverblock >::iterator blIter;
 	std::list< int >::iterator sockIter;
 	socklen_t sizeOfSockaddr_in;
-	int newFd, i;
+	int newFd, i, tmp = 1;
 
 	i = 0;
 	newFd = 0;
@@ -113,11 +113,11 @@ void Webserver::_acceptNewClients( void )
 		if (_fdToCheck[i].revents & POLLIN)
 		{
 			Client newClient;
-
 			newFd = accept(*sockIter, (struct sockaddr *)newClient.clientStruct, &sizeOfSockaddr_in);
 			if (newFd == -1)
 				throw "Accept function failed";
 			fcntl(newFd, F_SETFL, O_NONBLOCK);
+			setsockopt(newFd, SOL_SOCKET, SO_NOSIGPIPE, &tmp, sizeof(tmp));
 			newClient.correspondingBlock = new Serverblock(*blIter);
 			newClient.setSocket(newFd);
 			_pendingClients.push_back(newClient);
@@ -237,9 +237,57 @@ void Webserver::_readBodyIfPossible( Client &client )
 	parser.chooseCorrectParsingMode(client);
 }
 
+bool sendFile( std::list< Client >::iterator &it )
+{
+	char buff[2048 + 1];
+	std::streamsize bytes;
+
+	it->clientResponse.file.read(buff, 2048);
+	bytes = it->clientResponse.file.gcount();
+	it->clientResponse.r += bytes;
+	// std::cout << it->clientResponse.r << std::endl;
+	if (!it->clientResponse._isStatusSent)	
+	{
+		char buff2[2048 + 1 + it->clientResponse._status.size()];
+		int i;
+
+		it->clientResponse._isStatusSent = true;
+		for (i = 0; i < it->clientResponse._status.size(); i++)
+			buff2[i] = it->clientResponse._status[i];
+		int x = 0;
+		for (; i < bytes + it->clientResponse._status.size(); i++)
+		{
+			buff2[i] = buff[x];
+			x++;
+		}
+		if (send(it->getSocket(), buff2, i, 0) <= 0)
+			return true;
+		if (atoi(Utils::getSizeOfFile(it->clientResponse._nameOfFile).c_str()) == it->clientResponse.r)
+		{
+			it->clientResponse.file.close();
+			return true;
+		}
+		return false;
+	}
+	send(it->getSocket(), buff, bytes, 0);
+	if (atoi(Utils::getSizeOfFile(it->clientResponse._nameOfFile).c_str()) == it->clientResponse.r)
+	{
+		std::cout << it->clientResponse._nameOfFile << std::endl;
+		std::cout << "Ended 2" << std::endl;
+		it->clientResponse.file.close();
+		return true;
+	}
+	return false;
+}
+
 void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
 {
-	if (shouldSend)
+	if (shouldSend && it->clientResponse._shouldReadFromFile)
+	{
+		if (!sendFile(it))
+			return ;
+	}
+	else if (shouldSend)
 		it->clientResponse.sendResponse(it->getSocket());
 	close(it->getSocket());
 	it = _pendingClients.erase(it);
@@ -285,22 +333,23 @@ void Webserver::_handleFolderRequest(Client &client)
 	DIR *dir;
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
 	std::string joinPath;
-	std::ifstream file;
+	// std::ifstream file;
 
 	for(; index != client.currentList->_indexes_location.end(); ++index)
 	{
 		joinPath = client.currentList->_currentRoot + (*index);
-		file.open(joinPath, std::ios::binary);
-		if(file.is_open())
+		client.clientResponse.file.open(joinPath, std::ios::binary);
+		if(client.clientResponse.file.is_open())
 		{
 			if(client.currentList->get_cgi())
 				_runCgi(joinPath, client);
 			else
 			{
-				std::string response =  "HTTP/1.1 200 Ok\r\nContent-Length : " + Utils::getSizeOfFile(joinPath) +  " 	Content-Type : " + client.parsedRequest._headers["Content-Type"] + "\r\n\r\n";
 				client.clientResponse._shouldReadFromFile = true;
 				client.clientResponse._nameOfFile =  joinPath;
 				client.typeCheck = POLLOUT;
+				client.clientResponse.setBool(true);
+				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: video/mp4\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
 				// Utils::setGoodResponse(response, client);
 			}
 			return ;
@@ -425,7 +474,6 @@ void Webserver::_preparePostResponse( Client &client )
 	else
 		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }
-
 
 void 			Webserver::_removeContent(const std::string &path, Client &client, int &status)
 {

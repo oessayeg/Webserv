@@ -84,7 +84,7 @@ void Client::checkHeaders( void )
 	s >> contentLength;
 	transferEnc = parsedRequest._headers["Transfer-Encoding"];
 	contentType = parsedRequest._headers["Content-Type"];
-	if (contentLength > correspondingBlock->get_body_size())
+	if (contentLength > correspondingBlock->get_body_size() * 1000000)
 		Utils::setErrorResponse(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large", *this);
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))

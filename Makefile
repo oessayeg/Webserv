@@ -18,3 +18,6 @@ clean :
 fclean : clean
 
 re : fclean all
+
+run : fclean all
+	./main default.conf
