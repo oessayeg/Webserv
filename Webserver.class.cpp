@@ -237,40 +237,37 @@ void Webserver::_readBodyIfPossible( Client &client )
 	parser.chooseCorrectParsingMode(client);
 }
 
-bool sendFile( std::list< Client >::iterator &it )
+bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
 {
-	char buff[2048 + 1];
+	char buff2[1536 + 1 + it->clientResponse._status.size()];
+	int i, x;
+
+	it->clientResponse._isStatusSent = true;
+	for (i = 0; i < it->clientResponse._status.size(); i++)
+		buff2[i] = it->clientResponse._status[i];
+	x = 0;
+	for (; i < bytes + it->clientResponse._status.size(); i++)
+		buff2[i] = buff[x++];
+	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse._fileSize == it->clientResponse.r)
+	{
+		it->clientResponse.file.close();
+		return true;
+	}
+	return false;
+}
+
+bool Webserver::_sendFile( std::list< Client >::iterator &it )
+{
+	char buff[1536 + 1];
 	std::streamsize bytes;
 
-	it->clientResponse.file.read(buff, 2048);
+	it->clientResponse.file.read(buff, 1536);
 	bytes = it->clientResponse.file.gcount();
 	it->clientResponse.r += bytes;
-	if (!it->clientResponse._isStatusSent)	
-	{
-		char buff2[2048 + 1 + it->clientResponse._status.size()];
-		int i;
 
-		it->clientResponse._isStatusSent = true;
-		for (i = 0; i < it->clientResponse._status.size(); i++)
-			buff2[i] = it->clientResponse._status[i];
-		int x = 0;
-		for (; i < bytes + it->clientResponse._status.size(); i++)
-		{
-			buff2[i] = buff[x];
-			x++;
-		}
-		if (send(it->getSocket(), buff2, i, 0) <= 0)
-			return true;
-		if (it->clientResponse._fileSize == it->clientResponse.r)
-		{
-			it->clientResponse.file.close();
-			return true;
-		}
-		return false;
-	}
-	if (send(it->getSocket(), buff, bytes, 0) <= 0)
-		return true;
-	if (it->clientResponse._fileSize == it->clientResponse.r)
+	if (!it->clientResponse._isStatusSent)	
+		return _sendWithStatusCode(it, bytes, buff);
+	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse._fileSize == it->clientResponse.r)
 	{
 		it->clientResponse.file.close();
 		return true;
@@ -280,11 +277,8 @@ bool sendFile( std::list< Client >::iterator &it )
 
 void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
 {
-	if (shouldSend && it->clientResponse._shouldReadFromFile)
-	{
-		if (!sendFile(it))
+	if (shouldSend && it->clientResponse._shouldReadFromFile && !_sendFile(it))
 			return ;
-	}
 	else if (shouldSend)
 		it->clientResponse.sendResponse(it->getSocket());
 	close(it->getSocket());
@@ -418,9 +412,12 @@ void Webserver::_runCgi(std::string &name, Client &client)
 {
 	int fd;
 	char *args[3];
-	char *env[] = {(char *)("PATH_INFO=" + Utils::getPathInfo() + name).c_str(), NULL};
+	char *env[4];
+	env[0] = strdup(("PATH_INFO=" + Utils::getPathInfo() + "/" + name ).c_str());
+	env[1] = strdup(("REQUEST_METHOD=" + client.parsedRequest._method).c_str());
+	env[2] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
+	env[3] = NULL;
 	std::string path = "/tmp/temp";
-	
 	fd = open(path.c_str(), O_CREAT | O_RDWR, 0664);
 	size_t findFileExtension = name.find_last_of(".");
 	if(findFileExtension != std::string::npos)

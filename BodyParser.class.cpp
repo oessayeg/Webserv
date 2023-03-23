@@ -109,6 +109,7 @@ void BodyParser::parseMultipartData( Client &client )
 	client.fileToUpload.close();
 	if (client.request[i + client.boundary.size()] == '-' && client.request[i + client.boundary.size() + 1] == '-')
 	{
+		client.fileToUpload.write("\0", 1);
 		client.finishedBody = true;
 		return ;
 	}

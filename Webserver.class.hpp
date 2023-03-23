@@ -51,4 +51,6 @@ class Webserver
 		void _handleDeleteFile( Client &client );
 		void _handleFolderRequest( Client & );
 		void _handleFileRequest( Client & );
+		bool _sendFile( std::list< Client >::iterator &it );
+		bool _sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff );
 };
