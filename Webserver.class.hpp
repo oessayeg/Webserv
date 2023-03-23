@@ -46,7 +46,7 @@ class Webserver
 		void _handleCgi( std::list< Location>::iterator &currentList,  Client &client, const std::string &root );
 		void _runCgi( std::string &nameFile, Client & );
 		void _readFile( std::string &path, Client &client, std::string &name );
-		void _removeContent( const std::string &, Client &, int & );
+		void _removeContent( const std::string &, Client &, int &, bool &shouldPrint );
 		void _handleDeleteFolderRequest( Client &client );
 		void _handleDeleteFile( Client &client );
 		void _handleFolderRequest( Client & );

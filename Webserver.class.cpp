@@ -410,6 +410,7 @@ void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
 		response += "Content-Type: text/html\r\n\r\n";
 	response += str;
+	str += '\0';
 	Utils::setGoodResponse(response, client);
 }
 
@@ -471,7 +472,7 @@ void Webserver::_preparePostResponse( Client &client )
 		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }
 
-void 			Webserver::_removeContent(const std::string &path, Client &client, int &status)
+void 			Webserver::_removeContent(const std::string &path, Client &client, int &status, bool &shouldPrint)
 {
 	DIR *dir;
     DIR *dir1;
@@ -483,31 +484,39 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
         {
             std::string fullPath = (path + "/" + std::string(opt->d_name)).c_str();
             if((dir1= opendir(fullPath.c_str())) != NULL && strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
-                _removeContent(fullPath, client, status);
+                _removeContent(fullPath, client, status, shouldPrint);
 			if(strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
             {
-				if(access(fullPath.c_str(), X_OK | R_OK) == -1 )
+				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
+				{
+					shouldPrint = false;
 					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
+				}
                 status = remove(fullPath.c_str());
-                if(status != 0)
+				if(status != 0)
+				{
+					shouldPrint = false;
 					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+				}
             }
 	    }
 		closedir(dir);
-		closedir(dir1);
 	}
 }
 
 void Webserver::_handleDeleteFolderRequest(Client &client)
 {
 	int status = -1;
+	bool	shouldPrint = true;
 	DIR *dir;
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
 	std::string joinPath;
 	std::ifstream file;
 
 	if(client.currentList->_currentRoot[client.currentList->_currentRoot.length() - 1] != '/')
+	{
 		Utils::setErrorResponse(409, "HTTP/1.1 409 Conflict", "409 Conflict", client);
+	}
 	else if(client.currentList->get_cgi())			
 	{
 		for(; index != client.currentList->_indexes_location.end(); ++index)
@@ -525,10 +534,11 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	}
 	else
 	{
-		_removeContent(client.currentList->_currentRoot, client , status);
+		_removeContent(client.currentList->_currentRoot, client , status, shouldPrint);
 		if(status == 0)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
-		return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+		else if(status == -1 && shouldPrint)
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
 	}
 }
 
@@ -545,18 +555,20 @@ void Webserver::_handleDeleteFile(Client &client)
 		status = remove(client.currentList->_currentRoot.c_str());
 		if(status == 0)
 		{
-			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 			file.close();
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 		}
 	}
-	file.close();
 	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
 }
 
 void Webserver::_prepareDeleteResponse( Client &client )
 {
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
+	{
+		// std::cout<<"Here : "<<client.currentList->_currentRoot<<std::endl;
 		_handleDeleteFolderRequest(client);
+	}
 	else
 		_handleDeleteFile(client);
 }
