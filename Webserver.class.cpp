@@ -341,6 +341,7 @@ void Webserver::_handleFolderRequest(Client &client)
 				_runCgi(joinPath, client);
 			else
 			{
+
 				client.clientResponse._shouldReadFromFile = true;
 				client.clientResponse._nameOfFile =  joinPath;
 				client.typeCheck = POLLOUT;
@@ -360,13 +361,13 @@ void Webserver::_handleFolderRequest(Client &client)
 			response += Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
 			Utils::setGoodResponse(response, client);
 		}
+		closedir(dir);
 	}
 	else
 	{
 		if(client.currentList->_indexes_location.empty())
-			Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
-		else
-			Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 	}
 }
 
@@ -514,8 +515,12 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 			joinPath = client.currentList->_currentRoot + (*index);
 			file.open(joinPath);
 			if(file.good())
+			{
+				file.close();
 				return _runCgi(joinPath, client);
+			}
 		}
+		file.close();
 		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
 	}
 	else
@@ -523,8 +528,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 		_removeContent(client.currentList->_currentRoot, client , status);
 		if(status == 0)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
-		else if(status == -1)
-			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+		return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
 	}
 }
 
@@ -540,21 +544,21 @@ void Webserver::_handleDeleteFile(Client &client)
 			return _runCgi(client.currentList->_currentRoot, client);
 		status = remove(client.currentList->_currentRoot.c_str());
 		if(status == 0)
+		{
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
+			file.close();
+		}
 	}
+	file.close();
 	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
 }
 
 void Webserver::_prepareDeleteResponse( Client &client )
 {
-	int status;
-
-	status = -1;
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
 		_handleDeleteFolderRequest(client);
 	else
 		_handleDeleteFile(client);
-
 }
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)

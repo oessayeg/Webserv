@@ -64,9 +64,10 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
                 location_block += line + "\n";
                 if (line.find("}") != std::string::npos)
                 {
+                    size_t find;
                     size_t found  = line.find_first_not_of("  \t\f\v\n");
                     std::string name = line.substr(found);
-                    if(name.length() != 1)
+                    if(name.length() != 1 && (find = name.find_first_not_of(" \t\f\v\n")) == std::string::npos)
                         throw SyntaxError("Invalid close bracket");
                     else
                         break;
