@@ -297,7 +297,7 @@ void Webserver::_prepareResponse( Client &client )
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if (client.currentList == client.correspondingBlock->_location.end())
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
-	else if (client.currentList->get_isThereRedirection() && client.parsedRequest._method != "DELETE")
+	else if (client.currentList->get_isThereRedirection())
 		return _handleHttpRedirection(client.currentList, client);
 	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
 		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
@@ -404,7 +404,6 @@ void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
 		response += "Content-Type: text/html\r\n\r\n";
 	response += str;
-	str += '\0';
 	Utils::setGoodResponse(response, client);
 }
 
@@ -413,6 +412,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 	int fd;
 	char *args[3];
 	char *env[4];
+
 	env[0] = strdup(("PATH_INFO=" + Utils::getPathInfo() + "/" + name ).c_str());
 	env[1] = strdup(("REQUEST_METHOD=" + client.parsedRequest._method).c_str());
 	env[2] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
@@ -520,7 +520,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 		{
 			joinPath = client.currentList->_currentRoot + (*index);
 			file.open(joinPath);
-			if(file.good())
+			if(file.is_open())
 			{
 				file.close();
 				return _runCgi(joinPath, client);
@@ -562,10 +562,7 @@ void Webserver::_handleDeleteFile(Client &client)
 void Webserver::_prepareDeleteResponse( Client &client )
 {
 	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-	{
-		// std::cout<<"Here : "<<client.currentList->_currentRoot<<std::endl;
 		_handleDeleteFolderRequest(client);
-	}
 	else
 		_handleDeleteFile(client);
 }

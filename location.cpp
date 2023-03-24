@@ -25,13 +25,15 @@ Location & Location::operator=(const Location &opt)
         this->_count_return = opt._count_return;
         this->_isThereCgi = opt._isThereCgi;
         this->_supportUpload = opt._supportUpload;
+        this->_isThereRedirection = opt._isThereRedirection;
         for(int i = 0; i < 2; i++)
             this->_redirection[i] = opt._redirection[i];
     }
     return (*this);
 }
 
-Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false),_supportUpload(false)
+Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false), \
+_supportUpload(false)
 {
     init_list();
     size_t find = location.find_first_of("/");
@@ -202,6 +204,7 @@ void        Location::set_redirection(const std::string             &redirection
     std::string value;
     std::string key;
     std::string data;
+    std::cout<<"Hello"<<std::endl;
     check_valid_value(redirection, value);
     size_t found = value.find_first_not_of(" \t\f\v\n\r");
     size_t found_next = value.find_first_of(" \t\f\v\n\r", found + 1);
@@ -220,6 +223,7 @@ void        Location::set_redirection(const std::string             &redirection
     _redirection[0] = key;
     _redirection[1] = data;
     this->_count_return++;
+    this->_isThereRedirection = true;
 }
 
 

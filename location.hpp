@@ -21,13 +21,13 @@ class Location
         int                                      _count_return;
         bool                                     _isThereCgi;
         bool                                     _isThereRedirection;
-        std::list<std::string>                 _path_location;
-
+        std::list<std::string>                   _path_location;
+  
     public:
-        std::string                            _upload_dir;
-        std::list<std::string>                 _indexes_location;
-        bool                                   _supportUpload;
-        std::list<std::string>                 _accept_list;
+        bool                                     _supportUpload;
+        std::string                              _upload_dir;
+        std::list<std::string>                   _indexes_location;
+        std::list<std::string>                   _accept_list;
         std::string                              _redirection[2];
         std::string                              _currentRoot;
         Location();
