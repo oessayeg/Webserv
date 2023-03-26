@@ -65,13 +65,13 @@ void Client::setSocket( int s )
 void Client::checkRequestLine( void )
 {
 	if (!parsedRequest.hasAllowedChars())
-		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request", *this);
+		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Bad Request", *this);
 	else if (!parsedRequest.hasGoodSize())
-		Utils::setErrorResponse(414, "HTTP/1.1 414 Request-URI too long\r\n", "Error 414 Uri Too Long", *this);
+		Utils::setErrorResponse(414, "HTTP/1.1 414 Request-URI too long\r\n", "Uri Too Long", *this);
 	else if (!parsedRequest.isSupported())
-		Utils::setErrorResponse(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Error 405 Method Not Allowed", *this);
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Method Not Allowed", *this);
 	else if (!parsedRequest.isGoodVersion())
-		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Error 505 Version Not Supported", *this);
+		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Version Not Supported", *this);
 }
 
 void Client::checkHeaders( void )
@@ -85,12 +85,12 @@ void Client::checkHeaders( void )
 	transferEnc = parsedRequest._headers["Transfer-Encoding"];
 	contentType = parsedRequest._headers["Content-Type"];
 	if (contentLength > correspondingBlock->get_body_size() * 1000000)
-		Utils::setErrorResponse(413, "HTTP/1.1 413 Content Too Large\r\n", "Error 413 Content Too Large", *this);
+		Utils::setErrorResponse(413, "HTTP/1.1 413 Content Too Large\r\n", "Content Too Large", *this);
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
-		Utils::setErrorResponse(501, "HTTP/1.1 501 Not Implemented\r\n", "Error 501 Not Implemented", *this);
+		Utils::setErrorResponse(501, "HTTP/1.1 501 Not Implemented\r\n", "Not Implemented", *this);
 	else if (parsedRequest._method == "POST" && contentLength == 0 && transferEnc.empty())
-		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Error 400 Bad Request", *this);
+		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Bad Request", *this);
 	if (clientResponse.getBool() || parsedRequest._method != "POST")
 		return ;
 	// This part will set the correct reading mode for the body
@@ -111,9 +111,10 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	if (b != correspondingBlock->_error_page.end() && !errorFile.is_open())
 	{
 		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
-		errString.setErrorFile("Error 500 Internal Server Error");
+		errString.setErrorFile(500, "Internal Server Error");
 		s << errString.getFileInString().size();
 		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
 		return (returnString + errString.getFileInString());
 	}
 	else if (b != correspondingBlock->_error_page.end() && errorFile.is_open())
@@ -123,7 +124,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
 		return returnString + fileInString;
 	}
-	errString.setErrorFile(msgInBody);
+	errString.setErrorFile(statusCode, msgInBody);
 	s << errString.getFileInString().size();
 	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
 	returnString += "\r\n\r\n";
@@ -172,12 +173,12 @@ bool Client::isLocationFormedWell( const std::string &transferEnc )
 	if (currentList == correspondingBlock->_location.end()
 		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))
 	{
-		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", *this);
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "Not Found", *this);
 		return false;
 	}
 	else if (!isAccepted("POST", currentList->_accept_list))
 	{
-		Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", *this);
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "Method Not Allowed", *this);
 		return false;
 	}
 	else if (currentList->get_isThereRedirection())
@@ -188,7 +189,7 @@ bool Client::isLocationFormedWell( const std::string &transferEnc )
 	else if ((currentList->_currentRoot.back() == '/' && !currentList->get_indexes_location().size()
 		&& !currentList->_supportUpload) || (!currentList->get_cgi() && !currentList->_supportUpload))
 	{
-		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", *this);
+		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "Forbidden", *this);
 		return false;
 	}
 	else if (currentList->get_cgi() && !currentList->_supportUpload && contentLength > 0)
