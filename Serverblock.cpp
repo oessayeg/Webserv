@@ -183,7 +183,6 @@ void        Serverblock::set_port_and_ip(const std::string &line)
     check_value_arg(value);
     if (check_valid_listen(value, ip, port))
     {
-        std::cout<<"ip : "<<ip<<std::endl;
         if (check_valid_ip(ip) && check_valid_port(port))
         {
             this->_port = atoi(port.c_str());

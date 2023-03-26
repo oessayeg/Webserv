@@ -107,3 +107,10 @@ char *Utils::giveAllocatedChar( const std::string &str )
 	returnString[str.size()] = '\0';
 	return returnString;
 }
+
+void Utils::deleteDoublePtr( char **toDelete )
+{
+	for (int i = 0; toDelete[i]; i++)
+		delete toDelete[i];
+	delete toDelete;
+}

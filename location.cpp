@@ -204,7 +204,7 @@ void        Location::set_redirection(const std::string             &redirection
     std::string value;
     std::string key;
     std::string data;
-    std::cout<<"Hello"<<std::endl;
+    
     check_valid_value(redirection, value);
     size_t found = value.find_first_not_of(" \t\f\v\n\r");
     size_t found_next = value.find_first_of(" \t\f\v\n\r", found + 1);

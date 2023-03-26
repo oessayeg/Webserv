@@ -16,11 +16,12 @@ Client &Client::operator=( const Client &rhs )
 {
 	if (this != &rhs)
 	{
+		this->_socket = rhs._socket;
 		this->clientStruct = new struct sockaddr_in;
-		*this->clientStruct = *rhs.clientStruct;
+		if (this->clientStruct != NULL)
+			*this->clientStruct = *rhs.clientStruct;
 		*this->request = *rhs.request;
 		this->bodyType = rhs.bodyType;
-		this->_socket = rhs._socket;
 		this->isRead = rhs.isRead;
 		this->isRqLineParsed = rhs.isRqLineParsed;
 		this->isHeaderParsed = rhs.isHeaderParsed;
@@ -39,7 +40,10 @@ Client &Client::operator=( const Client &rhs )
 		this->boundary = rhs.boundary;
 		this->filePath = rhs.filePath;
 		this->nameForCgi = rhs.nameForCgi;
-		this->correspondingBlock = rhs.correspondingBlock;
+		this->currentList = rhs.currentList;
+		this->correspondingBlock = new Serverblock;
+		if (rhs.correspondingBlock != NULL)
+			*this->correspondingBlock = *rhs.correspondingBlock;
 		this->clientResponse = rhs.clientResponse;
 		this->errString = rhs.errString;
 		this->parsedRequest = rhs.parsedRequest;
@@ -50,6 +54,8 @@ Client &Client::operator=( const Client &rhs )
 Client::~Client( void )
 {
 	delete this->clientStruct;
+	if (correspondingBlock)
+		delete correspondingBlock;
 }
 
 int Client::getSocket( void ) 

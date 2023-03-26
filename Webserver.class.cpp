@@ -10,7 +10,11 @@ Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks),
 	_pendingClients(rhs._pendingClients), _listeningSockets(rhs._listeningSockets), \
 	_fdToCheck(rhs._fdToCheck) { }
 
-Webserver::~Webserver( void ) { }
+Webserver::~Webserver( void )
+{
+	if (_fdToCheck)
+		delete _fdToCheck;
+}
 
 void Webserver::setServerBlocks( std::list < Serverblock > &list )
 {
@@ -94,6 +98,8 @@ void Webserver::readAndRespond( void )
 			b++;
 		increment = true;
 	}
+	delete _fdToCheck;
+	_fdToCheck = NULL;
 }
 
 void Webserver::_acceptNewClients( void )
@@ -479,6 +485,8 @@ void Webserver::_runCgi(std::string &name, Client &client)
 			exit(EXIT_FAILURE);
 	}
 	wait(NULL);
+	Utils::deleteDoublePtr(args);
+	Utils::deleteDoublePtr(env);
 	_readFile("/tmp/temp", client, name);
 	close(fd);
 }
