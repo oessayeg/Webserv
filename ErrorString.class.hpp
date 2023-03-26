@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <sstream>
 
 class ErrorString
 {
@@ -15,5 +16,5 @@ class ErrorString
 	
 	public :
 		std::string getFileInString( void ) const;
-		void setErrorFile( const std::string &errorMessage );
+		void setErrorFile( int sCode, const std::string &errorMessage );
 };

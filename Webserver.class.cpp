@@ -10,7 +10,11 @@ Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks),
 	_pendingClients(rhs._pendingClients), _listeningSockets(rhs._listeningSockets), \
 	_fdToCheck(rhs._fdToCheck) { }
 
-Webserver::~Webserver( void ) { }
+Webserver::~Webserver( void )
+{
+	if (_fdToCheck)
+		delete _fdToCheck;
+}
 
 void Webserver::setServerBlocks( std::list < Serverblock > &list )
 {
@@ -94,6 +98,8 @@ void Webserver::readAndRespond( void )
 			b++;
 		increment = true;
 	}
+	delete _fdToCheck;
+	_fdToCheck = NULL;
 }
 
 void Webserver::_acceptNewClients( void )
@@ -303,13 +309,13 @@ void Webserver::_prepareResponse( Client &client )
 	client.typeCheck = POLLOUT;
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if (client.currentList == client.correspondingBlock->_location.end())
-		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", client);
 	else if (client.currentList->get_isThereRedirection())
 		return _handleHttpRedirection(client.currentList, client);
 	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
-		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "405 Method Not Allowed", client);
+		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "Method Not Allowed", client);
 	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
-		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 Not Found", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "Not Found", client);
 	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
 		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.parsedRequest._uri, client.clientResponse, client.currentList->get_root_location()))
 		return ;
@@ -366,8 +372,8 @@ void Webserver::_handleFolderRequest(Client &client)
 	else
 	{
 		if(client.currentList->_indexes_location.empty())
-			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
-		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden error", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", client);
 	}
 }
 
@@ -385,7 +391,7 @@ void	Webserver::_handleFileRequest(Client &client)
 		client.typeCheck = POLLOUT;
 	}
 	else
-		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", client);
 }
 
 void	Webserver::_readFile(std::string path, Client &client, std::string &name)
@@ -404,7 +410,7 @@ void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 	size_t findBody = str.find("\r\n\r\n");
 	body = str;
 	if(findBody != std::string::npos)
-		body = str.substr(findBƒody + 4, str.length() - (findBody + 4));
+		body = str.substr(findBody + 4, str.length() - (findBody + 4));
 	buffer << body.length();
 	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
@@ -479,6 +485,8 @@ void Webserver::_runCgi(std::string &name, Client &client)
 			exit(EXIT_FAILURE);
 	}
 	wait(NULL);
+	Utils::deleteDoublePtr(args);
+	Utils::deleteDoublePtr(env);
 	_readFile("/tmp/temp", client, name);
 	close(fd);
 }
@@ -540,13 +548,13 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
 				{
 					shouldPrint = false;
-					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
+					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "Internal Server Error", client);
 				}
                 status = remove(fullPath.c_str());
 				if(status != 0)
 				{
 					shouldPrint = false;
-					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden error", client);
 				}
             }
 	    }
@@ -565,7 +573,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 
 	if(client.currentList->_currentRoot[client.currentList->_currentRoot.length() - 1] != '/')
 	{
-		Utils::setErrorResponse(409, "HTTP/1.1 409 Conflict", "409 Conflict", client);
+		Utils::setErrorResponse(409, "HTTP/1.1 409 Conflict", "Conflict", client);
 	}
 	else if(client.currentList->get_cgi())			
 	{
@@ -580,7 +588,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 			}
 		}
 		file.close();
-		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
+		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "Forbidden", client);
 	}
 	else
 	{
@@ -588,7 +596,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 		if(status == 0)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 		else if(status == -1 && shouldPrint)
-			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "403 Forbidden error", client);
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden", client);
 	}
 }
 
@@ -609,7 +617,7 @@ void Webserver::_handleDeleteFile(Client &client)
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 		}
 	}
-	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "403 Forbidden", client);
+	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "Forbidden", client);
 }
 
 void Webserver::_prepareDeleteResponse( Client &client )

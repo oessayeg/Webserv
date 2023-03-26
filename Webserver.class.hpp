@@ -47,8 +47,8 @@ class Webserver
 		void _removeContent( const std::string &, Client &, int &, bool &shouldPrint );
 		void _handleDeleteFolderRequest( Client &client );
 		void _handleDeleteFile( Client &client );
-		void _handleFolderRequest( Client & );
-		void _handleFileRequest( Client & );
+		void _handleFolderRequest( Client &client );
+		void _handleFileRequest( Client &client );
 		bool _sendFile( std::list< Client >::iterator &it );
 		bool _sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff );
 		char **_prepareCgiEnv( Client &client, std::string &name );
