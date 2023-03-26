@@ -23,12 +23,12 @@ private:
     int                     _port;
     in_addr_t               _ip;
     size_t                   _body_size;
-    std::list<std::string>   _serverNames;
     int                     _countlisten;
     int                     _countbodysize;
     int                     _count_location;
     bool                    _found;
 public:
+    std::list<std::string>   _serverNames;
     std::list<Location>     _location;
     Serverblock();
     Serverblock(std::string &block);

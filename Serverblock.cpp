@@ -31,6 +31,7 @@ Serverblock &Serverblock::operator=(const Serverblock &opt)
         this->_location = opt._location;
         this->_error_page = opt._error_page;
         this->socketNeeds = opt.socketNeeds;
+        this->_serverNames = opt._serverNames;
     }
     return (*this);
 }
@@ -175,7 +176,6 @@ bool        Serverblock::check_valid_listen(const std::string &value, std::strin
     return (true);
 }
 
-
 void        Serverblock::set_port_and_ip(const std::string &line)
 {
     std::string ip;
@@ -188,7 +188,7 @@ void        Serverblock::set_port_and_ip(const std::string &line)
         if (check_valid_ip(ip) && check_valid_port(port))
         {
             this->_port = atoi(port.c_str());
-            this->_ip = inet_addr(ip.c_str());
+            this->_ip = inet_addr(ip.c_str()); 
         }
         else
             throw LogicError("'listen' invalid value");
