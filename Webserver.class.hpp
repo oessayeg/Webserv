@@ -52,4 +52,5 @@ class Webserver
 		bool _sendFile( std::list< Client >::iterator &it );
 		bool _sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff );
 		char **_prepareCgiEnv( Client &client, std::string &name );
+		char **_prepareArgs( const std::string &name );
 };

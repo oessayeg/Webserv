@@ -438,17 +438,33 @@ char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
 	return retEnv;
 }
 
+char **Webserver::_prepareArgs( const std::string &name )
+{
+	char **args;
+	size_t fileExt;
+
+	args = new char*[3];
+	args[0] = Utils::giveAllocatedChar((Utils::getPathInfo() + "/" + "php-cgi").c_str());
+	args[1] = Utils::giveAllocatedChar(name);
+	args[2] = NULL;
+	fileExt = name.find_last_of(".");
+	if(fileExt != std::string::npos && name.substr(fileExt + 1, name.length()) == "py")
+	{
+		delete args[0];
+		args[0] = Utils::giveAllocatedChar("/usr/bin/python");
+	}
+	return args;
+}
+
 void Webserver::_runCgi(std::string &name, Client &client)
 {
-	char *args[3];
+	char **args;
 	char **env;
 	int fd;
 
 	env = _prepareCgiEnv(client, name);
 	fd = open("/tmp/temp", O_CREAT | O_RDWR | O_TRUNC, 0664);
-	args[0] = Utils::giveAllocatedChar("/Users/oessayeg/Desktop/ytija/php-cgi");
-	args[1] = Utils::giveAllocatedChar(name);
-	args[2] = NULL;
+	args = _prepareArgs(name);
 	if(fork() == 0)
 	{
 		dup2(fd, STDOUT_FILENO);
