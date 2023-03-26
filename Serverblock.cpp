@@ -119,12 +119,20 @@ bool Serverblock::is_Number(const std::string &str)
     return true;
 }
 
+bool Serverblock::isNumberIp(const std::string &str)
+{
+    for(int i = 0; i < str.length(); i++)
+        if (std::isdigit(str[i]) == 0 && str[i] != '.')
+            return false;
+    return true;
+}
+
 bool        Serverblock::check_valid_port(std::string &port)
 {
     size_t found = port.find_first_of(" \t\f\v\n\r;");
 
     port = port.substr(0, found);
-    if (!is_Number(port))
+    if (!isNumberIp(port))
         throw LogicError("Invalid Port");
     unsigned int num = atoi(port.c_str());
     if (num > USHRT_MAX || num <= 0)
@@ -134,9 +142,8 @@ bool        Serverblock::check_valid_port(std::string &port)
 
 bool        Serverblock::check_valid_ip(const std::string    &ip)
 {
-    std::string value  = "127.0.0.1";
-    if(ip != value)
-        return (0);
+    if(!isNumberIp(ip))
+        throw LogicError("Inavlie value of ip '" + ip + "'");
     return (1);
 }
 
@@ -155,9 +162,13 @@ bool        Serverblock::check_valid_listen(const std::string &value, std::strin
     if (find_port == std::string::npos)
         throw LogicError("Invalid arg");
     str[0] = value.substr(0, find_port - 1);
+    if(str[0].empty())
+        throw LogicError("Invalid value of ip ' '");
     size_t find_next = value.find_first_of(" \t\f\v\n\r;", find_port);
     str[1]  = value.substr(find_port, find_next - find_port);
     ip = str[0];
+    if(ip == "localhost")
+        ip = "127.0.0.1";
     port = str[1];
     return (true);
 }
@@ -172,10 +183,11 @@ void        Serverblock::set_port_and_ip(const std::string &line)
     check_value_arg(value);
     if (check_valid_listen(value, ip, port))
     {
+        std::cout<<"ip : "<<ip<<std::endl;
         if (check_valid_ip(ip) && check_valid_port(port))
         {
             this->_port = atoi(port.c_str());
-            this->_ip = ip;
+            this->_ip = inet_addr(ip.c_str());
         }
         else
             throw LogicError("'listen' invalid value");
@@ -242,7 +254,7 @@ int         Serverblock::get_port() const
     return (this->_port);
 }
 
-std::string Serverblock::get_ip() const
+in_addr_t Serverblock::get_ip() const
 {
     return (this->_ip);
 }

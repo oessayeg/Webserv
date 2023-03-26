@@ -10,6 +10,7 @@
 #include <string.h>
 #include <iterator>
 #include <unistd.h>
+#include <netdb.h>
 #include <fcntl.h>
 #include <fstream>
 #include <sstream>

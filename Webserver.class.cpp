@@ -62,7 +62,7 @@ void Webserver::setReadyFds( void )
 	for (cIter = _pendingClients.begin(); cIter != _pendingClients.end(); cIter++)
 	{
 		_fdToCheck[i].fd = cIter->getSocket();
-		_fdToCheck[i].events = cIter->typeCheck;
+		_fdToCheck[i].events = POLLIN | POLLOUT;
 		_fdToCheck[i].revents = 0;
 		i++;
 	}
