@@ -404,7 +404,7 @@ void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 	size_t findBody = str.find("\r\n\r\n");
 	body = str;
 	if(findBody != std::string::npos)
-		body = str.substr(findBody + 4, str.length() - (findBody + 4));
+		body = str.substr(findBƒody + 4, str.length() - (findBody + 4));
 	buffer << body.length();
 	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
