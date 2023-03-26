@@ -179,6 +179,13 @@ void Webserver::_parseRequestLine( Client &client )
 	client.parsedRequest.setVersion(client.stringRequest.substr(i2 + 1, i1 - i2 - 1));
 	client.isRqLineParsed = true;
 	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
+
+	i1 = client.parsedRequest._uri.find('?');
+	if (i1 != std::string::npos)
+	{
+		client.parsedRequest._queryStr = client.parsedRequest._uri.substr(i1 + 1);
+		client.parsedRequest._uri = client.parsedRequest._uri.substr(0, i1);
+	}
 	client.checkRequestLine();
 }
 
@@ -335,7 +342,6 @@ void Webserver::_handleFolderRequest(Client &client)
 				_runCgi(joinPath, client);
 			else
 			{
-
 				client.clientResponse._shouldReadFromFile = true;
 				client.clientResponse._nameOfFile =  joinPath;
 				client.typeCheck = POLLOUT;
@@ -382,7 +388,7 @@ void	Webserver::_handleFileRequest(Client &client)
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "404 File Not Found", client);
 }
 
-void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
+void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 {
 	std::ifstream file(path.c_str());
 	std::stringstream buffer;
@@ -407,83 +413,58 @@ void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 	Utils::setGoodResponse(response, client);
 }
 
-std::string	readbuffer(std::string buffer)
+char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
 {
-	std::ifstream file(buffer);
+	char **retEnv;
 
-	std::stringstream ff;
-	ff << file.rdbuf();
-	return (ff.str());
+	retEnv = new char*[12];
+	retEnv[0] = Utils::giveAllocatedChar("PATH_INFO=" + Utils::getPathInfo() + "/" + name);
+	retEnv[1] = Utils::giveAllocatedChar("GATEWAY_INTERFACE=CGI/1.1");
+	retEnv[2] = Utils::giveAllocatedChar("REQUEST_METHOD=" + client.parsedRequest._method);
+	retEnv[3] = Utils::giveAllocatedChar("SCRIPT_NAME=" + Utils::getPathInfo() + "/" + name);
+	retEnv[4] = Utils::giveAllocatedChar("SCRIPT_FILENAME=" + Utils::getPathInfo() + "/" + name);
+	retEnv[5] = Utils::giveAllocatedChar("REDIRECT_STATUS=200");
+	retEnv[6] = Utils::giveAllocatedChar("SERVER_PROTOCOL=HTTP/1.1");
+	retEnv[7] = Utils::giveAllocatedChar("QUERY_STRING=" + client.parsedRequest._queryStr);
+	retEnv[8] = Utils::giveAllocatedChar("HTTP_COOKIE=" + client.parsedRequest._headers["Cookie"]);
+	if (client.parsedRequest._method == "POST")
+	{
+		retEnv[9] = Utils::giveAllocatedChar("CONTENT_TYPE=" + client.parsedRequest._headers["Content-Type"]);
+		retEnv[10] = Utils::giveAllocatedChar("CONTENT_LENGTH=" + client.parsedRequest._headers["Content-Length"]);
+		retEnv[11] = NULL;
+	}
+	else
+		retEnv[9] = NULL;
+	return retEnv;
 }
 
 void Webserver::_runCgi(std::string &name, Client &client)
 {
-	int fd;
 	char *args[3];
-	char *env[17];
+	char **env;
+	int fd;
 
-	env[0] = strdup("PATH_INFO=lolo/file.php");
-	env[1] = strdup(("CONTENT_LENGTH=" + client.parsedRequest._headers["Content-Length"]).c_str());
-	env[2] = strdup("GATEWAY_INTERFACE=CGI/1.1");
-	env[3] = strdup(("REQUEST_METHOD=" + client.parsedRequest._method).c_str());
-	env[4] = strdup("SCRIPT_NAME=");
-	env[5] = strdup("SCRIPT_FILENAME=/Users/ytijani/Desktop/Webserver/lolo/file.php");
-	env[6] = strdup(("CONTENT_TYPE=" + parser.getContentType(name)).c_str());
-	 env[7] = strdup("REDIRECT_STATUS=200");
-	//std::cout<<client.parsedRequest._uri<<std::endl;
-	env[8] = strdup("QUERY_STRING=");
-	env[9] = strdup("SERVER_PROTOCOL=HTTP/1.1");
-	env[10] = strdup("UPLOAD_DIR=/Users/ytijani/Desktop/Webserver/lolo/uploads");
-	env[11] = strdup(("PATH_TRANSLATED=" + Utils::getPathInfo() + "/" + name ).c_str());
-	env[12] = strdup("SERVER_SOFTWARE=main");
-	env[13] = strdup("SERVER_PORT=8080");
-	env[14] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
-	env[15] = strdup("REMOTE_ADDR=127.0.0.1");
-	env[16] = NULL;
-	// env[2] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
-	std::string path = "temp";
-	fd = open("temp", O_WRONLY | O_TRUNC | O_CREAT, 0644);
-	size_t findFileExtension = name.find_last_of(".");
-	if(findFileExtension != std::string::npos)
-	{
-		args[0] = strdup((Utils::getPathInfo() + "/" + "php-cgi").c_str());
-		// if(name.substr(findFileExtension + 1, name.length()) == "py")
-		// {
-		// 	free(args[0]);
-		// 	args[0] = strdup("/usr/bin/python");
-		// }
-		if (!client.nameForCgi.empty() && client.isThereCgi	)
-			name = client.nameForCgi;
-		args[1] = strdup("lolo/file.php");
-		args[2] = NULL;
-	}
+	env = _prepareCgiEnv(client, name);
+	fd = open("/tmp/temp", O_CREAT | O_RDWR | O_TRUNC, 0664);
+	args[0] = Utils::giveAllocatedChar("/Users/oessayeg/Desktop/ytija/php-cgi");
+	args[1] = Utils::giveAllocatedChar(name);
+	args[2] = NULL;
 	if(fork() == 0)
 	{
 		dup2(fd, STDOUT_FILENO);
 		close(fd);
-		if(client.parsedRequest._method == "POST")
+		if (client.parsedRequest._method == "POST")
 		{
-			int pipefd[2];
-			pipe(pipefd);
-			dup2(pipefd[0], 0);
-			write(pipefd[1], readbuffer(client.nameForCgi).c_str(), readbuffer(client.nameForCgi).length());
-			close(pipefd[0]);
-			close(pipefd[1]);
+			fd = open(client.nameForCgi.c_str(), O_RDONLY);
+			dup2(fd, 0);
+			close(fd);
 		}
-			if(execve(args[0], args, env) < 0)
-			{
-				perror("Execve :");
-				exit(0);
-			}
-			Utils::setErrorResponse(404, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
+		if(execve(args[0], args, env) < 0)
+			exit(EXIT_FAILURE);
 	}
-
 	wait(NULL);
+	_readFile("/tmp/temp", client, name);
 	close(fd);
-	_readFile(path, client, name);
-	// if (!client.nameForCgi.empty() && client.isThereCgi	)
-	// 	unlink(name.c_str());
-	// unlink(path.c_str());
 }
 
 void Webserver::_prepareGetResponse( Client &client )
@@ -498,10 +479,29 @@ void Webserver::_prepareGetResponse( Client &client )
 	}
 }
 
+std::string getIndex( Client &client )
+{
+	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
+	std::string joinPath;
+
+	for(; index != client.currentList->_indexes_location.end(); ++index)
+	{
+		joinPath = client.currentList->_currentRoot + (*index);
+		client.clientResponse.file.open(joinPath, std::ios::binary);
+		if(client.clientResponse.file.is_open())
+		{
+			client.clientResponse.file.close();
+			return joinPath;
+		}
+	}
+	return client.currentList->_currentRoot;
+}
+
 void Webserver::_preparePostResponse( Client &client )
 {
+	std::string name = getIndex(client);
 	if (client.isThereCgi)
-		_runCgi(client.currentList->_currentRoot, client);
+		_runCgi(name, client);
 	else
 		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }

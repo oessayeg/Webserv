@@ -13,6 +13,7 @@ class Request
 		std::string _method;
 		std::string _uri;
 		std::string _version;
+		std::string _queryStr;
 		std::map< std::string, std::string > _headers;
 		std::string _body;
 

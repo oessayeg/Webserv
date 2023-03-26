@@ -97,3 +97,13 @@ std::string	Utils::handleAutoindexFolder(const std::string &uri)
 	response <<"</ul></body></html>"<<std::endl;
 	return (response.str());	
 }
+
+char *Utils::giveAllocatedChar( const std::string &str )
+{
+	char *returnString;
+
+	returnString = new char[str.size() + 1];
+	std::strcpy(returnString, str.c_str());
+	returnString[str.size()] = '\0';
+	return returnString;
+}
