@@ -489,6 +489,9 @@ void Webserver::_runCgi(std::string &name, Client &client)
 	Utils::deleteDoublePtr(env);
 	_readFile("/tmp/temp", client, name);
 	close(fd);
+	unlink("/tmp/temp");
+	if (client.parsedRequest._method == "POST")
+		unlink(client.nameForCgi.c_str());
 }
 
 void Webserver::_prepareGetResponse( Client &client )

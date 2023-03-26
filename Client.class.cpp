@@ -132,7 +132,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	}
 	errString.setErrorFile(statusCode, msgInBody);
 	s << errString.getFileInString().size();
-	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
+	returnString = statusLine + "\r\nContent-Type: text/html\r\nContent-Length: " + s.str();
 	returnString += "\r\n\r\n";
 	return (returnString + errString.getFileInString());
 }
