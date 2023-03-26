@@ -62,7 +62,7 @@ void Webserver::setReadyFds( void )
 	for (cIter = _pendingClients.begin(); cIter != _pendingClients.end(); cIter++)
 	{
 		_fdToCheck[i].fd = cIter->getSocket();
-		_fdToCheck[i].events = cIter->typeCheck;
+		_fdToCheck[i].events = POLLIN | POLLOUT;
 		_fdToCheck[i].revents = 0;
 		i++;
 	}
@@ -407,46 +407,83 @@ void	Webserver::_readFile(std::string &path, Client &client, std::string &name)
 	Utils::setGoodResponse(response, client);
 }
 
+std::string	readbuffer(std::string buffer)
+{
+	std::ifstream file(buffer);
+
+	std::stringstream ff;
+	ff << file.rdbuf();
+	return (ff.str());
+}
+
 void Webserver::_runCgi(std::string &name, Client &client)
 {
 	int fd;
 	char *args[3];
-	char *env[4];
+	char *env[17];
 
-	env[0] = strdup(("PATH_INFO=" + Utils::getPathInfo() + "/" + name ).c_str());
-	env[1] = strdup(("REQUEST_METHOD=" + client.parsedRequest._method).c_str());
-	env[2] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
-	env[3] = NULL;
-	std::string path = "/tmp/temp";
-	fd = open(path.c_str(), O_CREAT | O_RDWR, 0664);
+	env[0] = strdup("PATH_INFO=lolo/file.php");
+	env[1] = strdup(("CONTENT_LENGTH=" + client.parsedRequest._headers["Content-Length"]).c_str());
+	env[2] = strdup("GATEWAY_INTERFACE=CGI/1.1");
+	env[3] = strdup(("REQUEST_METHOD=" + client.parsedRequest._method).c_str());
+	env[4] = strdup("SCRIPT_NAME=");
+	env[5] = strdup("SCRIPT_FILENAME=/Users/ytijani/Desktop/Webserver/lolo/file.php");
+	env[6] = strdup(("CONTENT_TYPE=" + parser.getContentType(name)).c_str());
+	 env[7] = strdup("REDIRECT_STATUS=200");
+	//std::cout<<client.parsedRequest._uri<<std::endl;
+	env[8] = strdup("QUERY_STRING=");
+	env[9] = strdup("SERVER_PROTOCOL=HTTP/1.1");
+	env[10] = strdup("UPLOAD_DIR=/Users/ytijani/Desktop/Webserver/lolo/uploads");
+	env[11] = strdup(("PATH_TRANSLATED=" + Utils::getPathInfo() + "/" + name ).c_str());
+	env[12] = strdup("SERVER_SOFTWARE=main");
+	env[13] = strdup("SERVER_PORT=8080");
+	env[14] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
+	env[15] = strdup("REMOTE_ADDR=127.0.0.1");
+	env[16] = NULL;
+	// env[2] = strdup(("HTTP_COOKIE=" + client.parsedRequest._headers["Set-Cookie"]).c_str());
+	std::string path = "temp";
+	fd = open("temp", O_WRONLY | O_TRUNC | O_CREAT, 0644);
 	size_t findFileExtension = name.find_last_of(".");
 	if(findFileExtension != std::string::npos)
 	{
 		args[0] = strdup((Utils::getPathInfo() + "/" + "php-cgi").c_str());
-		if(name.substr(findFileExtension + 1, name.length()) == "py")
-		{
-			free(args[0]);
-			args[0] = strdup("/usr/bin/python");
-		}
+		// if(name.substr(findFileExtension + 1, name.length()) == "py")
+		// {
+		// 	free(args[0]);
+		// 	args[0] = strdup("/usr/bin/python");
+		// }
 		if (!client.nameForCgi.empty() && client.isThereCgi	)
 			name = client.nameForCgi;
-		args[1] = strdup((name).c_str());
+		args[1] = strdup("lolo/file.php");
 		args[2] = NULL;
 	}
 	if(fork() == 0)
 	{
 		dup2(fd, STDOUT_FILENO);
 		close(fd);
-		if(execve(args[0], args, NULL) < 0)
+		if(client.parsedRequest._method == "POST")
+		{
+			int pipefd[2];
+			pipe(pipefd);
+			dup2(pipefd[0], 0);
+			write(pipefd[1], readbuffer(client.nameForCgi).c_str(), readbuffer(client.nameForCgi).length());
+			close(pipefd[0]);
+			close(pipefd[1]);
+		}
+			if(execve(args[0], args, env) < 0)
+			{
+				perror("Execve :");
+				exit(0);
+			}
 			Utils::setErrorResponse(404, "HTTP/1.1 500 Internal Server Error", "500 Internal Server Error", client);
 	}
 
-	while(wait(NULL) != -1);
-	_readFile(path, client, name);
+	wait(NULL);
 	close(fd);
-	if (!client.nameForCgi.empty() && client.isThereCgi	)
-		unlink(name.c_str());
-	unlink(path.c_str());
+	_readFile(path, client, name);
+	// if (!client.nameForCgi.empty() && client.isThereCgi	)
+	// 	unlink(name.c_str());
+	// unlink(path.c_str());
 }
 
 void Webserver::_prepareGetResponse( Client &client )

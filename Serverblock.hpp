@@ -2,10 +2,12 @@
 # define SERVERBLOCK_HPP
 
 #include <iostream>
+#include <arpa/inet.h>
 #include <list>
 #include <fstream>
 #include <sstream>
 #include <unistd.h>
+#include <netdb.h>
 #include <vector>
 #include <netinet/in.h>
 #include <map>
@@ -20,7 +22,7 @@ class Serverblock
 {
 private:
     int                     _port;
-    std::string              _ip;
+    in_addr_t               _ip;
     size_t                   _body_size;
     int                     _countlisten;
     int                     _countbodysize;
@@ -49,11 +51,12 @@ public:
     std::map<int, std::string> _error_page;
     struct sockaddr_in         socketNeeds;
     int                        get_port() const;
-    std::string                get_ip() const;
+    in_addr_t                get_ip() const;
     size_t                       get_body_size() const;
     std::list<Location>        get_locationblocks() const;
     void                       check_valid_config();
     void                       check_duplicate();
+    bool                        isNumberIp(const std::string &str);
     void                       check_valid_status_code(const std::string &key);
     std::list<Location>::iterator	ifUriMatchLocationBlock(std::list<Location> &list, const std::string &uri);
     ~Serverblock();
