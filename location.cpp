@@ -179,6 +179,8 @@ void        Location::check_valid_status_code(const std::string &key)
 
 void        Location::set_indexes_location(const std::string        &indexes_location)
 {
+    std::string value;
+    check_valid_value(indexes_location, value);
     size_t found = indexes_location.find_first_not_of("  \t\f\v\n\r");
     size_t found_t = indexes_location.find_first_of(";");
     if (found_t == std::string::npos)
@@ -188,7 +190,6 @@ void        Location::set_indexes_location(const std::string        &indexes_loc
     std::string       line;
     while(getline(paths, line, ' '))
         this->_indexes_location.push_back(line);
-    std::list<std::string>::iterator it = this->_indexes_location.begin();
 }
 
 

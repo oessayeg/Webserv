@@ -7,7 +7,7 @@ HEADER = ParseConfigfile/Configfile.hpp Serverblock.hpp
 
 NAME = main
 
-CPPFLAGS = -std=c++98 -fsanitize=address
+CPPFLAGS = -std=c++98
 all : $(NAME) $(HEADER)
 
 $(NAME) : $(SRCS)
