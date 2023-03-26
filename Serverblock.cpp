@@ -56,8 +56,8 @@ Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),
             set_port_and_ip(line.substr(6));
         else if (line.substr(0, 9) == "body_size")
             set_body_size(line.substr(9));
-        else if(line.substr(0, 11) == "server_name")
-            set_server_name(line.substr(11));
+        else if(line.substr(0, 12) == "server_names")
+            set_server_name(line.substr(12));
         else if (line.substr(0, 8) == "location")
         {
             location_block = line + "\n";
@@ -249,11 +249,15 @@ void                        Serverblock::set_server_name(const std::string &line
     std::string value;
 
     check_valid_value(line, value);
-    check_value_arg(value);
-     size_t found = value.find_first_of(" \t\f\v\n\r;");
-    std::string name = value.substr(0, found);
-    this->_serverName = name;
-
+    size_t found = line.find_first_not_of("  \t\f\v\n\r");
+    size_t found_t = line.find_first_of(";");
+    if (found_t == std::string::npos)
+       SyntaxError("'server_names' index value should be closed by ';'");
+    std::string name = line.substr(found, found_t - found);
+    std::stringstream paths(name);
+    std::string path;
+    while(getline(paths, path, ' '))
+        this->_serverNames.push_back(path);
 }
 
 void        Serverblock::check_duplicate()
@@ -281,9 +285,9 @@ std::list<Location> Serverblock::get_locationblocks() const
 {
     return(this->_location);
 }
-std::string                 Serverblock::get_server_name()
+std::list<std::string>                 Serverblock::get_server_name()
 {
-    return (this->_serverName);
+    return (this->_serverNames);
 }
 
 void	replaceString(std::string &str, const std::string &oldstring, const std::string &newString)

@@ -23,7 +23,7 @@ private:
     int                     _port;
     in_addr_t               _ip;
     size_t                   _body_size;
-    std::string              _serverName;
+    std::list<std::string>   _serverNames;
     int                     _countlisten;
     int                     _countbodysize;
     int                     _count_location;
@@ -55,7 +55,7 @@ public:
     in_addr_t                  get_ip() const;
     size_t                     get_body_size() const;
     std::list<Location>        get_locationblocks() const;
-    std::string                get_server_name();
+    std::list<std::string>     get_server_name();
     void                       check_valid_config();
     void                       check_duplicate();
     bool                       isNumberIp(const std::string &str);

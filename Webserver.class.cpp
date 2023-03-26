@@ -116,6 +116,7 @@ void Webserver::_acceptNewClients( void )
 	blIter = _serverBlocks.begin();
 	for (; sockIter != _listeningSockets.end(); sockIter++)
 	{
+		std::cout << "fd" << std::endl;
 		if (_fdToCheck[i].revents & POLLIN)
 		{
 			Client newClient;
