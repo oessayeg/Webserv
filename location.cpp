@@ -33,7 +33,7 @@ Location & Location::operator=(const Location &opt)
 }
 
 Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false), \
-_supportUpload(false)
+_isThereRedirection(false),_supportUpload(false)
 {
     init_list();
     size_t find = location.find_first_of("/");

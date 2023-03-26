@@ -20,4 +20,5 @@ class Utils
 		static std::string getPathInfo( void );
 		static std::string getFileContent( std::ifstream &file );
 		static std::string handleAutoindexFolder( const std::string &uri );
+		static char *giveAllocatedChar( const std::string &str );
 };
