@@ -10,7 +10,7 @@ HEADERS = $(addprefix includes/, Configfile.hpp Serverblock.hpp BodyParser.class
 	MainHeader.hpp MimeTypes.class.hpp Request.class.hpp Response.class.hpp \
 	Utils.class.hpp Webserver.class.hpp)
 
-CPPFLAGS = -std=c++98 -Wall -Wextra -Werror -fsanitize=address
+CPPFLAGS = -std=c++98 -Wall -Wextra -Werror
 
 CC = c++
 

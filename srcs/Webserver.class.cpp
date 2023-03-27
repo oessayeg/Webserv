@@ -319,7 +319,7 @@ void Webserver::_prepareResponse( Client &client )
 	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "Not Found", client);
 	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
-		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.clientResponse, client.currentList->get_root_location()))
+		&& (!client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.clientResponse) && client.parsedRequest._method != "DELETE"))
 		return ;
 	this->_handleProperResponse(client);
 }
@@ -385,7 +385,7 @@ void	Webserver::_handleFileRequest(Client &client)
 	if(client.clientResponse.file.is_open())
 	{
 		client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
-		client.clientResponse._status += "Content-Type: " + parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse._status += "\r\nContent-Type: " + parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
 		client.clientResponse._shouldReadFromFile = true;
 		client.clientResponse.setBool(true);
 		client.clientResponse._fileSize = Utils::getSize(client.currentList->_currentRoot);
@@ -539,13 +539,17 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 {
 	DIR *dir;
     DIR *dir1;
-
+	std::string fullPath;
 	struct dirent *opt;
+
+	opt = NULL;
+	dir = NULL;
+	dir1 = NULL;
 	if((dir = opendir(path.c_str())) != NULL)
 	{
 		while((opt = readdir(dir)) != NULL)
         {
-            std::string fullPath = (path + "/" + std::string(opt->d_name)).c_str();
+       		fullPath = (path + "/" + std::string(opt->d_name)).c_str();
             if((dir1= opendir(fullPath.c_str())) != NULL && strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
 			{
                 _removeContent(fullPath, client, status, shouldPrint);
@@ -556,16 +560,25 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
 				{
 					shouldPrint = false;
+					free(opt->d_name);
+					closedir(dir);
 					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "Internal Server Error", client);
 				}
                 status = remove(fullPath.c_str());
 				if(status != 0)
 				{
 					shouldPrint = false;
+					free(opt->d_name);
+					closedir(dir);
 					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden error", client);
 				}
+
             }
-	    }
+		}
+
+		// free(opt->d_name);
+
+		// std::cout<<"f_type :"<<&opt->d_type<<std::endl;
 		closedir(dir);
 	}
 }
@@ -641,5 +654,5 @@ void Webserver::_prepareDeleteResponse( Client &client )
 
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
 {
-	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n", client);
+	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
 }

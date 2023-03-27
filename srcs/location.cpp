@@ -32,7 +32,7 @@ Location & Location::operator=(const Location &opt)
     return (*this);
 }
 
-Location::Location(std::string &location):_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0),_isThereCgi(false), \
+Location::Location(std::string &location):_auto_index(false),_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0),_isThereCgi(false), \
 _isThereRedirection(false),_supportUpload(false)
 {
     init_list();
@@ -339,13 +339,15 @@ bool Location::ifRequestUriIsFolder( const std::string &uri )
     return false;
 }
 
-bool Location::checkIfPathIsValid(const std::string &path, Response &resp, const std::string &root)
+bool Location::checkIfPathIsValid(const std::string &path, Response &resp)
 {
     std::string send;
     if(path[path.length() - 1] == '/')
         return true;
-    send = path.substr(root.length() + 1);
-    resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + send + "/\r\nConnection : close\r\n\r\n");
+    size_t find = path.find_last_of("/");
+    if(find != std::string::npos)
+        send = path.substr(find + 1, path.length());
+    resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation:" + send + "/\r\nConnection: close\r\n\r\n");
     resp.setBool(true);
     return false;
 }

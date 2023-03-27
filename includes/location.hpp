@@ -63,7 +63,7 @@ class Location
         bool                        isMethodAccepted( std::list< Location >::iterator location, const std::string &method ); 
         bool                        checkIfPathExist(const std::string &path);
         bool                        ifRequestUriIsFolder( const std::string &uri);
-        bool                        checkIfPathIsValid(const std::string &path, Response &resp, const std::string &root);
+        bool                        checkIfPathIsValid(const std::string &path, Response &resp);
 
         ~Location();
 };
