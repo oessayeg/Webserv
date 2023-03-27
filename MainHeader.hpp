@@ -27,6 +27,7 @@
 #define BUFF_SIZE 17825
 #define MAX_RQ 8192
 #define ROOTFOLDER -42
+#define Default   "./default.conf"
 // Body type macros
 
 #define CHUNKED_MULTIPART 1

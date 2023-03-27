@@ -26,26 +26,6 @@ std::string     Configfile::get_contentfile(std::ifstream &infile)
     return (buffer.str());
 }
 
-void            Configfile::check_errors(const std::string    &namefile)
-{
-    std::ifstream file;
-
-    file.open(namefile);
-    if (!file)
-        throw FileError("Does Not Exist");
-    size_t found = namefile.find(".conf");
-    if(found != std::string::npos)
-    {
-        size_t start = found + 5;
-        size_t find = namefile.find_first_not_of(" \t\f\v\n\r", start);
-        if (find != std::string::npos)
-             throw FileError("'extension should be '.conf'");
-    }
-    else
-         throw FileError("extension should be '.conf'");
-}
-
-
 void    Configfile::parse_configfile(std::string &configfile)
 {
     while(configfile != "")

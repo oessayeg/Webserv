@@ -8,16 +8,18 @@ int main(int ac, char **av)
 
     try
     {
+        if(ac > 2)
+        throw  "Invalid argument";
         Configfile Config;
+        file = Default;
         if (av[1])
-        {
             file = av[1];
-            Config.check_errors(file);
-            std::ifstream infile;
-            infile.open(av[1]);
-            std::string content = Config.get_contentfile(infile);
-            Config.parse_configfile(content);
-        }
+        std::ifstream infile;
+        infile.open(file);
+        if(!infile.is_open())
+            throw NotFoundError("Do Not Exist");
+        std::string content = Config.get_contentfile(infile);
+        Config.parse_configfile(content);
 		mainServer.setServerBlocks(Config.get_serverblocks());
 		mainServer.createSockets();
 		while (1)

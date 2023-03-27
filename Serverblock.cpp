@@ -135,7 +135,7 @@ bool        Serverblock::check_valid_port(std::string &port)
     size_t found = port.find_first_of(" \t\f\v\n\r;");
 
     port = port.substr(0, found);
-    if (!isNumberIp(port))
+    if (!is_Number(port))
         throw LogicError("Invalid Port");
     unsigned int num = atoi(port.c_str());
     if (num > USHRT_MAX || num <= 0)
