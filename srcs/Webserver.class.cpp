@@ -555,6 +555,8 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
                 _removeContent(fullPath, client, status, shouldPrint);
 				closedir(dir1);
 			}
+			if(dir1 != NULL)
+				closedir(dir1);
 			if(strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
             {
 				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
@@ -572,13 +574,8 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 					closedir(dir);
 					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden error", client);
 				}
-
             }
 		}
-
-		// free(opt->d_name);
-
-		// std::cout<<"f_type :"<<&opt->d_type<<std::endl;
 		closedir(dir);
 	}
 }
