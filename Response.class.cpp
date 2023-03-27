@@ -1,7 +1,7 @@
 #include "Response.class.hpp"
 
-Response::Response( void ) : _response(), _canBeSent(false), _nameOfFile(), \
-	_shouldReadFromFile(false), _isStatusSent(false), r(0), _fileSize(0) { }
+Response::Response( void ) : _nameOfFile(), _response(), _canBeSent(false),  \
+	_shouldReadFromFile(false), _isStatusSent(false), _fileSize(0), r(0) { }
 
 Response::Response( const Response &rhs ) { *this = rhs; }
 

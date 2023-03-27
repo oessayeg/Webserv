@@ -1,6 +1,6 @@
 #include "Serverblock.hpp"
 
-Serverblock::Serverblock():_ip(0), _port(0),_countbodysize(0), _countlisten(0),_count_location(0),_body_size(10)
+Serverblock::Serverblock():_port(0), _ip(0), _body_size(10), _countlisten(0), _countbodysize(0), _count_location(0)
 {
 
 }
@@ -38,7 +38,7 @@ Serverblock &Serverblock::operator=(const Serverblock &opt)
 
 
 
-Serverblock::Serverblock(std::string &block):_countbodysize(0), _countlisten(0),_count_location(0),_body_size(10)
+Serverblock::Serverblock(std::string &block): _body_size(10), _countlisten(0), _countbodysize(0), _count_location(0)
 {
     block_is_empty(block);
     std::string location_block;
@@ -116,7 +116,7 @@ void        Serverblock::check_value_arg(const std::string &value)
 
 bool Serverblock::is_Number(const std::string &str)
 {
-    for(int i = 0; i < str.length(); i++)
+    for(size_t i = 0; i < str.length(); i++)
         if (std::isdigit(str[i]) == 0)
             return false;
     return true;
@@ -124,7 +124,7 @@ bool Serverblock::is_Number(const std::string &str)
 
 bool Serverblock::isNumberIp(const std::string &str)
 {
-    for(int i = 0; i < str.length(); i++)
+    for(size_t i = 0; i < str.length(); i++)
         if (std::isdigit(str[i]) == 0 && str[i] != '.')
             return false;
     return true;
@@ -183,7 +183,6 @@ bool        Serverblock::check_valid_ip(const std::string    &ip)
 bool        Serverblock::check_valid_listen(const std::string &value, std::string &ip, std::string &port)
 {
     std::string str[2];
-    int i = 0;
     size_t found = value.find_first_of(":");
     if (found == std::string::npos)
     {

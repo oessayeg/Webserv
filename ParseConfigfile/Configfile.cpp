@@ -23,6 +23,7 @@ std::string     Configfile::get_contentfile(std::ifstream &infile)
     std::stringstream buffer;
 
     buffer << infile.rdbuf();
+    infile.close();
     return (buffer.str());
 }
 

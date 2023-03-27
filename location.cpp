@@ -1,6 +1,6 @@
 #include "location.hpp"
 
-Location::Location():_auto_index(false),_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0), _supportUpload(false)
+Location::Location():_auto_index(false),_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0), _isThereCgi(false),_supportUpload(false)
 {
 }
 
@@ -32,7 +32,7 @@ Location & Location::operator=(const Location &opt)
     return (*this);
 }
 
-Location::Location(std::string &location):_count_auto_index(0),_count_allow_methode(0),_countroot(0),_count_return(0),_isThereCgi(false), \
+Location::Location(std::string &location):_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0),_isThereCgi(false), \
 _isThereRedirection(false),_supportUpload(false)
 {
     init_list();
@@ -101,7 +101,7 @@ void        Location::set_path_location(const std::string &path_location)//shoul
 
 bool Location::is_Number(const std::string  &str)
 {
-    for(int i = 0; i < str.length(); i++)
+    for(size_t i = 0; i < str.length(); i++)
     {
         if (std::isdigit(str[i]) == 0)
             return false;
@@ -339,12 +339,11 @@ bool Location::ifRequestUriIsFolder( const std::string &uri )
     return false;
 }
 
-bool Location::checkIfPathIsValid(const std::string &path, const std::string &uri, Response &resp, const std::string &root)
+bool Location::checkIfPathIsValid(const std::string &path, Response &resp, const std::string &root)
 {
     std::string send;
     if(path[path.length() - 1] == '/')
         return true;
-    size_t found = uri.find(root);
     send = path.substr(root.length() + 1);
     resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + send + "/\r\nConnection : close\r\n\r\n");
     resp.setBool(true);

@@ -171,7 +171,7 @@ void Webserver::_readRequest( Client &client )
 
 void Webserver::_parseRequestLine( Client &client )
 {
-	int i1, i2;
+	size_t i1, i2;
 	
 	if (!client.isRead || client.clientResponse.getBool() || client.isRqLineParsed)
 		return ;
@@ -253,7 +253,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
 {
 	char buff2[1536 + 1 + it->clientResponse._status.size()];
-	int i, x;
+	size_t i, x;
 
 	it->clientResponse._isStatusSent = true;
 	for (i = 0; i < it->clientResponse._status.size(); i++)
@@ -319,7 +319,7 @@ void Webserver::_prepareResponse( Client &client )
 	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "Not Found", client);
 	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
-		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.parsedRequest._uri, client.clientResponse, client.currentList->get_root_location()))
+		&& !client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.clientResponse, client.currentList->get_root_location()))
 		return ;
 	this->_handleProperResponse(client);
 }
@@ -574,7 +574,6 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 {
 	int status = -1;
 	bool	shouldPrint = true;
-	DIR *dir;
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
 	std::string joinPath;
 	std::ifstream file;
