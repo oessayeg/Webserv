@@ -611,7 +611,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	{
 		_removeContent(client.currentList->_currentRoot, client , status, shouldPrint);
 		if(status == 0)
-			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 35\r\n\r\n<h1> File Deleted successfully</h1>", client);
 		else if(status == -1 && shouldPrint)
 			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden", client);
 	}
