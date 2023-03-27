@@ -319,7 +319,7 @@ bool	Location::checkIfPathExist(const std::string &path)
 	std::ifstream file;
 
 	file.open(path);
-	if(file.good())
+	if(file.is_open())
     {
         file.close();
 		return (true);

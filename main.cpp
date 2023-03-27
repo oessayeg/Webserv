@@ -11,7 +11,7 @@ int main(int ac, char **av)
         if(ac > 2)
         throw  "Invalid argument";
         Configfile Config;
-        file = Default;
+        file = DEFAULT;
         if (av[1])
             file = av[1];
         std::ifstream infile;

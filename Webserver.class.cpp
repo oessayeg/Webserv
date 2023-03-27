@@ -547,7 +547,10 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
         {
             std::string fullPath = (path + "/" + std::string(opt->d_name)).c_str();
             if((dir1= opendir(fullPath.c_str())) != NULL && strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
+			{
                 _removeContent(fullPath, client, status, shouldPrint);
+				closedir(dir1);
+			}
 			if(strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
             {
 				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
@@ -614,13 +617,17 @@ void Webserver::_handleDeleteFile(Client &client)
 	if(file.is_open())
 	{
 		if(client.currentList->get_cgi())
+		{
+			file.close();
 			return _runCgi(client.currentList->_currentRoot, client);
+		}
 		status = remove(client.currentList->_currentRoot.c_str());
 		if(status == 0)
 		{
 			file.close();
 			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
 		}
+		file.close();
 	}
 	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "Forbidden", client);
 }

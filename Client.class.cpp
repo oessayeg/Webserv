@@ -128,6 +128,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
 		s << fileInString.size();
 		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		errorFile.close();
 		return returnString + fileInString;
 	}
 	errString.setErrorFile(statusCode, msgInBody);
