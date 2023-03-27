@@ -88,7 +88,7 @@ std::string	Utils::handleAutoindexFolder(const std::string &uri)
 	response << "<html><body><ul>" <<std::endl;
 	if((dir = opendir(uri.c_str())) != NULL)
 	{
-		while((folder = readdir (dir)) != NULL)
+		while((folder = readdir(dir)) != NULL)
 			if(folder->d_name[0] != '.')
 				response << "<li><a href=\"" << folder->d_name << "\">" << folder->d_name << "</a></li>\n";
 		closedir(dir);
