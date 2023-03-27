@@ -23,4 +23,6 @@ class Utils
 		static char *giveAllocatedChar( const std::string &str );
 		static void deleteDoublePtr( char **toDelete );
 		static bool serverNameMatches(std::string &host, Serverblock *block);
+		static std::string getFileN( char **av );
+		static void checkArgs( int ac, char **av );
 };

@@ -1,33 +1,6 @@
 #include "MainHeader.hpp"
 #include "Webserver.class.hpp"
 
-std::string getFileN( char **av )
-{
-	std::string file;
-
-	file = DEFAULT;
-	if (av[1])
-		file = av[1];
-	return file;
-}
-
-void checkArgs( int ac, char **av )
-{
-	std::ifstream infile;
-	std::string file;
-
-	file = DEFAULT;
-	if (ac > 2)
-		throw "Invalid Arguments";
-	if (av[1])
-		file = av[1];
-	infile.open(file);
-	if (!infile.is_open())
-		throw NotFoundError("Does Not Exist");
-	else
-		infile.close();
-}
-
 int main(int ac, char **av)
 {
     try
@@ -37,8 +10,8 @@ int main(int ac, char **av)
 		std::string content;
         std::ifstream infile;
 
-		checkArgs(ac, av);
-		infile.open(getFileN(av));
+		Utils::checkArgs(ac, av);
+		infile.open(Utils::getFileN(av));
         content = Config.get_contentfile(infile);
         Config.parse_configfile(content);
 		mainServer.setServerBlocks(Config.get_serverblocks());

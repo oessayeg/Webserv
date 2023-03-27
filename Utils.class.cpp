@@ -127,3 +127,30 @@ bool Utils::serverNameMatches(std::string &host, Serverblock *block)
 			return true;
 	return (false);
 }
+
+std::string Utils::getFileN( char **av )
+{
+	std::string file;
+
+	file = DEFAULT;
+	if (av[1])
+		file = av[1];
+	return file;
+}
+
+void Utils::checkArgs( int ac, char **av )
+{
+	std::ifstream infile;
+	std::string file;
+
+	file = DEFAULT;
+	if (ac > 2)
+		throw "Invalid Arguments";
+	if (av[1])
+		file = av[1];
+	infile.open(file);
+	if (!infile.is_open())
+		throw NotFoundError("Does Not Exist");
+	else
+		infile.close();
+}
