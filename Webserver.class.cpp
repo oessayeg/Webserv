@@ -158,7 +158,6 @@ void Webserver::_readRequest( Client &client )
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
 	ptrToEnd = strstr(client.request, "\r\n\r\n");
-	std::cout<<client.request<<std::endl;
 	if (client.bytesRead == MAX_RQ && !ptrToEnd)
 		return Utils::setErrorResponse(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large", client);
 	if (ptrToEnd)
@@ -300,18 +299,6 @@ void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool 
 	*inc = false;
 }
 
-bool serverNameMatches(std::string &host, Serverblock *block)
-{
-	std::list<std::string>::iterator it = block->_serverNames.begin();
-	std::cout << block->_serverNames.size() << std::endl;
-	if(host.empty() || (block->_serverNames.size() == 1 && *block->_serverNames.begin() == "_"))
-		return(true);
-	for(; it != block->_serverNames.end(); ++it)
-		if(host == *it)
-			return true;
-	return (false);
-}
-
 void Webserver::_prepareResponse( Client &client )
 {
 	std::list< Location >::iterator currentList;
@@ -320,7 +307,7 @@ void Webserver::_prepareResponse( Client &client )
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
 	client.typeCheck = POLLOUT;
-	if (!serverNameMatches(client.parsedRequest._headers["Host"], client.correspondingBlock))
+	if (!Utils::serverNameMatches(client.parsedRequest._headers["Host"], client.correspondingBlock))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", client);
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
 	if (client.currentList == client.correspondingBlock->_location.end())

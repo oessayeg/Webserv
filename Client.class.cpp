@@ -175,6 +175,11 @@ bool Client::isLocationFormedWell( const std::string &transferEnc )
 {
 	std::list< Location >::iterator currentList;
 	
+	if (!Utils::serverNameMatches(this->parsedRequest._headers["Host"], this->correspondingBlock))
+	{
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", *this);
+		return false;
+	}
 	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
 	if (currentList == correspondingBlock->_location.end()
 		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))

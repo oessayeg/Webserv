@@ -22,4 +22,5 @@ class Utils
 		static std::string handleAutoindexFolder( const std::string &uri );
 		static char *giveAllocatedChar( const std::string &str );
 		static void deleteDoublePtr( char **toDelete );
+		static bool serverNameMatches(std::string &host, Serverblock *block);
 };
