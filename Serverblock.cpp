@@ -143,10 +143,40 @@ bool        Serverblock::check_valid_port(std::string &port)
     return (true);
 }
 
+bool        Serverblock::chackValidIpValue(std::string &ip)
+{
+    int value;
+    std::stringstream ff(ip);
+    ff >> value;
+    if(!isNumberIp(ip)|| value > 255)
+        return false;
+    return true;
+
+}
 bool        Serverblock::check_valid_ip(const std::string    &ip)
 {
-    if(!isNumberIp(ip))
-        throw LogicError("Inavlie value of ip '" + ip + "'");
+    int count;
+
+    count = 0;
+    size_t found = ip.find_first_of(".");
+    size_t  found_t = ip.find_first_of(".");
+    if (found == std::string::npos)
+        return(true);
+    while (found_t != std::string::npos)
+    {
+        count++;
+        found_t = ip.find_first_of(".", found_t + 1);
+    }
+    if(count != 3)
+        throw "Invalid Ip";
+    if (found != std::string::npos)
+    {
+        std::stringstream outfile(ip);
+        std::string line;
+        while (getline(outfile, line, '.'))
+        if(!chackValidIpValue(line))
+            throw LogicError("Inavlid value of ip '" + ip + "'");
+    }
     return (1);
 }
 

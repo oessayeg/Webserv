@@ -48,6 +48,7 @@ public:
     bool                       check_valid_ip(const std::string    &ip);
     bool                       check_valid_listen(const std::string &value, std::string &ip, std::string &port);
     bool                       is_Number(const std::string &buffer);
+    bool                       chackValidIpValue(std::string &ip);
 //**********************************Get Attributes functions*******************************//
     std::map<int, std::string> _error_page;
     struct sockaddr_in         socketNeeds;
