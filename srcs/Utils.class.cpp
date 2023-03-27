@@ -153,3 +153,12 @@ void Utils::checkArgs( int ac, char **av )
 	else
 		infile.close();
 }
+
+
+std::string Utils::getSizeInString( const std::string &str )
+{
+	std::stringstream ss;
+
+	ss << str.size();
+	return ss.str();
+}

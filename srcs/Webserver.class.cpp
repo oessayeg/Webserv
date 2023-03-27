@@ -367,7 +367,7 @@ void Webserver::_handleFolderRequest(Client &client)
 		if((dir = opendir(client.currentList->_currentRoot.c_str())))
 		{
 			indexes = Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
-			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(indexes) + "\r\nContent-Type: text/html\r\n\r\n";
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeInString(indexes) + "\r\nContent-Type: text/html\r\n\r\n";
 			response += indexes;
 			Utils::setGoodResponse(response, client);
 		}

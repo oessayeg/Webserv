@@ -25,4 +25,5 @@ class Utils
 		static bool serverNameMatches(std::string &host, Serverblock *block);
 		static std::string getFileN( char **av );
 		static void checkArgs( int ac, char **av );
+		static std::string getSizeInString( const std::string &str );
 };
