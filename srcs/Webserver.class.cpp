@@ -554,15 +554,18 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 			{
                 _removeContent(fullPath, client, status, shouldPrint);
 				closedir(dir1);
+				dir1 = NULL;
 			}
 			if(dir1 != NULL)
+			{
 				closedir(dir1);
+				dir1 = NULL;
+			}
 			if(strcmp(opt->d_name, ".") && strcmp(opt->d_name, ".."))
             {
 				if(access(fullPath.c_str(), W_OK | R_OK) == -1 )
 				{
 					shouldPrint = false;
-					free(opt->d_name);
 					closedir(dir);
 					return Utils::setErrorResponse(500, "HTTP/1.1 500 Internal Server Error", "Internal Server Error", client);
 				}
@@ -570,7 +573,6 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 				if(status != 0)
 				{
 					shouldPrint = false;
-					free(opt->d_name);
 					closedir(dir);
 					return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error", "Forbidden error", client);
 				}
