@@ -638,7 +638,7 @@ void Webserver::_handleDeleteFile(Client &client)
 		if(status == 0)
 		{
 			file.close();
-			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 17\r\n\r\n<h1> DELETE </h1>", client);
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 35\r\n\r\n<h1> File Deleted successfully </h1>", client);
 		}
 		file.close();
 	}
