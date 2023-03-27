@@ -1,4 +1,4 @@
-#include "ErrorString.class.hpp"
+#include "../includes/ErrorString.class.hpp"
 
 ErrorString::ErrorString( void )
 {

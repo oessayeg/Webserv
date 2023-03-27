@@ -1,4 +1,4 @@
-#include "Response.class.hpp"
+#include "../includes/Response.class.hpp"
 
 Response::Response( void ) : _nameOfFile(), _response(), _canBeSent(false),  \
 	_shouldReadFromFile(false), _isStatusSent(false), _fileSize(0), r(0) { }

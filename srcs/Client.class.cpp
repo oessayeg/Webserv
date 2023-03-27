@@ -1,4 +1,4 @@
-#include "MainHeader.hpp"
+#include "../includes/MainHeader.hpp"
 
 Client::Client( void ) : _socket(0),\
 		clientStruct(new struct sockaddr_in), bodyType(0), isRead(false), \

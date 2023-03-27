@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MainHeader.hpp"
-#include "ParseConfigfile/Configfile.hpp"
+#include "Configfile.hpp"
 
 typedef struct pollfd pollfd;
 typedef struct sockaddr_in sockaddr_in;

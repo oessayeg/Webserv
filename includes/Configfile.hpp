@@ -8,8 +8,8 @@
 # include <sstream>
 # include <list>
 
-#include "../Exception.hpp"
-#include "../Serverblock.hpp"
+#include "Exception.hpp"
+#include "Serverblock.hpp"
 
 class Serverblock;
 class Configfile

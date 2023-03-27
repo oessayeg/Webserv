@@ -1,14 +1,14 @@
 NAME = webserv
 
-SRCS = main.cpp Webserver.class.cpp Request.class.cpp Client.class.cpp \
+SRCS = $(addprefix srcs/, main.cpp Webserver.class.cpp Request.class.cpp Client.class.cpp \
 	Response.class.cpp ErrorString.class.cpp MimeTypes.class.cpp \
-	BodyParser.class.cpp ParseConfigfile/Configfile.cpp Serverblock.cpp \
-	location.cpp Utils.class.cpp
+	BodyParser.class.cpp Configfile.cpp Serverblock.cpp \
+	location.cpp Utils.class.cpp)
 
-HEADERS = ParseConfigfile/Configfile.hpp Serverblock.hpp BodyParser.class.hpp \
+HEADERS = $(addprefix includes/, Configfile.hpp Serverblock.hpp BodyParser.class.hpp \
 	Client.class.hpp ErrorString.class.hpp Exception.hpp location.hpp \
 	MainHeader.hpp MimeTypes.class.hpp Request.class.hpp Response.class.hpp \
-	Utils.class.hpp Webserver.class.hpp
+	Utils.class.hpp Webserver.class.hpp)
 
 CPPFLAGS = -std=c++98 -Wall -Wextra -Werror -fsanitize=address
 

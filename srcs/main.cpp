@@ -1,5 +1,5 @@
-#include "MainHeader.hpp"
-#include "Webserver.class.hpp"
+#include "../includes/MainHeader.hpp"
+#include "../includes/Webserver.class.hpp"
 
 int main(int ac, char **av)
 {

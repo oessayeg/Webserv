@@ -1,4 +1,4 @@
-#include "location.hpp"
+#include "../includes/location.hpp"
 
 Location::Location():_auto_index(false),_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0), _isThereCgi(false),_supportUpload(false)
 {

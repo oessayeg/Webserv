@@ -14,9 +14,6 @@
 #include "Exception.hpp"
 #include "location.hpp"
 
-// Should also consider checking the default path for a config file if there is no path
-// Body_size max 2500mb; 
-
 class Serverblock
 {
 private:
