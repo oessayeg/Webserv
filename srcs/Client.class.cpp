@@ -91,7 +91,7 @@ void Client::checkHeaders( void )
 	transferEnc = parsedRequest._headers["Transfer-Encoding"];
 	contentType = parsedRequest._headers["Content-Type"];
 	if (contentLength > correspondingBlock->get_body_size() * 1000000)
-		Utils::setErrorResponse(413, "HTTP/1.1 413 Content Too Large\r\n", "Content Too Large", *this);
+		Utils::setErrorResponse(413, "HTTP/1.1 413 Request Entity Too Large\r\n", "Request Entity Too Large", *this);
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
 		Utils::setErrorResponse(501, "HTTP/1.1 501 Not Implemented\r\n", "Not Implemented", *this);
@@ -120,7 +120,6 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 		errString.setErrorFile(500, "Internal Server Error");
 		s << errString.getFileInString().size();
 		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
-		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
 		return (returnString + errString.getFileInString());
 	}
 	else if (b != correspondingBlock->_error_page.end() && errorFile.is_open())
@@ -133,7 +132,7 @@ std::string Client::formError( int statusCode, const std::string &statusLine, co
 	}
 	errString.setErrorFile(statusCode, msgInBody);
 	s << errString.getFileInString().size();
-	returnString = statusLine + "\r\nContent-Type: text/html\r\nContent-Length: " + s.str();
+	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
 	returnString += "\r\n\r\n";
 	return (returnString + errString.getFileInString());
 }
@@ -176,32 +175,32 @@ bool Client::isLocationFormedWell( const std::string &transferEnc )
 {
 	std::list< Location >::iterator currentList;
 	
-	if (!Utils::serverNameMatches(this->parsedRequest._headers["Host"], this->correspondingBlock))
+	if (this->correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(this->parsedRequest._headers["Host"], this->correspondingBlock))
 	{
-		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "File Not Found", *this);
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", *this);
 		return false;
 	}
 	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
 	if (currentList == correspondingBlock->_location.end()
 		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))
 	{
-		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found", "Not Found", *this);
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "Not Found", *this);
 		return false;
 	}
 	else if (!isAccepted("POST", currentList->_accept_list))
 	{
-		Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed", "Method Not Allowed", *this);
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed\r\n", "Method Not Allowed", *this);
 		return false;
 	}
 	else if (currentList->get_isThereRedirection())
 	{
-		Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length :0\r\n", *this);
+		Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", *this);
 		return false;
 	}
 	else if ((currentList->_currentRoot.back() == '/' && !currentList->get_indexes_location().size()
 		&& !currentList->_supportUpload) || (!currentList->get_cgi() && !currentList->_supportUpload))
 	{
-		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden", "Forbidden", *this);
+		Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden\r\n", "Forbidden", *this);
 		return false;
 	}
 	else if (currentList->get_cgi() && !currentList->_supportUpload && contentLength > 0)
