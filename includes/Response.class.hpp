@@ -6,15 +6,17 @@
 
 class Response
 {
+	private :
+		bool _canBeSent;
+		bool _shouldReadFromFile;
+		bool _isStatusSent;
+		size_t _fileSize;
+		
 	public :
 		std::ifstream file;
 		std::string _nameOfFile;
 		std::string _response;
 		std::string _status;
-		bool _canBeSent;
-		bool _shouldReadFromFile;
-		bool _isStatusSent;
-		size_t _fileSize;
 		size_t r;
 
 	public :
@@ -25,7 +27,13 @@ class Response
 
 	public :
 		bool getBool( void ) const;
+		bool readFromFile( void ) const;
+		bool getIsStatusSent( void ) const;
 		void setBool( bool isReady );
+		void setReadFromFile( bool shouldRead );
+		void setIsStatusSent( bool isItSent );
+		void setFileSize( size_t size );
 		void sendResponse( int socket ) const;
 		void setResponse( const std::string &resp );
+		size_t getFileSize( void ) const;
 };

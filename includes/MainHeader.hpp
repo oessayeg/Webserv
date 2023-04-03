@@ -21,22 +21,22 @@
 #include <dirent.h>
 #include <map>
 
-// The first macro is used when using recv function
-// The second one is for the size of request line + headers
-#define MIN_TO_READ 8192
-#define BUFF_SIZE 17825
-#define MAX_RQ 8192
-#define ROOTFOLDER -42
+// Default path for the config file
 #define DEFAULT   "./default.conf"
-// Body type macros
 
+// MIN_TO_READ = how much bytes to read when using recv()
+#define MIN_TO_READ 8192
+
+#define BUFF_SIZE 17825
+#define ROOTFOLDER -42
+
+// Body type macros (To know how to parse bodies in POST requests)
 #define CHUNKED_MULTIPART 1
 #define MULTIPART 2
 #define CHUNKED 3
 #define OTHER 4
 
-//Should consider changing the int to short (if I don't need the whole bytes)
-// Classes header files
+// Should consider changing the int to short (if I don't need the whole bytes)
 #include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"

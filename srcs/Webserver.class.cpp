@@ -157,7 +157,7 @@ void Webserver::_readRequest( Client &client )
 	client.bytesRead += r;
 	client.request[client.bytesRead] = '\0';
 	ptrToEnd = strstr(client.request, "\r\n\r\n");
-	if (client.bytesRead == MAX_RQ && !ptrToEnd)
+	if (client.bytesRead == MIN_TO_READ && !ptrToEnd)
 		return Utils::setErrorResponse(413, "HTTP/1.1 413 Entity Too Large\r\n", "Entity Too Large", client);
 	if (ptrToEnd)
 	{
@@ -254,13 +254,13 @@ bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int byte
 	char buff2[1536 + 1 + it->clientResponse._status.size()];
 	size_t i, x;
 
-	it->clientResponse._isStatusSent = true;
+	it->clientResponse.setIsStatusSent(true);
 	for (i = 0; i < it->clientResponse._status.size(); i++)
 		buff2[i] = it->clientResponse._status[i];
 	x = 0;
 	for (; i < bytes + it->clientResponse._status.size(); i++)
 		buff2[i] = buff[x++];
-	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse._fileSize == it->clientResponse.r)
+	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.r)
 	{
 		it->clientResponse.file.close();
 		return true;
@@ -277,9 +277,9 @@ bool Webserver::_sendFile( std::list< Client >::iterator &it )
 	bytes = it->clientResponse.file.gcount();
 	it->clientResponse.r += bytes;
 
-	if (!it->clientResponse._isStatusSent)	
+	if (!it->clientResponse.getIsStatusSent())	
 		return _sendWithStatusCode(it, bytes, buff);
-	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse._fileSize == it->clientResponse.r)
+	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.r)
 	{
 		it->clientResponse.file.close();
 		return true;
@@ -289,7 +289,7 @@ bool Webserver::_sendFile( std::list< Client >::iterator &it )
 
 void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
 {
-	if (shouldSend && it->clientResponse._shouldReadFromFile && !_sendFile(it))
+	if (shouldSend && it->clientResponse.readFromFile() && !_sendFile(it))
 			return ;
 	else if (shouldSend)
 		it->clientResponse.sendResponse(it->getSocket());
@@ -349,12 +349,12 @@ void Webserver::_handleFolderRequest(Client &client)
 				_runCgi(joinPath, client);
 			else
 			{
-				client.clientResponse._shouldReadFromFile = true;
+				client.clientResponse.setReadFromFile(true);
 				client.clientResponse._nameOfFile =  joinPath;
 				client.clientResponse.setBool(true);
 				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
 				client.clientResponse._status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
-				client.clientResponse._fileSize = Utils::getSize(joinPath);
+				client.clientResponse.setFileSize(Utils::getSize(joinPath));
 			}
 			return ;
 		}
@@ -385,9 +385,9 @@ void	Webserver::_handleFileRequest(Client &client)
 	{
 		client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
 		client.clientResponse._status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
-		client.clientResponse._shouldReadFromFile = true;
+		client.clientResponse.setReadFromFile(true);
 		client.clientResponse.setBool(true);
-		client.clientResponse._fileSize = Utils::getSize(client.currentList->_currentRoot);
+		client.clientResponse.setFileSize(Utils::getSize(client.currentList->_currentRoot));
 		client.clientResponse._nameOfFile =  client.currentList->_currentRoot;
 	}
 	else

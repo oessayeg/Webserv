@@ -48,7 +48,7 @@ void BodyParser::parseChunkedData( Client &client )
 	}
 	else if (index2 == client.bytesRead)
 	{
-		memset(client.request, 0, MAX_RQ);
+		memset(client.request, 0, MIN_TO_READ);
 		client.bytesRead = 0;
 	}
 	else
@@ -75,7 +75,7 @@ void BodyParser::parseNormalData( Client &client )
 		client.finishedBody = true;
 		return ;
 	}
-	memset(client.request, 0, MAX_RQ);
+	memset(client.request, 0, MIN_TO_READ);
 	client.bytesRead = 0;
 }
 

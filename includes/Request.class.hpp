@@ -7,6 +7,7 @@
 
 class Request
 {
+	// Request line components and headers
 	private :
 		std::string _method;
 		std::string _uri;
