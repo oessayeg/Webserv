@@ -37,6 +37,11 @@ void Request::setVersion( const std::string &version )
 	this->_version = version;
 }
 
+void Request::setQueryString( const std::string &qString )
+{
+	this->_queryStr = qString;
+}
+
 void Request::insertHeader( const std::pair< std::string, std::string > &pair)
 {
 	this->_headers.insert(pair);

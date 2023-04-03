@@ -4,7 +4,7 @@ Client::Client( void ) : _socket(0),\
 		clientStruct(new struct sockaddr_in), bodyType(0), isRead(false), \
 		isRqLineParsed(false), isHeaderParsed(false), shouldReadBody(false), \
 		finishedBody(false), gotFileName(false), shouldSkip(false), isConnected(true), \
-		isThereCgi(false), typeCheck(POLLIN), bytesRead(0), bytesToRead(0), bytesCounter(0), \
+		isThereCgi(false), bytesRead(0), bytesToRead(0), bytesCounter(0), \
 		contentLength(0), correspondingBlock(NULL), errString(), parsedRequest() { }
 
 Client::Client( const Client &rhs )
@@ -31,7 +31,6 @@ Client &Client::operator=( const Client &rhs )
 		this->shouldSkip = rhs.shouldSkip;
         this->isConnected = rhs.isConnected;
 		this->isThereCgi = rhs.isThereCgi;
-		this->typeCheck = rhs.typeCheck;
 		this->bytesRead = rhs.bytesRead;
 		this->bytesToRead = rhs.bytesToRead;
 		this->bytesCounter = rhs.bytesCounter;

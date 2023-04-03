@@ -29,6 +29,7 @@ class Request
 		void setMethod( const std::string &meth );
 		void setUri( const std::string &uri );
 		void setVersion( const std::string &version );
+		void setQueryString( const std::string &qStr );
 		void insertHeader( const std::pair< std::string, std::string > &pair );
 		void setBody( const std::string &body );
 

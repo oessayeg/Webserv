@@ -224,7 +224,7 @@ void Webserver::_parseHeaders( Client &client )
 	client.isHeaderParsed = true;
 	if (client.clientResponse.getBool() || !client.shouldReadBody)
 		return ;
-	parser.chooseCorrectParsingMode(client);
+	_parser.chooseCorrectParsingMode(client);
 }
 
 void Webserver::_readBodyIfPossible( Client &client )
@@ -246,7 +246,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 		client.request[b++] = buff[i];
 	client.request[b] = '\0';
 	client.bytesRead += r;
-	parser.chooseCorrectParsingMode(client);
+	_parser.chooseCorrectParsingMode(client);
 }
 
 bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
@@ -305,7 +305,6 @@ void Webserver::_prepareResponse( Client &client )
 	if (client.clientResponse.getBool() || !client.isHeaderParsed
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
-	client.typeCheck = POLLOUT;
 	if (client.correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(client.parsedRequest._headers["Host"], client.correspondingBlock))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
 	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
@@ -352,9 +351,8 @@ void Webserver::_handleFolderRequest(Client &client)
 			{
 				client.clientResponse._shouldReadFromFile = true;
 				client.clientResponse._nameOfFile =  joinPath;
-				client.typeCheck = POLLOUT;
 				client.clientResponse.setBool(true);
-				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: " + parser.getContentType(joinPath);
+				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
 				client.clientResponse._status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
 				client.clientResponse._fileSize = Utils::getSize(joinPath);
 			}
@@ -386,12 +384,11 @@ void	Webserver::_handleFileRequest(Client &client)
 	if(client.clientResponse.file.is_open())
 	{
 		client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
-		client.clientResponse._status += "\r\nContent-Type: " + parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse._status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
 		client.clientResponse._shouldReadFromFile = true;
 		client.clientResponse.setBool(true);
 		client.clientResponse._fileSize = Utils::getSize(client.currentList->_currentRoot);
 		client.clientResponse._nameOfFile =  client.currentList->_currentRoot;
-		client.typeCheck = POLLOUT;
 	}
 	else
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);

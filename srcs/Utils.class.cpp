@@ -9,14 +9,12 @@ void Utils::setErrorResponse( int code, const std::string &s1, const std::string
 {
 	client.clientResponse.setResponse(client.formError(code, s1, s2));
 	client.clientResponse.setBool(true);
-	client.typeCheck = POLLOUT;
 }
 
 void Utils::setGoodResponse( const std::string &s, Client &client )
 {
 	client.clientResponse.setResponse(s);
 	client.clientResponse.setBool(true);
-	client.typeCheck = POLLOUT;
 }
 
 std::string Utils::generateRandomString( void )

@@ -21,7 +21,6 @@ class Client
 		bool shouldSkip;
 		bool isConnected;
 		bool isThereCgi;
-		short typeCheck;
 		size_t bytesRead;
 		size_t bytesToRead;
 		size_t bytesCounter;
