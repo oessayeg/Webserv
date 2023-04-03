@@ -1,7 +1,7 @@
 #include "../includes/Response.class.hpp"
 
 Response::Response( void ) : _canBeSent(false), _shouldReadFromFile(false), \
-	_isStatusSent(false), _fileSize(0), r(0) { }
+	_isStatusSent(false), _fileSize(0), _bytesFromFile(0) { }
 
 Response::Response( const Response &rhs )
 {
@@ -10,14 +10,16 @@ Response::Response( const Response &rhs )
 
 Response &Response::operator=( const Response &rhs )
 {
-	_nameOfFile = rhs._nameOfFile;
-	_response = rhs._response;
-	_status = rhs._status;
-	_canBeSent = rhs._canBeSent;
-	_shouldReadFromFile = rhs._shouldReadFromFile;
-	_isStatusSent = rhs._isStatusSent;
-	_fileSize = rhs._fileSize;
-	r = rhs.r;
+	if (this != &rhs)
+	{
+		_canBeSent = rhs._canBeSent;
+		_shouldReadFromFile = rhs._shouldReadFromFile;
+		_isStatusSent = rhs._isStatusSent;
+		_fileSize = rhs._fileSize;
+		_bytesFromFile = rhs._bytesFromFile;
+		_response = rhs._response;
+		status = rhs.status;
+	}
 	return *this;
 }
 
@@ -68,7 +70,17 @@ void Response::setResponse( const std::string &resp )
 	this->_response = resp;
 }
 
+void Response::incrementBytesFromFile( size_t b )
+{
+	this->_bytesFromFile += b;
+}
+
 size_t Response::getFileSize( void ) const
 {
 	return (this->_fileSize);
+}
+
+size_t Response::getBytesFromFile( void ) const
+{
+	return (this->_bytesFromFile);
 }

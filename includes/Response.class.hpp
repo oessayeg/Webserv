@@ -11,13 +11,12 @@ class Response
 		bool _shouldReadFromFile;
 		bool _isStatusSent;
 		size_t _fileSize;
+		size_t _bytesFromFile;
+		std::string _response;
 		
 	public :
+		std::string status;
 		std::ifstream file;
-		std::string _nameOfFile;
-		std::string _response;
-		std::string _status;
-		size_t r;
 
 	public :
 		Response( void );
@@ -35,5 +34,7 @@ class Response
 		void setFileSize( size_t size );
 		void sendResponse( int socket ) const;
 		void setResponse( const std::string &resp );
+		void incrementBytesFromFile( size_t b );
 		size_t getFileSize( void ) const;
+		size_t getBytesFromFile( void ) const;
 };

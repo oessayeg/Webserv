@@ -251,16 +251,16 @@ void Webserver::_readBodyIfPossible( Client &client )
 
 bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
 {
-	char buff2[1536 + 1 + it->clientResponse._status.size()];
+	char buff2[1536 + 1 + it->clientResponse.status.size()];
 	size_t i, x;
 
 	it->clientResponse.setIsStatusSent(true);
-	for (i = 0; i < it->clientResponse._status.size(); i++)
-		buff2[i] = it->clientResponse._status[i];
+	for (i = 0; i < it->clientResponse.status.size(); i++)
+		buff2[i] = it->clientResponse.status[i];
 	x = 0;
-	for (; i < bytes + it->clientResponse._status.size(); i++)
+	for (; i < bytes + it->clientResponse.status.size(); i++)
 		buff2[i] = buff[x++];
-	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.r)
+	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
 	{
 		it->clientResponse.file.close();
 		return true;
@@ -275,11 +275,11 @@ bool Webserver::_sendFile( std::list< Client >::iterator &it )
 
 	it->clientResponse.file.read(buff, 1536);
 	bytes = it->clientResponse.file.gcount();
-	it->clientResponse.r += bytes;
+	it->clientResponse.incrementBytesFromFile(bytes);
 
 	if (!it->clientResponse.getIsStatusSent())	
 		return _sendWithStatusCode(it, bytes, buff);
-	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.r)
+	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
 	{
 		it->clientResponse.file.close();
 		return true;
@@ -350,10 +350,9 @@ void Webserver::_handleFolderRequest(Client &client)
 			else
 			{
 				client.clientResponse.setReadFromFile(true);
-				client.clientResponse._nameOfFile =  joinPath;
 				client.clientResponse.setBool(true);
-				client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
-				client.clientResponse._status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
+				client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
+				client.clientResponse.status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
 				client.clientResponse.setFileSize(Utils::getSize(joinPath));
 			}
 			return ;
@@ -383,12 +382,11 @@ void	Webserver::_handleFileRequest(Client &client)
 	client.clientResponse.file.open(client.currentList->_currentRoot, std::ios::binary); 
 	if(client.clientResponse.file.is_open())
 	{
-		client.clientResponse._status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
-		client.clientResponse._status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
+		client.clientResponse.status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
 		client.clientResponse.setReadFromFile(true);
 		client.clientResponse.setBool(true);
 		client.clientResponse.setFileSize(Utils::getSize(client.currentList->_currentRoot));
-		client.clientResponse._nameOfFile =  client.currentList->_currentRoot;
 	}
 	else
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
