@@ -81,22 +81,22 @@ void Client::checkRequestLine( void )
 
 void Client::checkHeaders( void )
 {
-	std::istringstream s(parsedRequest._headers["Content-Length"]);
+	std::istringstream s(parsedRequest.getValueFromMap("Content-Length"));
 	std::string transferEnc;
 	std::string contentType;
 
 	// This first part checks if there is an error
 	s >> contentLength;
-	transferEnc = parsedRequest._headers["Transfer-Encoding"];
-	contentType = parsedRequest._headers["Content-Type"];
+	transferEnc = parsedRequest.getValueFromMap("Transfer-Encoding");
+	contentType = parsedRequest.getValueFromMap("Content-Type");
 	if (contentLength > correspondingBlock->get_body_size() * 1000000)
 		Utils::setErrorResponse(413, "HTTP/1.1 413 Request Entity Too Large\r\n", "Request Entity Too Large", *this);
 	else if ((!transferEnc.empty() && transferEnc != "chunked")
 		|| (transferEnc == "chunked" && contentType.find("multipart") != std::string::npos))
 		Utils::setErrorResponse(501, "HTTP/1.1 501 Not Implemented\r\n", "Not Implemented", *this);
-	else if (parsedRequest._method == "POST" && contentLength == 0 && transferEnc.empty())
+	else if (parsedRequest.getMethod() == "POST" && contentLength == 0 && transferEnc.empty())
 		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Bad Request", *this);
-	if (clientResponse.getBool() || parsedRequest._method != "POST")
+	if (clientResponse.getBool() || parsedRequest.getMethod() != "POST")
 		return ;
 	// This part will set the correct reading mode for the body
 	this->setType(transferEnc, contentType);
@@ -174,12 +174,12 @@ bool Client::isLocationFormedWell( const std::string &transferEnc )
 {
 	std::list< Location >::iterator currentList;
 	
-	if (this->correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(this->parsedRequest._headers["Host"], this->correspondingBlock))
+	if (this->correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(this->parsedRequest.getValueFromMap("Host"), this->correspondingBlock))
 	{
 		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", *this);
 		return false;
 	}
-	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest._uri);
+	currentList = correspondingBlock->ifUriMatchLocationBlock(correspondingBlock->_location, parsedRequest.getUri());
 	if (currentList == correspondingBlock->_location.end()
 		|| (currentList->_supportUpload && (!currentList->checkIfPathExist(currentList->_upload_dir) || !currentList->ifRequestUriIsFolder(currentList->_upload_dir))))
 	{

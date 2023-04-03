@@ -19,7 +19,7 @@ void BodyParser::parseChunkedData( Client &client )
 
 	i = 0;
 	if (!client.gotFileName)
-		this->_openWithProperExtension(client.parsedRequest._headers["Content-Type"], client);
+		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
 	if (client.bytesToRead == 0)
 	{
 		if (!_isHexaReadable(client))
@@ -65,7 +65,7 @@ void BodyParser::parseNormalData( Client &client )
 	size_t i;
 
 	if (!client.gotFileName)
-		this->_openWithProperExtension(client.parsedRequest._headers["Content-Type"], client);
+		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
 	for (i = 0; i < client.bytesRead; i++);
 	client.bytesCounter += i;
 	client.fileToUpload.write(client.request, i);

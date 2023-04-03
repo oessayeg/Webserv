@@ -7,24 +7,21 @@
 
 class Request
 {
-	// Private member attributes
-	// Should consider returning them back to private
-	public :
+	private :
 		std::string _method;
 		std::string _uri;
 		std::string _version;
 		std::string _queryStr;
 		std::map< std::string, std::string > _headers;
-		std::string _body;
 
-	// Default constructor, copy constructor, assignment overload, destructor
+	// Default constructor, copy constructor, assignment operator overload, destructor
 	public :
 		Request( void );
 		Request( const Request &rhs );
 		Request &operator=( const Request &rhs );
 		~Request( void );
 
-	// Accessors
+	// Setters
 	public :
 		void setMethod( const std::string &meth );
 		void setUri( const std::string &uri );
@@ -33,7 +30,15 @@ class Request
 		void insertHeader( const std::pair< std::string, std::string > &pair );
 		void setBody( const std::string &body );
 
-	// Member functions
+	// Getters
+	public :
+		const std::string &getMethod( void ) const;
+		const std::string &getUri( void ) const;
+		const std::string &getVersion( void ) const;
+		const std::string &getQueryString( void ) const;
+		const std::string &getValueFromMap( const std::string &key );
+
+	// Member functions that check for the validity of the request's components
 	public :
 		bool isSupported( void ) const;
 		bool hasGoodSize( void ) const;

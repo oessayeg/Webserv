@@ -185,11 +185,11 @@ void Webserver::_parseRequestLine( Client &client )
 	client.isRqLineParsed = true;
 	client.stringRequest.erase(0, client.stringRequest.find("\r\n") + 2);
 
-	i1 = client.parsedRequest._uri.find('?');
+	i1 = client.parsedRequest.getUri().find('?');
 	if (i1 != std::string::npos)
 	{
-		client.parsedRequest._queryStr = client.parsedRequest._uri.substr(i1 + 1);
-		client.parsedRequest._uri = client.parsedRequest._uri.substr(0, i1);
+		client.parsedRequest.setQueryString(client.parsedRequest.getUri().substr(i1 + 1));
+		client.parsedRequest.setUri(client.parsedRequest.getUri().substr(0, i1));
 	}
 	client.checkRequestLine();
 }
@@ -305,30 +305,30 @@ void Webserver::_prepareResponse( Client &client )
 	if (client.clientResponse.getBool() || !client.isHeaderParsed
 		|| (client.shouldReadBody && !client.finishedBody))
 		return ;
-	if (client.correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(client.parsedRequest._headers["Host"], client.correspondingBlock))
+	if (client.correspondingBlock->_serverNames.size() > 0 && !Utils::serverNameMatches(client.parsedRequest.getValueFromMap("Host"), client.correspondingBlock))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
-	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest._uri);
+	client.currentList = client.correspondingBlock->ifUriMatchLocationBlock(client.correspondingBlock->_location, client.parsedRequest.getUri());
 	if (client.currentList == client.correspondingBlock->_location.end())
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
 	else if (client.currentList->get_isThereRedirection())
 		return _handleHttpRedirection(client.currentList, client);
-	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest._method))
+	else if (!client.currentList->isMethodAccepted(client.currentList, client.parsedRequest.getMethod()))
 		return Utils::setErrorResponse(405, "HTTP/1.1 405 Not Allowed\r\n", "Method Not Allowed", client);
 	else if (!client.currentList->checkIfPathExist(client.currentList->_currentRoot))
 		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "Not Found", client);
 	else if (client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot)
-		&& (!client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.clientResponse) && client.parsedRequest._method != "DELETE"))
+		&& (!client.currentList->checkIfPathIsValid(client.currentList->_currentRoot, client.clientResponse) && client.parsedRequest.getMethod() != "DELETE"))
 		return ;
 	this->_handleProperResponse(client);
 }
 
 void Webserver::_handleProperResponse( Client &client )
 {
-	if (client.parsedRequest._method == "GET")
+	if (client.parsedRequest.getMethod() == "GET")
 		this->_prepareGetResponse(client);
-	else if (client.parsedRequest._method == "POST")
+	else if (client.parsedRequest.getMethod() == "POST")
 		this->_preparePostResponse(client);
-	else if (client.parsedRequest._method == "DELETE")
+	else if (client.parsedRequest.getMethod() == "DELETE")
 		this->_prepareDeleteResponse(client);
 }
 
@@ -426,17 +426,17 @@ char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
 	retEnv = new char*[12];
 	retEnv[0] = Utils::giveAllocatedChar("PATH_INFO=" + Utils::getPathInfo() + "/" + name);
 	retEnv[1] = Utils::giveAllocatedChar("GATEWAY_INTERFACE=CGI/1.1");
-	retEnv[2] = Utils::giveAllocatedChar("REQUEST_METHOD=" + client.parsedRequest._method);
+	retEnv[2] = Utils::giveAllocatedChar("REQUEST_METHOD=" + client.parsedRequest.getMethod());
 	retEnv[3] = Utils::giveAllocatedChar("SCRIPT_NAME=" + Utils::getPathInfo() + "/" + name);
 	retEnv[4] = Utils::giveAllocatedChar("SCRIPT_FILENAME=" + Utils::getPathInfo() + "/" + name);
 	retEnv[5] = Utils::giveAllocatedChar("REDIRECT_STATUS=200");
 	retEnv[6] = Utils::giveAllocatedChar("SERVER_PROTOCOL=HTTP/1.1");
-	retEnv[7] = Utils::giveAllocatedChar("QUERY_STRING=" + client.parsedRequest._queryStr);
-	retEnv[8] = Utils::giveAllocatedChar("HTTP_COOKIE=" + client.parsedRequest._headers["Cookie"]);
-	if (client.parsedRequest._method == "POST")
+	retEnv[7] = Utils::giveAllocatedChar("QUERY_STRING=" + client.parsedRequest.getQueryString());
+	retEnv[8] = Utils::giveAllocatedChar("HTTP_COOKIE=" + client.parsedRequest.getValueFromMap("Cookie"));
+	if (client.parsedRequest.getMethod() == "POST")
 	{
-		retEnv[9] = Utils::giveAllocatedChar("CONTENT_TYPE=" + client.parsedRequest._headers["Content-Type"]);
-		retEnv[10] = Utils::giveAllocatedChar("CONTENT_LENGTH=" + client.parsedRequest._headers["Content-Length"]);
+		retEnv[9] = Utils::giveAllocatedChar("CONTENT_TYPE=" + client.parsedRequest.getValueFromMap("Content-Type"));
+		retEnv[10] = Utils::giveAllocatedChar("CONTENT_LENGTH=" + client.parsedRequest.getValueFromMap("Content-Length"));
 		retEnv[11] = NULL;
 	}
 	else
@@ -475,7 +475,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 	{
 		dup2(fd, STDOUT_FILENO);
 		close(fd);
-		if (client.parsedRequest._method == "POST")
+		if (client.parsedRequest.getMethod() == "POST")
 		{
 			fd = open(client.nameForCgi.c_str(), O_RDONLY);
 			dup2(fd, 0);
@@ -490,7 +490,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 	_readFile("/tmp/temp", client, name);
 	close(fd);
 	unlink("/tmp/temp");
-	if (client.parsedRequest._method == "POST")
+	if (client.parsedRequest.getMethod() == "POST")
 		unlink(client.nameForCgi.c_str());
 }
 

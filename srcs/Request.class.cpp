@@ -14,8 +14,8 @@ Request &Request::operator=( const Request &rhs )
 		this->_method = rhs._method;
 		this->_uri = rhs._uri;
 		this->_version = rhs._version;
+		this->_queryStr = rhs._queryStr;
 		this->_headers = rhs._headers;
-		this->_body = rhs._body;
 	}
 	return (*this);
 }
@@ -47,9 +47,29 @@ void Request::insertHeader( const std::pair< std::string, std::string > &pair)
 	this->_headers.insert(pair);
 }
 
-void Request::setBody( const std::string &body )
+const std::string &Request::getMethod( void ) const
 {
-	this->_body = body;
+	return (this->_method);
+}
+
+const std::string &Request::getUri( void ) const
+{
+	return (this->_uri);
+}
+
+const std::string &Request::getVersion( void ) const
+{
+	return (this->_version);
+}
+
+const std::string &Request::getQueryString( void ) const
+{
+	return (this->_queryStr);
+}
+
+const std::string &Request::getValueFromMap( const std::string &key )
+{
+	return (this->_headers[key]);
 }
 
 bool Request::isSupported( void ) const

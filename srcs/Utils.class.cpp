@@ -112,7 +112,7 @@ void Utils::deleteDoublePtr( char **toDelete )
 	delete toDelete;
 }
 
-bool Utils::serverNameMatches(std::string &host, Serverblock *block)
+bool Utils::serverNameMatches(const std::string &host, Serverblock *block)
 {
 	std::list<std::string>::iterator it;
 
