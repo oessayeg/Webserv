@@ -27,8 +27,8 @@
 // MIN_TO_READ = how much bytes to read when using recv()
 #define MIN_TO_READ 8192
 
+// BUFF_SIZE = the size of the buffer that'll contain the request and body of the client
 #define BUFF_SIZE 17825
-#define ROOTFOLDER -42
 
 // Body type macros (To know how to parse bodies in POST requests)
 #define CHUNKED_MULTIPART 1

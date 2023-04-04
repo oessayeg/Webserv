@@ -16,94 +16,6 @@ void Utils::setGoodResponse( const std::string &s, Client &client )
 	client.clientResponse.setBool(true);
 }
 
-std::string Utils::generateRandomString( void )
-{
-    std::string tmp_s;
-    const char alphanum[] =
-        "0123456789"
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        "abcdefghijklmnopqrstuvwxyz";
-
-	srand(time(NULL));
-    tmp_s.reserve(8);
-    for (int i = 0; i < 8; ++i)
-        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
-    return tmp_s;
-}
-
-size_t Utils::giveDecimal( const std::string &hexaString )
-{
-	std::stringstream ss;
-	size_t ret;
-
-	ss << std::hex << hexaString;
-	ss >> ret;
-	return ret;
-}
-
-size_t Utils::getSize( const std::string &file )
-{
-	struct stat fileInfo;
-
-	stat(file.c_str(), &fileInfo);
-	return (fileInfo.st_size);
-}
-
-std::string	Utils::getSizeOfFile( const std::string &file )
-{
-	std::stringstream size;
-	struct stat fileInfo;
-
-	stat(file.c_str(), &fileInfo);
-	size << fileInfo.st_size;
-	return (size.str());
-}
-
-std::string Utils::getPathInfo( void )
-{
-	char currentPath[FILENAME_MAX];
-
-	if(getcwd(currentPath, sizeof(currentPath)) != NULL)
-		return (std::string(currentPath));
-	return (NULL);
-}
-
-std::string Utils::getFileContent( std::ifstream &file )
-{
-	std::stringstream buffer;
-
-	buffer << file.rdbuf();
-	return (buffer.str());
-}
-
-std::string	Utils::handleAutoindexFolder(const std::string &uri)
-{
-	DIR *dir;
-	struct dirent *folder;
-	std::stringstream response;
-
-	response << "<html><body><ul>" <<std::endl;
-	if((dir = opendir(uri.c_str())) != NULL)
-	{
-		while((folder = readdir(dir)) != NULL)
-			if(folder->d_name[0] != '.')
-				response << "<li><a href=\"" << folder->d_name << "\">" << folder->d_name << "</a></li>\n";
-		closedir(dir);
-	}
-	response <<"</ul></body></html>"<<std::endl;
-	return (response.str());	
-}
-
-char *Utils::giveAllocatedChar( const std::string &str )
-{
-	char *returnString;
-
-	returnString = new char[str.size() + 1];
-	std::strcpy(returnString, str.c_str());
-	returnString[str.size()] = '\0';
-	return returnString;
-}
-
 void Utils::deleteDoublePtr( char **toDelete )
 {
 	for (int i = 0; toDelete[i]; i++)
@@ -111,27 +23,16 @@ void Utils::deleteDoublePtr( char **toDelete )
 	delete toDelete;
 }
 
-bool Utils::serverNameMatches(const std::string &host, Serverblock *block)
+void Utils::checkRequestLine( Client &client )
 {
-	std::list<std::string>::iterator it;
-
-	it = block->_serverNames.begin();
-	if(host.empty() || (block->_serverNames.size() == 1 && *block->_serverNames.begin() == "_"))
-		return(true);
-	for(; it != block->_serverNames.end(); ++it)
-		if(host == *it)
-			return true;
-	return (false);
-}
-
-std::string Utils::getFileN( char **av )
-{
-	std::string file;
-
-	file = DEFAULT;
-	if (av[1])
-		file = av[1];
-	return file;
+	if (!client.parsedRequest.hasAllowedChars())
+		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Bad Request", client);
+	else if (!client.parsedRequest.hasGoodSize())
+		Utils::setErrorResponse(414, "HTTP/1.1 414 Request-URI too long\r\n", "Uri Too Long", client);
+	else if (!client.parsedRequest.isSupported())
+		Utils::setErrorResponse(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Method Not Allowed", client);
+	else if (!client.parsedRequest.isGoodVersion())
+		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Version Not Supported", client);
 }
 
 void Utils::checkArgs( int ac, char **av )
@@ -149,38 +50,6 @@ void Utils::checkArgs( int ac, char **av )
 		throw NotFoundError("Does Not Exist");
 	else
 		infile.close();
-}
-
-
-std::string Utils::getSizeInString( const std::string &str )
-{
-	std::stringstream ss;
-
-	ss << str.size();
-	return ss.str();
-}
-
-bool Utils::isAccepted( const std::string &method, std::list< std::string > list )
-{
-	std::list< std::string >::iterator it1;
-
-	it1 = list.begin();
-	for (; it1 != list.end(); it1++)
-		if (method == *it1)
-			return true;
-	return false;
-}
-
-void Utils::checkRequestLine( Client &client )
-{
-	if (!client.parsedRequest.hasAllowedChars())
-		Utils::setErrorResponse(400, "HTTP/1.1 400 Bad Request\r\n", "Bad Request", client);
-	else if (!client.parsedRequest.hasGoodSize())
-		Utils::setErrorResponse(414, "HTTP/1.1 414 Request-URI too long\r\n", "Uri Too Long", client);
-	else if (!client.parsedRequest.isSupported())
-		Utils::setErrorResponse(405, "HTTP/1.1 405 Method Not Allowed\r\n", "Method Not Allowed", client);
-	else if (!client.parsedRequest.isGoodVersion())
-		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Version Not Supported", client);
 }
 
 void Utils::checkHeaders( Client &client )
@@ -230,38 +99,28 @@ void Utils::setType( const std::string &transferEnc, const std::string &contentT
 	}
 }
 
-// This function forms the whole error response with the correct status code
-std::string Utils::formError( int statusCode, const std::string &statusLine, const std::string &msgInBody, Client &client )
+bool Utils::serverNameMatches(const std::string &host, Serverblock *block)
 {
-	std::map< int, std::string >::iterator b;
-	std::string returnString, fileInString;
-	std::ifstream errorFile;
-	std::stringstream s;
+	std::list<std::string>::iterator it;
 
-	b = client.correspondingBlock->_error_page.find(statusCode);
-	if (b != client.correspondingBlock->_error_page.end())
-		errorFile.open(b->second);
-	if (b != client.correspondingBlock->_error_page.end() && !errorFile.is_open())
-	{
-		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
-		client.errString.setErrorFile(500, "Internal Server Error");
-		s << client.errString.getFileInString().size();
-		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
-		return (returnString + client.errString.getFileInString());
-	}
-	else if (b != client.correspondingBlock->_error_page.end() && errorFile.is_open())
-	{
-		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
-		s << fileInString.size();
-		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
-		errorFile.close();
-		return returnString + fileInString;
-	}
-	client.errString.setErrorFile(statusCode, msgInBody);
-	s << client.errString.getFileInString().size();
-	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
-	returnString += "\r\n\r\n";
-	return (returnString + client.errString.getFileInString());
+	it = block->_serverNames.begin();
+	if(host.empty() || (block->_serverNames.size() == 1 && *block->_serverNames.begin() == "_"))
+		return(true);
+	for(; it != block->_serverNames.end(); ++it)
+		if(host == *it)
+			return true;
+	return (false);
+}
+
+bool Utils::isAccepted( const std::string &method, std::list< std::string > list )
+{
+	std::list< std::string >::iterator it1;
+
+	it1 = list.begin();
+	for (; it1 != list.end(); it1++)
+		if (method == *it1)
+			return true;
+	return false;
 }
 
 bool Utils::isLocationFormedWell( const std::string &transferEnc, Client &client )
@@ -308,4 +167,144 @@ bool Utils::isLocationFormedWell( const std::string &transferEnc, Client &client
 	}
 	client.filePath = currentList->_upload_dir;
 	return true;
+}
+
+std::string Utils::getFileN( char **av )
+{
+	std::string file;
+
+	file = DEFAULT;
+	if (av[1])
+		file = av[1];
+	return file;
+}
+
+std::string Utils::getSizeInString( const std::string &str )
+{
+	std::stringstream ss;
+
+	ss << str.size();
+	return ss.str();
+}
+
+std::string Utils::generateRandomString( void )
+{
+    std::string tmp_s;
+    const char alphanum[] =
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+
+	srand(time(NULL));
+    tmp_s.reserve(8);
+    for (int i = 0; i < 8; ++i)
+        tmp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+    return tmp_s;
+}
+
+std::string	Utils::getSizeOfFile( const std::string &file )
+{
+	std::stringstream size;
+	struct stat fileInfo;
+
+	stat(file.c_str(), &fileInfo);
+	size << fileInfo.st_size;
+	return (size.str());
+}
+
+std::string Utils::getPathInfo( void )
+{
+	char currentPath[FILENAME_MAX];
+
+	if(getcwd(currentPath, sizeof(currentPath)) != NULL)
+		return (std::string(currentPath));
+	return (NULL);
+}
+
+std::string Utils::getFileContent( std::ifstream &file )
+{
+	std::stringstream buffer;
+
+	buffer << file.rdbuf();
+	return (buffer.str());
+}
+
+std::string	Utils::handleAutoindexFolder(const std::string &uri)
+{
+	DIR *dir;
+	struct dirent *folder;
+	std::stringstream response;
+
+	response << "<html><body><ul>" <<std::endl;
+	if((dir = opendir(uri.c_str())) != NULL)
+	{
+		while((folder = readdir(dir)) != NULL)
+			if(folder->d_name[0] != '.')
+				response << "<li><a href=\"" << folder->d_name << "\">" << folder->d_name << "</a></li>\n";
+		closedir(dir);
+	}
+	response <<"</ul></body></html>"<<std::endl;
+	return (response.str());	
+}
+
+// This function forms the whole error response with the correct status code
+std::string Utils::formError( int statusCode, const std::string &statusLine, const std::string &msgInBody, Client &client )
+{
+	std::map< int, std::string >::iterator b;
+	std::string returnString, fileInString;
+	std::ifstream errorFile;
+	std::stringstream s;
+
+	b = client.correspondingBlock->_error_page.find(statusCode);
+	if (b != client.correspondingBlock->_error_page.end())
+		errorFile.open(b->second);
+	if (b != client.correspondingBlock->_error_page.end() && !errorFile.is_open())
+	{
+		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
+		client.errString.setErrorFile(500, "Internal Server Error");
+		s << client.errString.getFileInString().size();
+		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		return (returnString + client.errString.getFileInString());
+	}
+	else if (b != client.correspondingBlock->_error_page.end() && errorFile.is_open())
+	{
+		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
+		s << fileInString.size();
+		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		errorFile.close();
+		return returnString + fileInString;
+	}
+	client.errString.setErrorFile(statusCode, msgInBody);
+	s << client.errString.getFileInString().size();
+	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
+	returnString += "\r\n\r\n";
+	return (returnString + client.errString.getFileInString());
+}
+
+size_t Utils::giveDecimal( const std::string &hexaString )
+{
+	std::stringstream ss;
+	size_t ret;
+
+	ss << std::hex << hexaString;
+	ss >> ret;
+	return ret;
+}
+
+size_t Utils::getSize( const std::string &file )
+{
+	struct stat fileInfo;
+
+	stat(file.c_str(), &fileInfo);
+	return (fileInfo.st_size);
+}
+
+char *Utils::giveAllocatedChar( const std::string &str )
+{
+	char *returnString;
+
+	returnString = new char[str.size() + 1];
+	std::strcpy(returnString, str.c_str());
+	returnString[str.size()] = '\0';
+	return returnString;
 }

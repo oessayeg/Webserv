@@ -12,71 +12,14 @@ BodyParser &BodyParser::operator=( const BodyParser &rhs )
 
 BodyParser::~BodyParser( void ) { }
 
-void BodyParser::parseChunkedData( Client &client )
+void BodyParser::chooseCorrectParsingMode( Client &client )
 {
-	size_t i;
-	size_t index2;
-
-	i = 0;
-	if (!client.gotFileName)
-		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
-	if (client.bytesToRead == 0)
-	{
-		if (!_isHexaReadable(client))
-			return ;
-		for (; client.request[i] != '\r' && i < client.bytesRead; i++);
-		if (i == client.bytesRead || client.request[i + 1] != '\n')
-			return ;
-		client.bytesToRead = Utils::giveDecimal(std::string(client.request, client.request + i));
-		i += 2;
-		if (client.bytesToRead == 0)
-		{
-			client.finishedBody = true;
-			client.fileToUpload.close();
-			return ;
-		}
-	}
-	index2 = i;
-	for (; index2 < client.bytesToRead + i && index2 < client.bytesRead; index2++);
-	client.fileToUpload.write(client.request + i, index2 - i);
-	client.bytesToRead -= index2 - i;
-	client.bytesCounter += index2 - i;
-	if (client.contentLength > 0 && client.bytesCounter == client.contentLength)
-	{
-		client.finishedBody = true;
-		client.fileToUpload.close();
-	}
-	else if (index2 == client.bytesRead)
-	{
-		memset(client.request, 0, MIN_TO_READ);
-		client.bytesRead = 0;
-	}
-	else
-	{
-		this->_moveRequest(index2, client);
-		if (client.bytesRead == 0)
-			return ;
+	if (client.bodyType == CHUNKED)
 		this->parseChunkedData(client);
-	}
-}
-
-void BodyParser::parseNormalData( Client &client )
-{
-	size_t i;
-
-	if (!client.gotFileName)
-		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
-	for (i = 0; i < client.bytesRead; i++);
-	client.bytesCounter += i;
-	client.fileToUpload.write(client.request, i);
-	if (client.bytesCounter == client.contentLength)
-	{
-		client.fileToUpload.close();
-		client.finishedBody = true;
-		return ;
-	}
-	memset(client.request, 0, MIN_TO_READ);
-	client.bytesRead = 0;
+	else if (client.bodyType == MULTIPART)
+		this->parseMultipartData(client);
+	else if (client.bodyType == OTHER)
+		this->parseNormalData(client);
 }
 
 void BodyParser::parseMultipartData( Client &client )
@@ -115,6 +58,123 @@ void BodyParser::parseMultipartData( Client &client )
 	}
 	memmove(client.request, &client.request[i], client.bytesRead + 1);
 	this->parseMultipartData(client);
+}
+
+void BodyParser::parseChunkedData( Client &client )
+{
+	size_t i;
+	size_t index2;
+
+	i = 0;
+	// If the file isn't opened yet, generate a random name for it with the proper extension
+	if (!client.gotFileName)
+		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
+
+	// Get the hexadecimal and skip it
+	if (client.bytesToRead == 0)
+	{
+		if (!_isHexaReadable(client))
+			return ;
+		for (; client.request[i] != '\r' && i < client.bytesRead; i++);
+		if (i == client.bytesRead || client.request[i + 1] != '\n')
+			return ;
+		client.bytesToRead = Utils::giveDecimal(std::string(client.request, client.request + i));
+		i += 2;
+		if (client.bytesToRead == 0)
+		{
+			client.finishedBody = true;
+			client.fileToUpload.close();
+			return ;
+		}
+	}
+
+	// This is the part where the actual reading starts after skipping the hexa
+	index2 = i;
+	for (; index2 < client.bytesToRead + i && index2 < client.bytesRead; index2++);
+	client.fileToUpload.write(client.request + i, index2 - i);
+	client.bytesToRead -= index2 - i;
+	client.bytesCounter += index2 - i;
+	if (client.contentLength > 0 && client.bytesCounter == client.contentLength)
+	{
+		client.finishedBody = true;
+		client.fileToUpload.close();
+	}
+	else if (index2 == client.bytesRead)
+	{
+		memset(client.request, 0, MIN_TO_READ);
+		client.bytesRead = 0;
+	}
+	else
+	{
+		this->_moveRequest(index2, client);
+		if (client.bytesRead == 0)
+			return ;
+		this->parseChunkedData(client);
+	}
+}
+
+// This function keeps reading data until the content-length is reached
+void BodyParser::parseNormalData( Client &client )
+{
+	size_t i;
+
+	if (!client.gotFileName)
+		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
+	for (i = 0; i < client.bytesRead; i++);
+	client.bytesCounter += i;
+	client.fileToUpload.write(client.request, i);
+	if (client.bytesCounter == client.contentLength)
+	{
+		client.fileToUpload.close();
+		client.finishedBody = true;
+		return ;
+	}
+	memset(client.request, 0, MIN_TO_READ);
+	client.bytesRead = 0;
+}
+
+std::string BodyParser::getContentType( const std::string &file )
+{
+	return this->_extensions.getContentType(file);
+}
+
+void BodyParser::_openWithProperExtension( const std::string &contentType, Client &client )
+{
+	std::string extension;
+
+	extension = this->_extensions.getExtension(contentType);
+	client.nameForCgi = client.filePath + "/" + Utils::generateRandomString() + extension;
+	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
+	client.gotFileName = true;
+}
+
+void BodyParser::_openFile( char *name, Client &client )
+{
+	char *fileName;
+	int i;
+
+	for (i = 0; name[i] != '\"'; i++);
+	fileName = new char[i + 1];
+	for (i = 0; name[i] != '\"'; i++)
+		fileName[i] = name[i];
+	fileName[i] = '\0';
+	client.nameForCgi = client.filePath + "/" + fileName;
+	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
+	delete fileName;
+	return ;
+}
+
+void BodyParser::_moveRequest( size_t index2, Client &client )
+{
+	int i;
+
+	i = 0;
+	if (index2 + 1 == client.bytesRead)
+		i = 1;
+	else
+		i = 2;
+	memmove(client.request, &client.request[index2 + i], (client.bytesRead - (index2 + i)) + 1);
+	client.bytesRead -= (index2 + i);
 }
 
 bool BodyParser::_isThereFilename( Client &client )
@@ -156,34 +216,9 @@ bool BodyParser::_isBoundary( char *ptr, Client &client )
 	i = 0;
 	while (i < client.bytesRead && ptr[i] == client.boundary[i])
 		i++;
-	return i == client.boundary.size();
+	return (i == client.boundary.size());
 }
 
-void BodyParser::_openFile( char *name, Client &client )
-{
-	char *fileName;
-	int i;
-
-	for (i = 0; name[i] != '\"'; i++);
-	fileName = new char[i + 1];
-	for (i = 0; name[i] != '\"'; i++)
-		fileName[i] = name[i];
-	fileName[i] = '\0';
-	client.nameForCgi = client.filePath + "/" + fileName;
-	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
-	delete fileName;
-	return ;
-}
-
-void BodyParser::_openWithProperExtension( const std::string &contentType, Client &client )
-{
-	std::string extension;
-
-	extension = this->_extensions.getExtension(contentType);
-	client.nameForCgi = client.filePath + "/" + Utils::generateRandomString() + extension;
-	client.fileToUpload.open(client.nameForCgi, std::ios::trunc | std::ios::binary);
-	client.gotFileName = true;
-}
 
 bool BodyParser::_isHexaReadable( Client &client )
 {
@@ -200,32 +235,4 @@ bool BodyParser::_isHexaReadable( Client &client )
 	if (client.bytesRead == 0)
 		return false;
 	return true;
-}
-
-void BodyParser::_moveRequest( size_t index2, Client &client )
-{
-	int i;
-
-	i = 0;
-	if (index2 + 1 == client.bytesRead)
-		i = 1;
-	else
-		i = 2;
-	memmove(client.request, &client.request[index2 + i], (client.bytesRead - (index2 + i)) + 1);
-	client.bytesRead -= (index2 + i);
-}
-
-void BodyParser::chooseCorrectParsingMode( Client &client )
-{
-	if (client.bodyType == CHUNKED)
-		this->parseChunkedData(client);
-	else if (client.bodyType == MULTIPART)
-		this->parseMultipartData(client);
-	else if (client.bodyType == OTHER)
-		this->parseNormalData(client);
-}
-
-std::string BodyParser::getContentType( const std::string &file )
-{
-	return this->_extensions.getContentType(file);
 }

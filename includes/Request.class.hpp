@@ -23,16 +23,13 @@ class Request
 		~Request( void );
 
 	// Setters
-	public :
 		void setMethod( const std::string &meth );
 		void setUri( const std::string &uri );
 		void setVersion( const std::string &version );
 		void setQueryString( const std::string &qStr );
 		void insertHeader( const std::pair< std::string, std::string > &pair );
-		void setBody( const std::string &body );
 
 	// Getters
-	public :
 		const std::string &getMethod( void ) const;
 		const std::string &getUri( void ) const;
 		const std::string &getVersion( void ) const;
@@ -40,7 +37,6 @@ class Request
 		const std::string &getValueFromMap( const std::string &key );
 
 	// Member functions that check for the validity of the request's components
-	public :
 		bool isSupported( void ) const;
 		bool hasGoodSize( void ) const;
 		bool hasAllowedChars( void ) const;

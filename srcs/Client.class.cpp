@@ -57,12 +57,12 @@ Client::~Client( void )
 		delete correspondingBlock;
 }
 
-int Client::getSocket( void ) const
-{
-	return (this->_socket);
-}
-
 void Client::setSocket( int s )
 {
 	this->_socket = s;
+}
+
+int Client::getSocket( void ) const
+{
+	return (this->_socket);
 }

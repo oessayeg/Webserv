@@ -40,7 +40,7 @@ public:
     void                        block_is_empty(const std::string &block);
     void                        check_valid_value(const std::string &buffer,  std::string &value);
     void                        check_value_arg(const std::string &value);
-//**********************************Function_to_check_valid_ip_and_port*******************************//
+//**********************************Functions_to_check_valid_ip_and_port*******************************//
     bool                       check_valid_port(std::string &port);
     bool                       check_valid_ip(const std::string    &ip);
     bool                       check_valid_listen(const std::string &value, std::string &ip, std::string &port);

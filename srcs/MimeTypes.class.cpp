@@ -84,6 +84,16 @@ MimeTypes::MimeTypes( void )
 	this->types.insert(allTypes, allTypes + 76);
 }
 
+MimeTypes::MimeTypes( const MimeTypes &rhs ) { *this = rhs; }
+
+MimeTypes &MimeTypes::operator=( const MimeTypes &rhs )
+{
+	this->types = rhs.types;
+	return (*this);
+}
+
+MimeTypes::~MimeTypes( void ) { }
+
 std::string MimeTypes::getContentType( const std::string &path )
 {
 	size_t find = path.rfind(".");
@@ -98,16 +108,6 @@ std::string MimeTypes::getContentType( const std::string &path )
 	}
 	return ("");
 }
-
-MimeTypes::MimeTypes( const MimeTypes &rhs ) { *this = rhs; }
-
-MimeTypes &MimeTypes::operator=( const MimeTypes &rhs )
-{
-	this->types = rhs.types;
-	return (*this);
-}
-
-MimeTypes::~MimeTypes( void ) { }
 
 std::string MimeTypes::getExtension( const std::string &contentType )
 {
