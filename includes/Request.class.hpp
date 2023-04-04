@@ -15,7 +15,7 @@ class Request
 		std::string _queryStr;
 		std::map< std::string, std::string > _headers;
 
-	// Default constructor, copy constructor, assignment operator overload, destructor
+	// Default constructor, copy constructor, copy assignment operator overload, destructor
 	public :
 		Request( void );
 		Request( const Request &rhs );

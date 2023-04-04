@@ -17,7 +17,7 @@ CC = c++
 OBJS = $(SRCS:.cpp=.o)
 
 %.o : %.cpp
-	@echo "\033[33;3mCompiling $<\033[0m"
+	@echo "\033[33;3mCompiling $< ...\033[0m"
 	@$(CC) -c $(CPPFLAGS) $< -o $@
 
 all : $(NAME)

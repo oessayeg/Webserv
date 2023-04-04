@@ -26,4 +26,10 @@ class Utils
 		static std::string getFileN( char **av );
 		static void checkArgs( int ac, char **av );
 		static std::string getSizeInString( const std::string &str );
+		static bool isAccepted( const std::string &method, std::list< std::string > list );
+		static void checkRequestLine( Client &client );
+		static void checkHeaders( Client &client );
+		static void setType( const std::string &transferEnc, const std::string &contentType, Client &client );
+		static std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody, Client &client );
+		static bool isLocationFormedWell( const std::string &transferEnc, Client &client );
 };

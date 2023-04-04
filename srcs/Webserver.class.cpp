@@ -190,7 +190,7 @@ void Webserver::_parseRequestLine( Client &client )
 		client.parsedRequest.setQueryString(client.parsedRequest.getUri().substr(i1 + 1));
 		client.parsedRequest.setUri(client.parsedRequest.getUri().substr(0, i1));
 	}
-	client.checkRequestLine();
+	Utils::checkRequestLine(client);
 }
 
 void Webserver::_parseHeaders( Client &client )
@@ -219,7 +219,7 @@ void Webserver::_parseHeaders( Client &client )
 		if (client.stringRequest[index + 2] == '\r')
 			isHeader = true;
 	}
-	client.checkHeaders();
+	Utils::checkHeaders(client);
 	client.isHeaderParsed = true;
 	if (client.clientResponse.getBool() || !client.shouldReadBody)
 		return ;

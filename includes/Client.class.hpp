@@ -44,18 +44,8 @@ class Client
 		Client &operator=( const Client &rhs );
 		~Client( void );
 
+	// Accessors for the _socket variable
 	public :
-		// Accessors for the _socket variable
 		void setSocket( int s );
-		int getSocket( void );
-
-		// These functions that check if the request and headers are well formed
-		void setType( const std::string &transferEnc, const std::string &contentType );
-		void checkBody( const std::string &key, const std::string &value );
-		void checkRequestLine( void );
-		void checkHeaders( void );
-
-		// This function forms the correct error response in case of an error
-		std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody );
-		bool isLocationFormedWell( const std::string &transferEnc );
+		int getSocket( void ) const;
 };

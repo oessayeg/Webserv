@@ -12,13 +12,13 @@ Response &Response::operator=( const Response &rhs )
 {
 	if (this != &rhs)
 	{
-		_canBeSent = rhs._canBeSent;
-		_shouldReadFromFile = rhs._shouldReadFromFile;
-		_isStatusSent = rhs._isStatusSent;
-		_fileSize = rhs._fileSize;
-		_bytesFromFile = rhs._bytesFromFile;
-		_response = rhs._response;
-		status = rhs.status;
+		this->_canBeSent = rhs._canBeSent;
+		this->_shouldReadFromFile = rhs._shouldReadFromFile;
+		this->_isStatusSent = rhs._isStatusSent;
+		this->_fileSize = rhs._fileSize;
+		this->_bytesFromFile = rhs._bytesFromFile;
+		this->_response = rhs._response;
+		this->status = rhs.status;
 	}
 	return *this;
 }
