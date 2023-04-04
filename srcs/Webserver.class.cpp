@@ -28,7 +28,6 @@ void Webserver::createSockets( void )
 
 	sock = 0;
 	tmp = 1;
-	// Need to change the exceptions thrown
 	for (b = this->_serverBlocks.begin(); b != this->_serverBlocks.end(); b++)
 	{
 		memset(&b->socketNeeds, 0, sizeof(sockaddr_in));

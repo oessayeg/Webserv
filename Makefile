@@ -17,13 +17,14 @@ CC = c++
 OBJS = $(SRCS:.cpp=.o)
 
 %.o : %.cpp
+	@echo "\033[33;3mCompiling $<\033[0m"
 	@$(CC) -c $(CPPFLAGS) $< -o $@
 
 all : $(NAME)
 
 $(NAME) : $(OBJS) $(HEADERS)
 	@$(CC) $(CPPFLAGS) $(OBJS) -o $(NAME)
-	@echo "\033[32;3m------Webserv Created Successfully------\033[0m"
+	@echo "\033[32;5m------Webserv Created Successfully------\033[0m"
 
 clean :
 	@rm -f $(OBJS)
@@ -34,3 +35,5 @@ fclean : clean
 	@echo "\033[31;6m-----Executable Deleted Successfully-----\033[0m"
 
 re : fclean all
+
+.PHONY : all clean fclean re

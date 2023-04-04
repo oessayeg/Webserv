@@ -4,7 +4,6 @@ Utils::Utils( void ) { }
 
 Utils::~Utils( void ) { }
 
-
 void Utils::setErrorResponse( int code, const std::string &s1, const std::string &s2, Client &client )
 {
 	client.clientResponse.setResponse(client.formError(code, s1, s2));

@@ -49,7 +49,7 @@ class Client
 		void setSocket( int s );
 		int getSocket( void );
 
-		// These are checkFunctions that check if the request or headers are well formed
+		// These functions that check if the request and headers are well formed
 		void setType( const std::string &transferEnc, const std::string &contentType );
 		void checkBody( const std::string &key, const std::string &value );
 		void checkRequestLine( void );
