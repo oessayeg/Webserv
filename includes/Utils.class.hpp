@@ -32,7 +32,7 @@ class Utils
 		static std::string getFileContent( std::ifstream &file );
 		static std::string handleAutoindexFolder( const std::string &uri );
 		static std::string formError( int statusCode, const std::string &statusLine, const std::string &msgInBody, Client &client );
-
+		static std::string getIndex( Client &client );
 		static size_t giveDecimal( const std::string &hexaString );
 		static size_t getSize( const std::string &file);
 

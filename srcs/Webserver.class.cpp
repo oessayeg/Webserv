@@ -1,5 +1,8 @@
 #include "../includes/Webserver.class.hpp"
 
+// In all checking functions, if something is wrong, they will 
+// automatically prepare an error response and stop the process of parsing.
+
 Webserver::Webserver( void ) : _serverBlocks(), _pendingClients(), _listeningSockets(),\
 	_fdToCheck(NULL) { }
 
@@ -10,17 +13,33 @@ Webserver::Webserver( const Webserver &rhs ) : _serverBlocks(rhs._serverBlocks),
 	_pendingClients(rhs._pendingClients), _listeningSockets(rhs._listeningSockets), \
 	_fdToCheck(rhs._fdToCheck) { }
 
+Webserver &Webserver::operator=( const Webserver &rhs )
+{
+	if (this != &rhs)
+	{
+		this->_serverBlocks = rhs._serverBlocks;
+		this->_pendingClients = rhs._pendingClients;
+		this->_listeningSockets = rhs._listeningSockets;
+		*this->_fdToCheck = *rhs._fdToCheck;
+		this->_parser = rhs._parser;
+	}
+	return (*this);
+}
+
 Webserver::~Webserver( void )
 {
 	if (_fdToCheck)
 		delete _fdToCheck;
 }
 
+// This function gets the list of the blocks after parsing the config file.
 void Webserver::setServerBlocks( std::list < Serverblock > &list )
 {
 	this->_serverBlocks = list;
 }
 
+// This function creates the sockets with the appropriate ip and port.
+// These sockets will be able to listen to incoming connections.
 void Webserver::createSockets( void )
 {
 	std::list< Serverblock >::iterator b;
@@ -47,6 +66,8 @@ void Webserver::createSockets( void )
 	}
 }
 
+// This function initializes the pollfd struct with all available sockets
+// for future read/write operations on them.
 void Webserver::setReadyFds( void )
 {
 	std::list< Client >::iterator cIter;
@@ -71,6 +92,7 @@ void Webserver::setReadyFds( void )
 	}
 }
 
+// This is the main function that'll parse the request and prepare the appropriate response.
 void Webserver::readAndRespond( void )
 {
 	std::list< Client >::iterator b;
@@ -100,6 +122,8 @@ void Webserver::readAndRespond( void )
 	_fdToCheck = NULL;
 }
 
+// If a listening socket is ready for reading, this function will be called,
+// it will accept connections and add a new client to be served into the client list.
 void Webserver::_acceptNewClients( void )
 {
 	std::list< Serverblock >::iterator blIter;
@@ -131,6 +155,9 @@ void Webserver::_acceptNewClients( void )
 	}
 }
 
+// These are the steps to parse and prepare the response.
+// Each function here depends on the one called before it
+// except for the first one, it depends on the existence of a body.
 void Webserver::_readAndParse( Client &client )
 {
 	this->_readBodyIfPossible(client);
@@ -140,6 +167,8 @@ void Webserver::_readAndParse( Client &client )
 	this->_prepareResponse(client);
 }
 
+// After accepting a connection and finding out that it is ready for reading
+// recv() is used, it'll have the request sent by the client
 void Webserver::_readRequest( Client &client )
 {
 	char *ptrToEnd;
@@ -167,6 +196,9 @@ void Webserver::_readRequest( Client &client )
 	}
 }
 
+// After reading the whole request, parsing will succeed.
+// This function parses the request line into 3 parts :
+// Method, Uri, Version.
 void Webserver::_parseRequestLine( Client &client )
 {
 	size_t i1, i2;
@@ -193,13 +225,15 @@ void Webserver::_parseRequestLine( Client &client )
 	Utils::checkRequestLine(client);
 }
 
+// After finished the request line parsing, headers will be put in a map.
+// If the request is POST, the process of checking if a list matches/there is an upload directory...
+// will be started and the body reading also will start
 void Webserver::_parseHeaders( Client &client )
 {
 	std::string first, second;
 	int index;
 	bool isHeader;
 
-	// Pour l'optimisation je peux mémoriser la position du premier CRLF
 	if (!client.isRqLineParsed || client.clientResponse.getBool() || client.isHeaderParsed)
 		return ;
 	isHeader = false;
@@ -226,6 +260,8 @@ void Webserver::_parseHeaders( Client &client )
 	_parser.chooseCorrectParsingMode(client);
 }
 
+// This function will be executed only if there is a body.
+// It will read the body by 8kb and at the same time parse it.
 void Webserver::_readBodyIfPossible( Client &client )
 {
 	int r, b;
@@ -248,44 +284,8 @@ void Webserver::_readBodyIfPossible( Client &client )
 	_parser.chooseCorrectParsingMode(client);
 }
 
-bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
-{
-	char buff2[1536 + 1 + it->clientResponse.status.size()];
-	size_t i, x;
-
-	it->clientResponse.setIsStatusSent(true);
-	for (i = 0; i < it->clientResponse.status.size(); i++)
-		buff2[i] = it->clientResponse.status[i];
-	x = 0;
-	for (; i < bytes + it->clientResponse.status.size(); i++)
-		buff2[i] = buff[x++];
-	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
-	{
-		it->clientResponse.file.close();
-		return true;
-	}
-	return false;
-}
-
-bool Webserver::_sendFile( std::list< Client >::iterator &it )
-{
-	char buff[1536 + 1];
-	std::streamsize bytes;
-
-	it->clientResponse.file.read(buff, 1536);
-	bytes = it->clientResponse.file.gcount();
-	it->clientResponse.incrementBytesFromFile(bytes);
-
-	if (!it->clientResponse.getIsStatusSent())	
-		return _sendWithStatusCode(it, bytes, buff);
-	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
-	{
-		it->clientResponse.file.close();
-		return true;
-	}
-	return false;
-}
-
+// This function drops the client directly if the connection was closed or
+// the recv function failed, or send the response if it is ready and drops the client
 void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
 {
 	if (shouldSend && it->clientResponse.readFromFile() && !_sendFile(it))
@@ -297,6 +297,9 @@ void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool 
 	*inc = false;
 }
 
+// After parsing the request and headers the response should be prepared and sent.
+// This function checks if the uri matches a location block and the validity of that block with the request.
+// If everything went right, a response will be set and sent.
 void Webserver::_prepareResponse( Client &client )
 {
 	std::list< Location >::iterator currentList;
@@ -321,6 +324,7 @@ void Webserver::_prepareResponse( Client &client )
 	this->_handleProperResponse(client);
 }
 
+// This function prepares a response depending on the method
 void Webserver::_handleProperResponse( Client &client )
 {
 	if (client.parsedRequest.getMethod() == "GET")
@@ -331,134 +335,50 @@ void Webserver::_handleProperResponse( Client &client )
 		this->_prepareDeleteResponse(client);
 }
 
-void Webserver::_handleFolderRequest(Client &client)
+// Get method handler.
+// This function will get the files requested and set them in the body of the response.
+void Webserver::_prepareGetResponse( Client &client )
 {
-	DIR *dir;
-	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
-	std::string joinPath;
-	std::string indexes;
-
-	for(; index != client.currentList->_indexes_location.end(); ++index)
-	{
-		joinPath = client.currentList->_currentRoot + (*index);
-		client.clientResponse.file.open(joinPath, std::ios::binary);
-		if(client.clientResponse.file.is_open())
-		{
-			if(client.currentList->get_cgi())
-				_runCgi(joinPath, client);
-			else
-			{
-				client.clientResponse.setReadFromFile(true);
-				client.clientResponse.setBool(true);
-				client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
-				client.clientResponse.status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
-				client.clientResponse.setFileSize(Utils::getSize(joinPath));
-			}
-			return ;
-		}
-	}
-	if(client.currentList->get_autoindex())
-	{
-		if((dir = opendir(client.currentList->_currentRoot.c_str())))
-		{
-			indexes = Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
-			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeInString(indexes) + "\r\nContent-Type: text/html\r\n\r\n";
-			response += indexes;
-			Utils::setGoodResponse(response, client);
-		}
-		closedir(dir);
-	}
+	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
+		_handleFolderRequest(client);
 	else
 	{
-		if(client.currentList->_indexes_location.empty())
-			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error\r\n", "Forbidden error", client);
-		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
+		if(client.currentList->get_cgi())
+			return _runCgi(client.currentList->_currentRoot, client);
+		return _handleFileRequest(client);
 	}
 }
 
-void	Webserver::_handleFileRequest(Client &client)
+// Post method handler (if a cgi should be executed).
+// If not then the file will already be uploaded.
+void Webserver::_preparePostResponse( Client &client )
 {
-	client.clientResponse.file.open(client.currentList->_currentRoot, std::ios::binary); 
-	if(client.clientResponse.file.is_open())
-	{
-		client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
-		client.clientResponse.status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
-		client.clientResponse.setReadFromFile(true);
-		client.clientResponse.setBool(true);
-		client.clientResponse.setFileSize(Utils::getSize(client.currentList->_currentRoot));
-	}
+	std::string name = Utils::getIndex(client);
+	if (client.isThereCgi)
+		_runCgi(name, client);
 	else
-		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
+		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
 }
 
-void	Webserver::_readFile(std::string path, Client &client, std::string &name)
+// Delete method handler.
+// This function will check for permissions, existence of folder/files then delete them.
+void Webserver::_prepareDeleteResponse( Client &client )
 {
-	std::ifstream file(path.c_str());
-	std::stringstream buffer;
-	std::string 	  str;
-	std::string       body;
-	std::string 	  response;
-	size_t 			  find;
-
-	find = name.find_last_of(".");
-	buffer << file.rdbuf();
-	str = buffer.str();
-	buffer.str("");
-	size_t findBody = str.find("\r\n\r\n");
-	body = str;
-	if(findBody != std::string::npos)
-		body = str.substr(findBody + 4, str.length() - (findBody + 4));
-	buffer << body.length();
-	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
-	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
-		response += "Content-Type: text/html\r\n\r\n";
-	response += str;
-	Utils::setGoodResponse(response, client);
-}
-
-char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
-{
-	char **retEnv;
-
-	retEnv = new char*[12];
-	retEnv[0] = Utils::giveAllocatedChar("PATH_INFO=" + Utils::getPathInfo() + "/" + name);
-	retEnv[1] = Utils::giveAllocatedChar("GATEWAY_INTERFACE=CGI/1.1");
-	retEnv[2] = Utils::giveAllocatedChar("REQUEST_METHOD=" + client.parsedRequest.getMethod());
-	retEnv[3] = Utils::giveAllocatedChar("SCRIPT_NAME=" + Utils::getPathInfo() + "/" + name);
-	retEnv[4] = Utils::giveAllocatedChar("SCRIPT_FILENAME=" + Utils::getPathInfo() + "/" + name);
-	retEnv[5] = Utils::giveAllocatedChar("REDIRECT_STATUS=200");
-	retEnv[6] = Utils::giveAllocatedChar("SERVER_PROTOCOL=HTTP/1.1");
-	retEnv[7] = Utils::giveAllocatedChar("QUERY_STRING=" + client.parsedRequest.getQueryString());
-	retEnv[8] = Utils::giveAllocatedChar("HTTP_COOKIE=" + client.parsedRequest.getValueFromMap("Cookie"));
-	if (client.parsedRequest.getMethod() == "POST")
-	{
-		retEnv[9] = Utils::giveAllocatedChar("CONTENT_TYPE=" + client.parsedRequest.getValueFromMap("Content-Type"));
-		retEnv[10] = Utils::giveAllocatedChar("CONTENT_LENGTH=" + client.parsedRequest.getValueFromMap("Content-Length"));
-		retEnv[11] = NULL;
-	}
+	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
+		_handleDeleteFolderRequest(client);
 	else
-		retEnv[9] = NULL;
-	return retEnv;
+		_handleDeleteFile(client);
 }
 
-char **Webserver::_prepareArgs( const std::string &name )
+// Redirect the client, if there a redirection in the config file.
+void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
 {
-	char **args;
-	size_t fileExt;
-
-	args = new char*[3];
-	args[0] = Utils::giveAllocatedChar((Utils::getPathInfo() + "/" + "php-cgi").c_str());
-	args[1] = Utils::giveAllocatedChar(name);
-	args[2] = NULL;
-	fileExt = name.find_last_of(".");
-	if(fileExt != std::string::npos && name.substr(fileExt + 1, name.length()) == "py")
-	{
-		delete args[0];
-		args[0] = Utils::giveAllocatedChar("/usr/bin/python");
-	}
-	return args;
+	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
 }
 
+// This function prepares args, env variables for the cgi and executes it.
+// It will be executed on a file for GET/DELETE requests, and on the bodies for POST requests.
+// The files created and used here are all removed.
 void Webserver::_runCgi(std::string &name, Client &client)
 {
 	char **args;
@@ -491,45 +411,36 @@ void Webserver::_runCgi(std::string &name, Client &client)
 		unlink(client.nameForCgi.c_str());
 }
 
-void Webserver::_prepareGetResponse( Client &client )
+// This function is called in runCgi, it will get the content of a file and put
+// it in the body of the response.
+// This file contains the output of the cgi.
+void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 {
-	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-		_handleFolderRequest(client);
-	else
-	{
-		if(client.currentList->get_cgi())
-			return _runCgi(client.currentList->_currentRoot, client);
-		return _handleFileRequest(client);
-	}
+	std::ifstream file(path.c_str());
+	std::stringstream buffer;
+	std::string 	  str;
+	std::string       body;
+	std::string 	  response;
+	size_t 			  find;
+
+	find = name.find_last_of(".");
+	buffer << file.rdbuf();
+	str = buffer.str();
+	buffer.str("");
+	size_t findBody = str.find("\r\n\r\n");
+	body = str;
+	if(findBody != std::string::npos)
+		body = str.substr(findBody + 4, str.length() - (findBody + 4));
+	buffer << body.length();
+	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
+	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
+		response += "Content-Type: text/html\r\n\r\n";
+	response += str;
+	Utils::setGoodResponse(response, client);
 }
 
-std::string getIndex( Client &client )
-{
-	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
-	std::string joinPath;
-
-	for(; index != client.currentList->_indexes_location.end(); ++index)
-	{
-		joinPath = client.currentList->_currentRoot + (*index);
-		client.clientResponse.file.open(joinPath, std::ios::binary);
-		if(client.clientResponse.file.is_open())
-		{
-			client.clientResponse.file.close();
-			return joinPath;
-		}
-	}
-	return client.currentList->_currentRoot;
-}
-
-void Webserver::_preparePostResponse( Client &client )
-{
-	std::string name = getIndex(client);
-	if (client.isThereCgi)
-		_runCgi(name, client);
-	else
-		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
-}
-
+// Main function that handles delete.
+// It recursively goes to subdirectories of the request directory and deletes its content.
 void 			Webserver::_removeContent(const std::string &path, Client &client, int &status, bool &shouldPrint)
 {
 	DIR *dir;
@@ -577,6 +488,69 @@ void 			Webserver::_removeContent(const std::string &path, Client &client, int &
 	}
 }
 
+// This function is called in GET request, it will handle folder requests.
+void Webserver::_handleFolderRequest(Client &client)
+{
+	DIR *dir;
+	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
+	std::string joinPath;
+	std::string indexes;
+
+	for(; index != client.currentList->_indexes_location.end(); ++index)
+	{
+		joinPath = client.currentList->_currentRoot + (*index);
+		client.clientResponse.file.open(joinPath, std::ios::binary);
+		if(client.clientResponse.file.is_open())
+		{
+			if(client.currentList->get_cgi())
+				_runCgi(joinPath, client);
+			else
+			{
+				client.clientResponse.setReadFromFile(true);
+				client.clientResponse.setBool(true);
+				client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
+				client.clientResponse.status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
+				client.clientResponse.setFileSize(Utils::getSize(joinPath));
+			}
+			return ;
+		}
+	}
+	if(client.currentList->get_autoindex())
+	{
+		if((dir = opendir(client.currentList->_currentRoot.c_str())))
+		{
+			indexes = Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeInString(indexes) + "\r\nContent-Type: text/html\r\n\r\n";
+			response += indexes;
+			Utils::setGoodResponse(response, client);
+		}
+		closedir(dir);
+	}
+	else
+	{
+		if(client.currentList->_indexes_location.empty())
+			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error\r\n", "Forbidden error", client);
+		return Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
+	}
+}
+
+// This function gets the requested file and puts it in the response.
+void	Webserver::_handleFileRequest(Client &client)
+{
+	client.clientResponse.file.open(client.currentList->_currentRoot, std::ios::binary); 
+	if(client.clientResponse.file.is_open())
+	{
+		client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
+		client.clientResponse.status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse.setReadFromFile(true);
+		client.clientResponse.setBool(true);
+		client.clientResponse.setFileSize(Utils::getSize(client.currentList->_currentRoot));
+	}
+	else
+		Utils::setErrorResponse(404, "HTTP/1.1 404 Not Found\r\n", "File Not Found", client);
+}
+
+// This function handles delete folder requests.
 void Webserver::_handleDeleteFolderRequest(Client &client)
 {
 	int status = -1;
@@ -614,6 +588,8 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	}
 }
 
+// This one handles file DELETE requests.
+// It checks if the file requested exists/has permissions and deletes it.
 void Webserver::_handleDeleteFile(Client &client)
 {
 	std::ifstream file;
@@ -638,15 +614,88 @@ void Webserver::_handleDeleteFile(Client &client)
 	Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden\r\n", "Forbidden", client);
 }
 
-void Webserver::_prepareDeleteResponse( Client &client )
+// If the response contains a body, it will be sent 1536 by 1536 bytes.
+// This function is responsible for that.
+bool Webserver::_sendFile( std::list< Client >::iterator &it )
 {
-	if(client.currentList->ifRequestUriIsFolder(client.currentList->_currentRoot))
-		_handleDeleteFolderRequest(client);
-	else
-		_handleDeleteFile(client);
+	char buff[1536 + 1];
+	std::streamsize bytes;
+
+	it->clientResponse.file.read(buff, 1536);
+	bytes = it->clientResponse.file.gcount();
+	it->clientResponse.incrementBytesFromFile(bytes);
+
+	if (!it->clientResponse.getIsStatusSent())	
+		return _sendWithStatusCode(it, bytes, buff);
+	if (send(it->getSocket(), buff, bytes, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
+	{
+		it->clientResponse.file.close();
+		return true;
+	}
+	return false;
 }
 
-void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
+// For the first chunk of data sent, the request line and headers are sent here.
+bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int bytes, char *buff )
 {
-	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
+	char buff2[1536 + 1 + it->clientResponse.status.size()];
+	size_t i, x;
+
+	it->clientResponse.setIsStatusSent(true);
+	for (i = 0; i < it->clientResponse.status.size(); i++)
+		buff2[i] = it->clientResponse.status[i];
+	x = 0;
+	for (; i < bytes + it->clientResponse.status.size(); i++)
+		buff2[i] = buff[x++];
+	if (send(it->getSocket(), buff2, i, 0) <= 0 || it->clientResponse.getFileSize() == it->clientResponse.getBytesFromFile())
+	{
+		it->clientResponse.file.close();
+		return true;
+	}
+	return false;
+}
+
+// This function sets appropriate environment variables for the cgi
+char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
+{
+	char **retEnv;
+
+	retEnv = new char*[12];
+	retEnv[0] = Utils::giveAllocatedChar("PATH_INFO=" + Utils::getPathInfo() + "/" + name);
+	retEnv[1] = Utils::giveAllocatedChar("GATEWAY_INTERFACE=CGI/1.1");
+	retEnv[2] = Utils::giveAllocatedChar("REQUEST_METHOD=" + client.parsedRequest.getMethod());
+	retEnv[3] = Utils::giveAllocatedChar("SCRIPT_NAME=" + Utils::getPathInfo() + "/" + name);
+	retEnv[4] = Utils::giveAllocatedChar("SCRIPT_FILENAME=" + Utils::getPathInfo() + "/" + name);
+	retEnv[5] = Utils::giveAllocatedChar("REDIRECT_STATUS=200");
+	retEnv[6] = Utils::giveAllocatedChar("SERVER_PROTOCOL=HTTP/1.1");
+	retEnv[7] = Utils::giveAllocatedChar("QUERY_STRING=" + client.parsedRequest.getQueryString());
+	retEnv[8] = Utils::giveAllocatedChar("HTTP_COOKIE=" + client.parsedRequest.getValueFromMap("Cookie"));
+	if (client.parsedRequest.getMethod() == "POST")
+	{
+		retEnv[9] = Utils::giveAllocatedChar("CONTENT_TYPE=" + client.parsedRequest.getValueFromMap("Content-Type"));
+		retEnv[10] = Utils::giveAllocatedChar("CONTENT_LENGTH=" + client.parsedRequest.getValueFromMap("Content-Length"));
+		retEnv[11] = NULL;
+	}
+	else
+		retEnv[9] = NULL;
+	return retEnv;
+}
+
+// This function sets the arguments that will be sent to execve.
+char **Webserver::_prepareArgs( const std::string &name )
+{
+	char **args;
+	size_t fileExt;
+
+	args = new char*[3];
+	args[0] = Utils::giveAllocatedChar((Utils::getPathInfo() + "/" + "php-cgi").c_str());
+	args[1] = Utils::giveAllocatedChar(name);
+	args[2] = NULL;
+	fileExt = name.find_last_of(".");
+	if(fileExt != std::string::npos && name.substr(fileExt + 1, name.length()) == "py")
+	{
+		delete args[0];
+		args[0] = Utils::giveAllocatedChar("/usr/bin/python");
+	}
+	return args;
 }

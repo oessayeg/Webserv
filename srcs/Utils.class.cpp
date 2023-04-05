@@ -308,3 +308,22 @@ char *Utils::giveAllocatedChar( const std::string &str )
 	returnString[str.size()] = '\0';
 	return returnString;
 }
+
+std::string Utils::getIndex( Client &client )
+{
+	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
+	std::string joinPath;
+
+	for(; index != client.currentList->_indexes_location.end(); ++index)
+	{
+		joinPath = client.currentList->_currentRoot + (*index);
+		client.clientResponse.file.open(joinPath, std::ios::binary);
+		if(client.clientResponse.file.is_open())
+		{
+			client.clientResponse.file.close();
+			return joinPath;
+		}
+	}
+	return client.currentList->_currentRoot;
+}
+
