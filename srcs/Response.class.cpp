@@ -1,5 +1,8 @@
 #include "../includes/Response.class.hpp"
 
+// Apart from the constructors, the other member functions
+// are accessors, and sendResponse use send() to send the response.
+
 Response::Response( void ) : _canBeSent(false), _shouldReadFromFile(false), \
 	_isStatusSent(false), _fileSize(0), _bytesFromFile(0) { }
 

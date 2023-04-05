@@ -1,7 +1,7 @@
 #include "../includes/ErrorString.class.hpp"
 
 // Initialize 'errorFile' with all the html/css code that will
-// be used for default error pages
+// be used for default error pages.
 ErrorString::ErrorString( void )
 {
 	_errorFile = "<!DOCTYPE html>\n\
@@ -91,14 +91,14 @@ ErrorString &ErrorString::operator=( const ErrorString &rhs )
 
 ErrorString::~ErrorString( void ) { }
 
-// Gets the actual error code that'll be sent to the client
+// Gets the actual error code that'll be sent to the client.
 std::string ErrorString::getFileInString( void ) const
 {
 	return _errorFile;
 }
 
 // This function changes directly the status code and the explicit error
-// message with 'sCode' and 'errorMessage' in the errorFile attribute
+// message with 'sCode' and 'errorMessage' in the errorFile attribute.
 void ErrorString::setErrorFile( int sCode, const std::string &errorMessage )
 {
 	int index2;

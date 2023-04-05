@@ -3,8 +3,12 @@
 #include "MainHeader.hpp"
 #include "ErrorString.class.hpp"
 
+// This class contains just attributes that will be useful for
+// getting the client's request/body and therefore preparing an
+// appropriate response for him.
 class Client
 {
+	// This is the socket from where the request is read and the response is sent.
 	private :
 		int _socket;
 
@@ -38,13 +42,14 @@ class Client
 		ErrorString errString;
 		Request parsedRequest;
 
+	// Coplien's form.
 	public :
 		Client( void );
 		Client( const Client &rhs );
 		Client &operator=( const Client &rhs );
 		~Client( void );
 
-	// Accessors for the _socket variable
+	// Accessors for the _socket variable.
 	public :
 		void setSocket( int s );
 		int getSocket( void ) const;

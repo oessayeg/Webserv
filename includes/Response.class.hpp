@@ -6,6 +6,9 @@
 
 class Response
 {
+	// 1st bool indicates if the response is ready or not.
+	// 2nd bool indicates if a file needs to be read and put into a response.
+	// 3rd bool indicates if the first part of the response is sent or not.
 	private :
 		bool _canBeSent;
 		bool _shouldReadFromFile;
@@ -18,12 +21,15 @@ class Response
 		std::string status;
 		std::ifstream file;
 
+	// Constructors, '=' overload, destructor (Coplien's form).
 	public :
 		Response( void );
 		Response( const Response &rhs );
 		Response &operator=( const Response &rhs );
 		~Response( void );
 
+	// Getters and setters.
+	// SendResponse() sends the response directly to 'socket'.
 	public :
 		bool getBool( void ) const;
 		bool readFromFile( void ) const;

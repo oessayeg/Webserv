@@ -4,13 +4,14 @@
 
 class Client;
 
-// This class contains static functions that can be used without creating an object of it
+// This class contains static functions that can be used without creating an object of it.
 class Utils
 {
 	public :
 		Utils( void );
 		~Utils( void );
 
+	// Description of these functions ins 'Utils.class.cpp'.
 	public :
 		static void setErrorResponse( int code, const std::string &s1, const std::string &s2, Client &client );
 		static void setGoodResponse( const std::string &s, Client &client );

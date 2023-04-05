@@ -4,18 +4,24 @@ Utils::Utils( void ) { }
 
 Utils::~Utils( void ) { }
 
+// This function gets all the error response and puts it in a string.
+// That response will be sent if the socket is ready for writing.
+// It will also set a boolean to indicate that a respoonse is ready. 
 void Utils::setErrorResponse( int code, const std::string &s1, const std::string &s2, Client &client )
 {
 	client.clientResponse.setResponse(Utils::formError(code, s1, s2, client));
 	client.clientResponse.setBool(true);
 }
 
+// This function sets directly the response with the parameter s.
+// It will also be sent if the socket is ready for writing.
 void Utils::setGoodResponse( const std::string &s, Client &client )
 {
 	client.clientResponse.setResponse(s);
 	client.clientResponse.setBool(true);
 }
 
+// Deletes an allocated double pointer using delete.
 void Utils::deleteDoublePtr( char **toDelete )
 {
 	for (int i = 0; toDelete[i]; i++)
@@ -23,6 +29,8 @@ void Utils::deleteDoublePtr( char **toDelete )
 	delete toDelete;
 }
 
+// After parsing the request line, this function will be called.
+// It will check for the validity of it.
 void Utils::checkRequestLine( Client &client )
 {
 	if (!client.parsedRequest.hasAllowedChars())
@@ -35,6 +43,8 @@ void Utils::checkRequestLine( Client &client )
 		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Version Not Supported", client);
 }
 
+// This functions is used in the beggining of the main.
+// Checks if arguments are valid and if the file given exists and has permissions.
 void Utils::checkArgs( int ac, char **av )
 {
 	std::ifstream infile;
@@ -52,6 +62,8 @@ void Utils::checkArgs( int ac, char **av )
 		infile.close();
 }
 
+// After putting headers in a map, this function is called.
+// It will check if headers are valid.
 void Utils::checkHeaders( Client &client )
 {
 	std::istringstream s(client.parsedRequest.getValueFromMap("Content-Length"));
@@ -76,6 +88,8 @@ void Utils::checkHeaders( Client &client )
 	Utils::setType(transferEnc, contentType, client);
 }
 
+// Sets the correct reading mode for the body in POST requests :
+// Chunked, multipart, normal.
 void Utils::setType( const std::string &transferEnc, const std::string &contentType, Client &client )
 {
 	if (!Utils::isLocationFormedWell(transferEnc, client))
@@ -99,6 +113,9 @@ void Utils::setType( const std::string &transferEnc, const std::string &contentT
 	}
 }
 
+// If server_name instruction is in the config file
+// this function will be called and it will check if the host header
+// matches with the server name, if not then the client gets an error response.
 bool Utils::serverNameMatches(const std::string &host, Serverblock *block)
 {
 	std::list<std::string>::iterator it;
@@ -112,6 +129,7 @@ bool Utils::serverNameMatches(const std::string &host, Serverblock *block)
 	return (false);
 }
 
+// This function checks if the method in the request line is accepted in the server block.
 bool Utils::isAccepted( const std::string &method, std::list< std::string > list )
 {
 	std::list< std::string >::iterator it1;
@@ -123,6 +141,8 @@ bool Utils::isAccepted( const std::string &method, std::list< std::string > list
 	return false;
 }
 
+// Particularly for POST requests, this function checks if everything is right before
+// uploading files.
 bool Utils::isLocationFormedWell( const std::string &transferEnc, Client &client )
 {
 	std::list< Location >::iterator currentList;
@@ -169,6 +189,8 @@ bool Utils::isLocationFormedWell( const std::string &transferEnc, Client &client
 	return true;
 }
 
+// The program takes no argument or 1 which is the file. (The config file)
+// This function just returns the default path or the name of the file.
 std::string Utils::getFileN( char **av )
 {
 	std::string file;
@@ -179,6 +201,7 @@ std::string Utils::getFileN( char **av )
 	return file;
 }
 
+// This functin returns the size of a string in a string.
 std::string Utils::getSizeInString( const std::string &str )
 {
 	std::stringstream ss;
@@ -187,6 +210,9 @@ std::string Utils::getSizeInString( const std::string &str )
 	return ss.str();
 }
 
+// This function is called when opening files.
+// If the body in the requests has no filename, then a random name will be
+// assigned to it with the appropriate extension.
 std::string Utils::generateRandomString( void )
 {
     std::string tmp_s;
@@ -202,6 +228,7 @@ std::string Utils::generateRandomString( void )
     return tmp_s;
 }
 
+// Get the size of file in a string. (used for content-length header in responses)
 std::string	Utils::getSizeOfFile( const std::string &file )
 {
 	std::stringstream size;
@@ -212,6 +239,7 @@ std::string	Utils::getSizeOfFile( const std::string &file )
 	return (size.str());
 }
 
+// This functions gets the current working directory.
 std::string Utils::getPathInfo( void )
 {
 	char currentPath[FILENAME_MAX];
@@ -221,6 +249,7 @@ std::string Utils::getPathInfo( void )
 	return (NULL);
 }
 
+// This functions gets all file content in a string.
 std::string Utils::getFileContent( std::ifstream &file )
 {
 	std::stringstream buffer;
@@ -229,6 +258,7 @@ std::string Utils::getFileContent( std::ifstream &file )
 	return (buffer.str());
 }
 
+// Autoindex handler.
 std::string	Utils::handleAutoindexFolder(const std::string &uri)
 {
 	DIR *dir;
@@ -281,6 +311,8 @@ std::string Utils::formError( int statusCode, const std::string &statusLine, con
 	return (returnString + client.errString.getFileInString());
 }
 
+// This function transforms a hexa number to a decimal number.
+// This one is used in chunked requests.
 size_t Utils::giveDecimal( const std::string &hexaString )
 {
 	std::stringstream ss;
@@ -291,6 +323,7 @@ size_t Utils::giveDecimal( const std::string &hexaString )
 	return ret;
 }
 
+// This functions gets the size of a file.
 size_t Utils::getSize( const std::string &file )
 {
 	struct stat fileInfo;
@@ -299,6 +332,8 @@ size_t Utils::getSize( const std::string &file )
 	return (fileInfo.st_size);
 }
 
+// This function is used when creating environment variables for the cgi.
+// It allocates using new instead of delete.
 char *Utils::giveAllocatedChar( const std::string &str )
 {
 	char *returnString;
@@ -309,6 +344,7 @@ char *Utils::giveAllocatedChar( const std::string &str )
 	return returnString;
 }
 
+// This function get the index in the appropriate location block.
 std::string Utils::getIndex( Client &client )
 {
 	std::list<std::string>::iterator index = client.currentList->_indexes_location.begin();
@@ -326,4 +362,3 @@ std::string Utils::getIndex( Client &client )
 	}
 	return client.currentList->_currentRoot;
 }
-

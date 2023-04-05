@@ -8,6 +8,11 @@ typedef struct sockaddr_in sockaddr_in;
 
 class Webserver
 {
+	// 1st list contains instructions in server blocks from the configfile.
+	// 2nd list contains all clients connected and waiting for a response.
+	// 3rd list contains listening sockets that'll accept new connections.
+	// 4th attribute is the struct pointer that'll be sent to poll() to check for I/O operations.
+	// 5th attribute is an object that will parse bodies in case of POST requests.
 	private :
 		std::list < Serverblock > _serverBlocks;
 		std::list < Client > _pendingClients;
@@ -15,7 +20,7 @@ class Webserver
 		pollfd *_fdToCheck;
 		BodyParser _parser;
 
-	// Constructors, '=' overload and destructor
+	// Constructors, '=' overload and destructor (Coplien's form).
 	public :
 		Webserver( void );
 		Webserver( std::list < Serverblock > &rhs );
@@ -23,7 +28,7 @@ class Webserver
 		Webserver &operator=( const Webserver &rhs );
 		~Webserver( void );
 
-		// Functions that prepare for the multiplexing part
+		// Functions that prepare for the multiplexing part.
 		void setServerBlocks( std::list < Serverblock > &list );
 		void createSockets( void );
 		void setReadyFds( void );
@@ -31,7 +36,7 @@ class Webserver
 		// Main multiplexing function
 		void readAndRespond( void );
 
-	// Description of these functions in 'Webserver.class.cpp'
+	// Description of these functions in 'Webserver.class.cpp'.
 	private :
 		void _acceptNewClients( void );
 		void _readAndParse( Client &client );

@@ -10,14 +10,14 @@ class BodyParser
 	private :
 		MimeTypes _extensions;
 
-	// Constructors, '=' overload and destructor
+	// Constructors, '=' overload and destructor.
 	public :
 		BodyParser( void );
 		BodyParser( const BodyParser &rhs );
 		BodyParser &operator=( const BodyParser &rhs );
 		~BodyParser( void );
 	
-	// Public member functions (each one is used depending on the type of the body to be parsed)
+	// Public member functions (each one is used depending on the type of the body to be parsed).
 	public :
 		void chooseCorrectParsingMode( Client &client );
 		void parseMultipartData( Client &client );
@@ -25,7 +25,7 @@ class BodyParser
 		void parseNormalData( Client &client );
 		std::string getContentType( const std::string & );
 
-	// Helpers (description in their implementation file (.cpp))
+	// Helpers (description in their implementation file 'BodyParser.class.cpp').
 	private :
 		void _openWithProperExtension( const std::string &contentType, Client &client );
 		void _openFile( char *name, Client &client );

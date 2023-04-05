@@ -12,6 +12,8 @@ BodyParser &BodyParser::operator=( const BodyParser &rhs )
 
 BodyParser::~BodyParser( void ) { }
 
+// This function checks the bodyType and calls the appropriate
+// body parsing function.
 void BodyParser::chooseCorrectParsingMode( Client &client )
 {
 	if (client.bodyType == CHUNKED)
@@ -22,6 +24,7 @@ void BodyParser::chooseCorrectParsingMode( Client &client )
 		this->parseNormalData(client);
 }
 
+// Multipart-form-data parsing function.
 void BodyParser::parseMultipartData( Client &client )
 {
 	size_t i;
@@ -60,17 +63,18 @@ void BodyParser::parseMultipartData( Client &client )
 	this->parseMultipartData(client);
 }
 
+// Chunked request function.
 void BodyParser::parseChunkedData( Client &client )
 {
 	size_t i;
 	size_t index2;
 
 	i = 0;
-	// If the file isn't opened yet, generate a random name for it with the proper extension
+	// If the file isn't opened yet, generate a random name for it with the proper extension.
 	if (!client.gotFileName)
 		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
 
-	// Get the hexadecimal and skip it
+	// Get the hexadecimal and skip it.
 	if (client.bytesToRead == 0)
 	{
 		if (!_isHexaReadable(client))
@@ -88,7 +92,7 @@ void BodyParser::parseChunkedData( Client &client )
 		}
 	}
 
-	// This is the part where the actual reading starts after skipping the hexa
+	// This is the part where the actual reading starts after skipping the hexa.
 	index2 = i;
 	for (; index2 < client.bytesToRead + i && index2 < client.bytesRead; index2++);
 	client.fileToUpload.write(client.request + i, index2 - i);
@@ -113,7 +117,7 @@ void BodyParser::parseChunkedData( Client &client )
 	}
 }
 
-// This function keeps reading data until the content-length is reached
+// This function keeps reading data until the content-length is reached.
 void BodyParser::parseNormalData( Client &client )
 {
 	size_t i;
@@ -138,6 +142,9 @@ std::string BodyParser::getContentType( const std::string &file )
 	return this->_extensions.getContentType(file);
 }
 
+// These 2 next functions open files with their proper extension and path.
+// For POST requests with cgi, the file will be put in /tmp and removed
+// immediatly after executing the cgi.
 void BodyParser::_openWithProperExtension( const std::string &contentType, Client &client )
 {
 	std::string extension;
@@ -177,6 +184,8 @@ void BodyParser::_moveRequest( size_t index2, Client &client )
 	client.bytesRead -= (index2 + i);
 }
 
+// This function is used in multipart-form-data reading.
+// It gets the filename and opens a file where the data will be sent.
 bool BodyParser::_isThereFilename( Client &client )
 {
 	char *crlfIndex;
@@ -209,6 +218,7 @@ bool BodyParser::_isThereFilename( Client &client )
 	return true;
 }
 
+// This function indicates if the boundary is reached or not.
 bool BodyParser::_isBoundary( char *ptr, Client &client )
 {
 	size_t i;
@@ -219,7 +229,7 @@ bool BodyParser::_isBoundary( char *ptr, Client &client )
 	return (i == client.boundary.size());
 }
 
-
+// This function checks if the body in chunked requests contains all the hexa or not.
 bool BodyParser::_isHexaReadable( Client &client )
 {
 	size_t i;

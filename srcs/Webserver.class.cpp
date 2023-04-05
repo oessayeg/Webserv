@@ -1,5 +1,6 @@
 #include "../includes/Webserver.class.hpp"
 
+// In each function that parses the request, a checking function will be called.
 // In all checking functions, if something is wrong, they will 
 // automatically prepare an error response and stop the process of parsing.
 
@@ -33,6 +34,7 @@ Webserver::~Webserver( void )
 }
 
 // This function gets the list of the blocks after parsing the config file.
+// This list will be pointed to by clients to serve them depending on it.
 void Webserver::setServerBlocks( std::list < Serverblock > &list )
 {
 	this->_serverBlocks = list;
@@ -67,7 +69,7 @@ void Webserver::createSockets( void )
 }
 
 // This function initializes the pollfd struct with all available sockets
-// for future read/write operations on them.
+// (clients/listening sockets) for future read/write operations on them.
 void Webserver::setReadyFds( void )
 {
 	std::list< Client >::iterator cIter;
@@ -168,7 +170,7 @@ void Webserver::_readAndParse( Client &client )
 }
 
 // After accepting a connection and finding out that it is ready for reading
-// recv() is used, it'll have the request sent by the client
+// recv() is used, it'll have the request sent by the client.
 void Webserver::_readRequest( Client &client )
 {
 	char *ptrToEnd;
@@ -225,9 +227,9 @@ void Webserver::_parseRequestLine( Client &client )
 	Utils::checkRequestLine(client);
 }
 
-// After finished the request line parsing, headers will be put in a map.
+// After finishing the request line parsing, headers will be put in a map.
 // If the request is POST, the process of checking if a list matches/there is an upload directory...
-// will be started and the body reading also will start
+// will be started and the body reading also will start.
 void Webserver::_parseHeaders( Client &client )
 {
 	std::string first, second;
@@ -285,7 +287,7 @@ void Webserver::_readBodyIfPossible( Client &client )
 }
 
 // This function drops the client directly if the connection was closed or
-// the recv function failed, or send the response if it is ready and drops the client
+// the recv function failed, or send the response if it is ready and drops the client.
 void Webserver::_dropClient( std::list< Client >::iterator &it, bool *inc, bool shouldSend )
 {
 	if (shouldSend && it->clientResponse.readFromFile() && !_sendFile(it))
@@ -324,7 +326,7 @@ void Webserver::_prepareResponse( Client &client )
 	this->_handleProperResponse(client);
 }
 
-// This function prepares a response depending on the method
+// This function prepares a response depending on the method.
 void Webserver::_handleProperResponse( Client &client )
 {
 	if (client.parsedRequest.getMethod() == "GET")
@@ -370,7 +372,7 @@ void Webserver::_prepareDeleteResponse( Client &client )
 		_handleDeleteFile(client);
 }
 
-// Redirect the client, if there a redirection in the config file.
+// Redirect the client, if there is a redirection in the config file.
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
 {
 	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
@@ -412,7 +414,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 }
 
 // This function is called in runCgi, it will get the content of a file and put
-// it in the body of the response.
+// it as a response.
 // This file contains the output of the cgi.
 void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 {
@@ -655,7 +657,7 @@ bool Webserver::_sendWithStatusCode( std::list< Client >::iterator &it, int byte
 	return false;
 }
 
-// This function sets appropriate environment variables for the cgi
+// This function sets the appropriate environment variables for the cgi.
 char **Webserver::_prepareCgiEnv( Client &client, std::string &name )
 {
 	char **retEnv;

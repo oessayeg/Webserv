@@ -1,6 +1,6 @@
 #pragma once
 
-// Main header files
+// Main header files.
 #include <unordered_map>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -21,22 +21,22 @@
 #include <dirent.h>
 #include <map>
 
-// Default path for the config file
+// Default path for the config file.
 #define DEFAULT   "./default.conf"
 
-// MIN_TO_READ = how much bytes to read when using recv()
+// MIN_TO_READ = how much bytes to read when using recv().
 #define MIN_TO_READ 8192
 
-// BUFF_SIZE = the size of the buffer that'll contain the request and body of the client
+// BUFF_SIZE = the size of the buffer that'll contain the request and body of the client.
 #define BUFF_SIZE 17825
 
-// Body type macros (To know how to parse bodies in POST requests)
+// Body type macros (To know how to parse bodies in POST requests).
 #define CHUNKED_MULTIPART 1
 #define MULTIPART 2
 #define CHUNKED 3
 #define OTHER 4
 
-// Should consider changing the int to short (if I don't need the whole bytes)
+// Should consider changing the int to short (if I don't need the whole bytes).
 #include "MimeTypes.class.hpp"
 #include "Response.class.hpp"
 #include "Request.class.hpp"

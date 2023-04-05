@@ -7,7 +7,7 @@
 
 class Request
 {
-	// Request line components and headers
+	// Request line components and headers.
 	private :
 		std::string _method;
 		std::string _uri;
@@ -15,7 +15,7 @@ class Request
 		std::string _queryStr;
 		std::map< std::string, std::string > _headers;
 
-	// Default constructor, copy constructor, copy assignment operator overload, destructor
+	// Default constructor, copy constructor, copy assignment operator overload, destructor.
 	public :
 		Request( void );
 		Request( const Request &rhs );
@@ -36,7 +36,7 @@ class Request
 		const std::string &getQueryString( void ) const;
 		const std::string &getValueFromMap( const std::string &key );
 
-	// Member functions that check for the validity of the request's components
+	// Member functions that check for the validity of the request's components.
 		bool isSupported( void ) const;
 		bool hasGoodSize( void ) const;
 		bool hasAllowedChars( void ) const;
