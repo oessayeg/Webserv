@@ -2,13 +2,15 @@
 
 import cgi
 
-# Get the form data
 form = cgi.FieldStorage()
 
-# Get the value of the 'first_name' and 'last_name' fields
-first_name = form.getvalue('first_name')
-last_name = form.getvalue('last_name')
+name = form.getvalue('name')
+email = form.getvalue('email')
 
-# Print the submitted name
-print("First Name: {}".format(first_name))
-print("Last Name: {}".format(last_name))
+print("<html>")
+print("<body>")
+print("<h1>Data submitted from the form:</h1>")
+print("<p>Name: %s</p>" % name)
+print("<p>Email: %s</p>" % email)
+print("</body>")
+print("</html>")

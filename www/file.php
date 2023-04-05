@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     if (in_array($avatar_actual_ext, $allowed)) {
         if ($avatar_error === 0) {
-            if ($avatar_size < 1000000) {
+            if ($avatar_size < 100000000) {
                 $avatar_name_new = uniqid('', true) . '.' . $avatar_actual_ext;
                 $avatar_destination = 'uploads/' . $avatar_name_new;
                 move_uploaded_file($avatar_tmp_name, $avatar_destination);
