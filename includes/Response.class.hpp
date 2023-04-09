@@ -8,7 +8,7 @@ class Response
 {
 	// 1st bool indicates if the response is ready or not.
 	// 2nd bool indicates if a file needs to be read and put into a response.
-	// 3rd bool indicates if the first part of the response is sent or not.
+	// 3rd bool indicates if the first part of the response is sent or not (The status line).
 	private :
 		bool _canBeSent;
 		bool _shouldReadFromFile;

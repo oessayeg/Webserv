@@ -6,7 +6,7 @@ Utils::~Utils( void ) { }
 
 // This function gets all the error response and puts it in a string.
 // That response will be sent if the socket is ready for writing.
-// It will also set a boolean to indicate that a respoonse is ready. 
+// It will also set a boolean to indicate that a response is ready. 
 void Utils::setErrorResponse( int code, const std::string &s1, const std::string &s2, Client &client )
 {
 	client.clientResponse.setResponse(Utils::formError(code, s1, s2, client));
@@ -43,7 +43,7 @@ void Utils::checkRequestLine( Client &client )
 		Utils::setErrorResponse(505, "HTTP/1.1 505 Version Not Supported\r\n", "Version Not Supported", client);
 }
 
-// This functions is used in the beggining of the main.
+// This function is used in the beggining of the main.
 // Checks if arguments are valid and if the file given exists and has permissions.
 void Utils::checkArgs( int ac, char **av )
 {
@@ -201,7 +201,7 @@ std::string Utils::getFileN( char **av )
 	return file;
 }
 
-// This functin returns the size of a string in a string.
+// This function returns the size of a string in the string format.
 std::string Utils::getSizeInString( const std::string &str )
 {
 	std::stringstream ss;

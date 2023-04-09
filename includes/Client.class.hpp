@@ -3,9 +3,8 @@
 #include "MainHeader.hpp"
 #include "ErrorString.class.hpp"
 
-// This class contains just attributes that will be useful for
-// getting the client's request/body and therefore preparing an
-// appropriate response for him.
+// This class contains just attributes that will be useful for getting the 
+// client's request/body and therefore preparing an appropriate response.
 class Client
 {
 	// This is the socket from where the request is read and the response is sent.

@@ -99,11 +99,15 @@ MimeTypes::~MimeTypes( void ) { }
 // It gets the content-type from the extension of the 'path' parameter.
 std::string MimeTypes::getContentType( const std::string &path )
 {
-	size_t find = path.rfind(".");
+	std::map<std::string, std::string>::iterator  it;
+	std::string extension;
+	size_t find;
+
+	find = path.rfind(".");
 	if(find == std::string::npos)
 		return ("");
-	std::string extension = path.substr(find);
-	std::map<std::string, std::string>::iterator it  = _types.begin();
+	extension = path.substr(find);
+	it  = _types.begin();
 	for(; it != _types.end(); it++)
 	{
 		if(it->second == extension)
