@@ -7,7 +7,7 @@ class MimeTypes
 {
 	// This map contains all common MiMe types.
 	private :
-		std::map< std::string, std::string > types;
+		std::map< std::string, std::string > _types;
 
 	// Constructors, '=' overload and destructor.
 	public :

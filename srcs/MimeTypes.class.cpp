@@ -82,14 +82,14 @@ MimeTypes::MimeTypes( void )
 		std::make_pair("audio/3gpp2", ".3g2"),
 		std::make_pair("application/x-7z-compressed", ".7z")
 	};
-	this->types.insert(allTypes, allTypes + 76);
+	this->_types.insert(allTypes, allTypes + 76);
 }
 
 MimeTypes::MimeTypes( const MimeTypes &rhs ) { *this = rhs; }
 
 MimeTypes &MimeTypes::operator=( const MimeTypes &rhs )
 {
-	this->types = rhs.types;
+	this->_types = rhs._types;
 	return (*this);
 }
 
@@ -103,8 +103,8 @@ std::string MimeTypes::getContentType( const std::string &path )
 	if(find == std::string::npos)
 		return ("");
 	std::string extension = path.substr(find);
-	std::map<std::string, std::string>::iterator it  = types.begin();
-	for(; it != types.end(); it++)
+	std::map<std::string, std::string>::iterator it  = _types.begin();
+	for(; it != _types.end(); it++)
 	{
 		if(it->second == extension)
 			return (it->first);
@@ -115,5 +115,5 @@ std::string MimeTypes::getContentType( const std::string &path )
 // This function gets the extension directly from the contentType.
 std::string MimeTypes::getExtension( const std::string &contentType )
 {
-	return (types[contentType]);
+	return (_types[contentType]);
 }

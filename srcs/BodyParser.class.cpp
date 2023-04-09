@@ -31,8 +31,12 @@ void BodyParser::parseMultipartData( Client &client )
 	bool isFound;
 
 	isFound = false;
+	// This part checks if the head of the multipart-form-data body is all read.
+	// In other words, if there is '\r\n\r\n'. (To get the filename)
 	if (!this->_isThereFilename(client))
 		return ;
+	
+	// This is where it checks for the boundary to know how much bytes should be read.
 	for (i = 0; i < client.bytesRead; i++)
 	{
 		if (client.request[i] == '\r' && i + 2 < client.bytesRead && client.request[i + 2] == '-')
@@ -40,30 +44,45 @@ void BodyParser::parseMultipartData( Client &client )
 		if (isFound)
 			break;
 	}
+
+	// If a part in the body does not contain a filename, it will be skipped.
 	if (!client.shouldSkip)
 		client.fileToUpload.write(client.request, i);
+	
+	// If the boundary isn't found, the buffer will be emptied and set to 0 to read another time.
 	if (!isFound)
 	{
 		memset(client.request, 0, client.bytesRead);
 		client.bytesRead = 0;
 		return ;
 	}
+
+	// If the boundary is found, variables will be set for another new file body.
 	i += 2;
 	client.bytesRead -= i;
 	client.shouldSkip = false;
 	client.gotFileName = false;
 	client.fileToUpload.close();
+
+	// If the delimiter is found, stop reading. (The end of the all the body)
 	if (client.request[i + client.boundary.size()] == '-' && client.request[i + client.boundary.size() + 1] == '-')
 	{
-		client.fileToUpload.write("\0", 1);
 		client.finishedBody = true;
 		return ;
 	}
+
+	// If there is no delimiter but just the boundary, the whole process of reading will restart.
 	memmove(client.request, &client.request[i], client.bytesRead + 1);
 	this->parseMultipartData(client);
 }
 
 // Chunked request function.
+// This function will read until :
+// * The sum of all bytes read is equal to the content-length. (if there is the content-length header)
+// * The buffer is read. (that means that a recv() call will happen again)
+// * The hexadecimal is 0. (That means that it is the end of the body)
+// This function will be recursive in one case : if the the chunk is read and the buffer 
+// contains another chunk and therefore another hexa.
 void BodyParser::parseChunkedData( Client &client )
 {
 	size_t i;
@@ -74,7 +93,7 @@ void BodyParser::parseChunkedData( Client &client )
 	if (!client.gotFileName)
 		this->_openWithProperExtension(client.parsedRequest.getValueFromMap("Content-Type"), client);
 
-	// Get the hexadecimal and skip it.
+	// Get the hexadecimal and skip it. (Do not touch)
 	if (client.bytesToRead == 0)
 	{
 		if (!_isHexaReadable(client))
@@ -229,7 +248,8 @@ bool BodyParser::_isBoundary( char *ptr, Client &client )
 	return (i == client.boundary.size());
 }
 
-// This function checks if the body in chunked requests contains all the hexa or not.
+// This function checks if the body in chunked requests contains all the hexadecimal number
+// or not (Just in case the whole line wasn't read).
 bool BodyParser::_isHexaReadable( Client &client )
 {
 	size_t i;
