@@ -166,7 +166,7 @@ bool Utils::isLocationFormedWell( const std::string &transferEnc, Client &client
 	}
 	else if (currentList->get_isThereRedirection())
 	{
-		Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
+		Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n" + Utils::getDateAndTime(), client);
 		return false;
 	}
 	else if ((currentList->_currentRoot.back() == '/' && !currentList->get_indexes_location().size()
@@ -293,21 +293,21 @@ std::string Utils::formError( int statusCode, const std::string &statusLine, con
 		returnString = "HTTP/1.1 500 Internal Server Error\r\n";
 		client.errString.setErrorFile(500, "Internal Server Error");
 		s << client.errString.getFileInString().size();
-		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		returnString += "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n" + Utils::getDateAndTime();
 		return (returnString + client.errString.getFileInString());
 	}
 	else if (b != client.correspondingBlock->_error_page.end() && errorFile.is_open())
 	{
 		fileInString = std::string((std::istreambuf_iterator<char>(errorFile)), (std::istreambuf_iterator<char>()));
 		s << fileInString.size();
-		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n\r\n";
+		returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str() + "\r\n" + Utils::getDateAndTime();
 		errorFile.close();
 		return returnString + fileInString;
 	}
 	client.errString.setErrorFile(statusCode, msgInBody);
 	s << client.errString.getFileInString().size();
 	returnString = statusLine + "Content-Type: text/html\r\nContent-Length: " + s.str();
-	returnString += "\r\n\r\n";
+	returnString += "\r\n" + Utils::getDateAndTime();
 	return (returnString + client.errString.getFileInString());
 }
 
@@ -361,4 +361,17 @@ std::string Utils::getIndex( Client &client )
 		}
 	}
 	return client.currentList->_currentRoot;
+}
+
+// This function returns the date and time for the date header.
+std::string Utils::getDateAndTime( void )
+{
+    char buff[40];
+    std::time_t time;
+    std::tm *tm;
+
+    time = std::time(NULL);
+    tm = std::gmtime(&time);
+    std::strftime(buff, sizeof(buff), "%a, %d %b %Y %H:%M:%S GMT", tm);
+    return "Date: " + std::string(buff) + "\r\n\r\n";
 }

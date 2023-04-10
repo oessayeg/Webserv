@@ -1,4 +1,5 @@
 #include "../includes/location.hpp"
+#include "../includes/Utils.class.hpp"
 
 Location::Location():_auto_index(false),_countroot(0),_count_allow_methode(0),_count_auto_index(0),_count_return(0), _isThereCgi(false),_supportUpload(false)
 {
@@ -342,12 +343,13 @@ bool Location::ifRequestUriIsFolder( const std::string &uri )
 bool Location::checkIfPathIsValid(const std::string &path, Response &resp)
 {
     std::string send;
+
     if(path[path.length() - 1] == '/')
         return true;
     size_t find = path.find_last_of("/");
     if(find != std::string::npos)
         send = path.substr(find + 1, path.length());
-    resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation:" + send + "/\r\nConnection: close\r\n\r\n");
+    resp.setResponse("HTTP/1.1 301 Moved Permanently\r\nLocation:" + send + "/\r\nConnection: close\r\n" + Utils::getDateAndTime());
     resp.setBool(true);
     return false;
 }

@@ -359,7 +359,7 @@ void Webserver::_preparePostResponse( Client &client )
 	if (client.isThereCgi)
 		_runCgi(name, client);
 	else
-		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1>File uploaded succesfully !</h1>", client);
+		Utils::setGoodResponse("HTTP/1.1 201 Created\r\nContent-Type: text/html\r\nContent-Length: 36\r\n" + Utils::getDateAndTime() + "<h1>File uploaded succesfully !</h1>", client);
 }
 
 // Delete method handler.
@@ -375,7 +375,7 @@ void Webserver::_prepareDeleteResponse( Client &client )
 // Redirect the client, if there is a redirection in the config file.
 void Webserver::_handleHttpRedirection(std::list<Location>::iterator &currentList, Client &client)
 {
-	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n\r\n", client);
+	Utils::setGoodResponse("HTTP/1.1 301 Moved Permanently\r\nLocation: " + currentList->_redirection[1] + "\r\n" + "Content-Length: 0\r\n" + Utils::getDateAndTime(), client);
 }
 
 // This function prepares args, env variables for the cgi and executes it.
@@ -423,8 +423,12 @@ void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 	std::string 	  str;
 	std::string       body;
 	std::string 	  response;
+	std::string		  date;
 	size_t 			  find;
 
+	date = Utils::getDateAndTime();
+	date.pop_back();
+	date.pop_back();
 	find = name.find_last_of(".");
 	buffer << file.rdbuf();
 	str = buffer.str();
@@ -434,7 +438,7 @@ void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 	if(findBody != std::string::npos)
 		body = str.substr(findBody + 4, str.length() - (findBody + 4));
 	buffer << body.length();
-	response = "HTTP/1.1 200 OK\r\nContent-Length: " + buffer.str() + "\r\n";
+	response = "HTTP/1.1 200 OK\r\n" + date + "Content-Length: " + buffer.str() + "\r\n";
 	if(find != std::string::npos && name.substr(find + 1, name.length()) == "py")
 		response += "Content-Type: text/html\r\n\r\n";
 	response += str;
@@ -511,7 +515,7 @@ void Webserver::_handleFolderRequest(Client &client)
 				client.clientResponse.setReadFromFile(true);
 				client.clientResponse.setBool(true);
 				client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Type: " + _parser.getContentType(joinPath);
-				client.clientResponse.status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n\r\n";
+				client.clientResponse.status += "\r\nContent-Length: " + Utils::getSizeOfFile(joinPath) + "\r\n" + Utils::getDateAndTime();
 				client.clientResponse.setFileSize(Utils::getSize(joinPath));
 			}
 			return ;
@@ -522,7 +526,7 @@ void Webserver::_handleFolderRequest(Client &client)
 		if((dir = opendir(client.currentList->_currentRoot.c_str())))
 		{
 			indexes = Utils::handleAutoindexFolder(client.currentList->_currentRoot.c_str());
-			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeInString(indexes) + "\r\nContent-Type: text/html\r\n\r\n";
+			std::string response = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeInString(indexes) + "\r\nContent-Type: text/html\r\n" + Utils::getDateAndTime();
 			response += indexes;
 			Utils::setGoodResponse(response, client);
 		}
@@ -543,7 +547,7 @@ void	Webserver::_handleFileRequest(Client &client)
 	if(client.clientResponse.file.is_open())
 	{
 		client.clientResponse.status = "HTTP/1.1 200 Ok\r\nContent-Length: " + Utils::getSizeOfFile(client.currentList->_currentRoot);
-		client.clientResponse.status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n\r\n";
+		client.clientResponse.status += "\r\nContent-Type: " + _parser.getContentType(client.currentList->_currentRoot) + "\r\n" + Utils::getDateAndTime();
 		client.clientResponse.setReadFromFile(true);
 		client.clientResponse.setBool(true);
 		client.clientResponse.setFileSize(Utils::getSize(client.currentList->_currentRoot));
@@ -584,7 +588,7 @@ void Webserver::_handleDeleteFolderRequest(Client &client)
 	{
 		_removeContent(client.currentList->_currentRoot, client , status, shouldPrint);
 		if(status == 0)
-			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 35\r\n\r\n<h1> File Deleted successfully</h1>", client);
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 35\r\n" + Utils::getDateAndTime() + "<h1> File Deleted successfully</h1>", client);
 		else if(status == -1 && shouldPrint)
 			return Utils::setErrorResponse(403, "HTTP/1.1 403 Forbidden error\r\n", "Forbidden", client);
 	}
@@ -609,7 +613,7 @@ void Webserver::_handleDeleteFile(Client &client)
 		if(status == 0)
 		{
 			file.close();
-			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 36\r\n\r\n<h1> File Deleted successfully </h1>", client);
+			return Utils::setGoodResponse("HTTP/1.1 204 No Content\r\nContent-Type: text/html\r\nContent-Length: 36\r\n" + Utils::getDateAndTime() + "<h1> File Deleted successfully </h1>", client);
 		}
 		file.close();
 	}
