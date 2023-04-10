@@ -446,7 +446,7 @@ void	Webserver::_readFile(std::string path, Client &client, std::string &name)
 }
 
 // Main function that handles delete.
-// It recursively goes to subdirectories of the request directory and deletes its content.
+// It recursively goes to subdirectories of the request directory and deletes their content.
 void 			Webserver::_removeContent(const std::string &path, Client &client, int &status, bool &shouldPrint)
 {
 	DIR *dir;
