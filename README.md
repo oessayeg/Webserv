@@ -3,9 +3,9 @@ An http server implemented using C++98.
 
 # Overview
  * This is a single threaded web server that was developed using I/O mutliplexing to serve concurrent clients.
- * It is developed in C++98 using the socket api.
+ * It is implemented in C++98 using the socket api.
  * It is designed to serve static web content for small sized projects.
- * The methods supported on this web server are : GET, POST and DELETE.
+ * The http methods supported are : GET, POST and DELETE.
  * It supports cgi (php and python).
  
 ## Setup
