@@ -16,5 +16,5 @@ An http server implemented using C++98.
 ### Usage
   In your terminal, clone this repo and go to the root directory : 
   ```bash
-  git clone https://github.com/oessayeg/Webserver.git && cd Webserv
+  git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
