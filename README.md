@@ -22,3 +22,6 @@ An http server implemented using C++98.
   ```bash
   (make && ./webserv) || (c++ srcs/*.cpp && ./a.out)
   ```
+  <img width="979" alt="Capture d’écran 2023-04-13 à 15 48 22" src="https://user-images.githubusercontent.com/96997041/231814758-4865f24b-a42e-4b2f-ab75-5ee27b3ed004.png">
+
+  
