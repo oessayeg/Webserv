@@ -24,3 +24,4 @@ An http server implemented using C++98.
   (make && ./webserv) || (c++ srcs/*.cpp && ./a.out)
   ```
   
+## Testing
