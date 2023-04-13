@@ -19,8 +19,7 @@ An http server implemented using C++98.
   git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
   * Compilation part :
-    * If you have make : 
-    ```bash
+    * If you have make : ```bash
     make && ./webserv
     ```
     * Else :
