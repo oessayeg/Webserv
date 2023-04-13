@@ -14,15 +14,16 @@ An http server implemented using C++98.
   * This project was developed under a unix environment (macOS). Compiling this code without errors in any other environment is not guaranteed.
 
 ## Usage
-  * In your terminal, clone this repo and go to the root directory : 
+  1. In your terminal, clone this repo and go to the root directory : 
   ```bash
   git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
-  * Compilation part :
-    * If you have make : ```bash
+  2. Compilation part :
+    If you have make :
+    ```bash
     make && ./webserv
     ```
-    * Else :
+    Else :
     ```bash
     c++ srcs/*.cpp && ./webserv
     ```
