@@ -18,7 +18,7 @@ An http server implemented using C++98.
   ```bash
   git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
-  2. Compilation part : (If you have make the first 2 commands will execute, otherwise the other two will)
+  2. Compilation part : (If you have make the first two commands will execute, otherwise the other two will)
   ```bash
   (make && ./webserv) || (c++ srcs/*.cpp && ./a.out)
   ```
