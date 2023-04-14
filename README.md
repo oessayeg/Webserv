@@ -29,4 +29,4 @@ An http server implemented using C++98.
   ```
   
 ## Testing
- * You can test the server without touching the configuration file, with the default configuration you can test all its features directly without changing it :
+ * The file provided here 'default.conf' is set so you can test all features (if you executed the program without argument or with default.conf as an argument without changing the content of the file):
