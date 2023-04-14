@@ -39,7 +39,11 @@ An http server implemented using C++98.
 
 ## Configuration file directives
   * 'server' : the configuration block that defines the settings for serving content on a specific port. (The directives below can be only inside server blocks)
-    * listen 'port' : it sets this port to listen to incoming connections.
-    * error_page 'statusCode' 'pathToErrorFile' : if an error with the status code 'statusCode' occurs, the page of your choice will appear instead of the default error page.
-    * location '/path/to/your/directory' : it defines how the server will handle requests for a specific url.
-    
+  * listen 'port' : sets this port to listen to incoming connections.
+  * error_page 'statusCode' 'pathToErrorFile' : if an error with the status code 'statusCode' occurs, the page of your choice will appear instead of the default error page.
+  * location '/path/to/your/directory' : it defines how the server will handle requests for a specific url. (The directives below can be only inside location blocks)
+    * accept_list 'method1' 'method2' : sets the allowed http methods. If not specified, GET, POST and DELETE are the default ones.
+    * run_cgi 'on/off' : sets cgi execution (off by default)
+    * root '/path/to/directory' : specifies the root directory that will be used to serve files for a given location.
+    * index 'file1' 'file2' : specifies the files that will be served if the request uri is a folder.
+    * upload_dir 'directoy' : specifies the directory where the files will be uploaded.
