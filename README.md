@@ -52,3 +52,5 @@ An http server implemented using C++98.
 ## Example of a simple configuration file
 <img width="513" alt="Capture d’écran 2023-04-14 à 14 30 47" src="https://user-images.githubusercontent.com/96997041/232073486-9d45abf8-3a8b-4a1d-9973-73405d51e4ef.png">
 
+## Project status
+  Finished
