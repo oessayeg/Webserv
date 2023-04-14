@@ -11,7 +11,7 @@ An http server implemented using C++98.
 
 ## Setup
   * Clang should be installed. (Obviously to compile C++ code)
-  * Make is optional. (if you want to use the Makefile)
+  * 'Make' is optional. (if you want to use the Makefile)
   * This project was developed under a unix environment (macOS). Compiling this code without errors in any other environment is not guaranteed.
 
 ## Usage
@@ -19,9 +19,13 @@ An http server implemented using C++98.
   ```bash
   git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
-  2. Compilation and execution part : (If you have make the first two commands will execute, otherwise the other two will)
+  2. Compilation and execution part : (If you have 'make' the first two commands will execute, otherwise the other two will)
   ```bash
   (make && ./webserv) || (c++ srcs/*.cpp && ./a.out)
+  ```
+  - :warning: The program needs a configuration file to be executed, so if you execute the program without any argument, the default path of the configuration file will be './default.conf', otherwise you can execute the program with the path of your own configuration file.
+  ```bash
+  (make && ./webserv /path/to/your/config/file) || (c++ srcs/*.cpp && ./a.out /path/to/your/config/file)
   ```
   
 ## Testing
