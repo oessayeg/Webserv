@@ -41,9 +41,14 @@ An http server implemented using C++98.
   * 'server' : the configuration block that defines the settings for serving content on a specific port. (The directives below can be only inside server blocks)
   * listen 'port' : sets this port to listen to incoming connections.
   * error_page 'statusCode' 'pathToErrorFile' : if an error with the status code 'statusCode' occurs, the page of your choice will appear instead of the default error page.
+  * body_size 'size in megabytes' : sets the maximum size of file uploads.
   * location '/path/to/your/directory' : it defines how the server will handle requests for a specific url. (The directives below can be only inside location blocks)
     * accept_list 'method1' 'method2' : sets the allowed http methods. If not specified, GET, POST and DELETE are the default ones.
     * run_cgi 'on/off' : sets cgi execution (off by default)
     * root '/path/to/directory' : specifies the root directory that will be used to serve files for a given location.
     * index 'file1' 'file2' : specifies the files that will be served if the request uri is a folder.
-    * upload_dir 'directoy' : specifies the directory where the files will be uploaded.
+    * upload_dir 'directory' : specifies the directory where the files will be uploaded.
+
+## Example of a simple configuration file
+<img width="513" alt="Capture d’écran 2023-04-14 à 14 30 47" src="https://user-images.githubusercontent.com/96997041/232073486-9d45abf8-3a8b-4a1d-9973-73405d51e4ef.png">
+
