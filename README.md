@@ -42,6 +42,6 @@ An http server implemented using C++98.
   
 <img width="408" alt="Capture d’écran 2023-04-14 à 14 05 50" src="https://user-images.githubusercontent.com/96997041/232067439-03e3b58f-9555-4ae2-ab64-4d31011d3b94.png">
   * Inside of this server block 3 instructions are possible :
-    * listen [port], it sets this port to listen to incoming connections e.g : listen 8080.
-    * error_page [statusCode] [pathToErrorFile], if an error with the status code 'statusCode' happens, the page of your choice will appear instead of the default error page here.
+    * listen 'port', it sets this port to listen to incoming connections e.g : listen 8080.
+    * error_page 'statusCode' 'pathToErrorFile', if an error with the status code 'statusCode' happens, the page of your choice will appear instead of the default error page here.
   
