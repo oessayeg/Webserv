@@ -29,4 +29,5 @@ An http server implemented using C++98.
   ```
   
 ## Testing
- * The file provided here 'default.conf' is set so you can test all features (if you executed the program without argument or with default.conf as an argument without changing the content of the file):
+ * The 'default.conf' file provided here is set to test all features in different ports.
+ * Here's how you can test them if default.conf is used (if you used your own config file the behavior will of course change) : 
