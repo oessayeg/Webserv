@@ -36,3 +36,5 @@ An http server implemented using C++98.
    * **'localhost:7070'** to test php-cgi and cookies. After filling the form, an image will be uploaded and a page will appear with that image. Everytime you open it up, the same page will appear because of cookies until you click on logout.
    * **'localhost:8000'** to test python cgi. A simple form should be filled, and a simple python script will be executed on it.
    * **'localhost:8080'** to test file uploads (Files will be uploaded on a folder 'uploads'). If you want to get them back go to 'localhost:8080/uploads/nameOfYourFile'
+
+## Configuration file
