@@ -38,3 +38,6 @@ An http server implemented using C++98.
    * **'localhost:8080'** to test file uploads (Files will be uploaded on a folder 'uploads'). If you want to get them back go to 'localhost:8080/uploads/nameOfYourFile'
 
 ## Configuration file
+  * This file file sets the behavior of the webserver. It consists of one or multiple server <img width="332" alt="Capture d’écran 2023-04-14 à 14 03 33" src="https://user-images.githubusercontent.com/96997041/232067105-94c92225-33e7-4631-aa35-d02810691336.png">
+blocks :
+  
