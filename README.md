@@ -37,11 +37,9 @@ An http server implemented using C++98.
    * **'localhost:8000'** to test python cgi. A simple form should be filled, and a simple python script will be executed on it.
    * **'localhost:8080'** to test file uploads (Files will be uploaded on a folder 'uploads'). If you want to get them back go to 'localhost:8080/uploads/nameOfYourFile'
 
-## Configuration file
-  * This file file sets the behavior of the webserver. It consists of one or multiple server blocks :
-  
-<img width="408" alt="Capture d’écran 2023-04-14 à 14 05 50" src="https://user-images.githubusercontent.com/96997041/232067439-03e3b58f-9555-4ae2-ab64-4d31011d3b94.png">
-  * Inside of this server block 3 instructions are possible :
-    * listen 'port', it sets this port to listen to incoming connections e.g : listen 8080.
-    * error_page 'statusCode' 'pathToErrorFile', if an error with the status code 'statusCode' happens, the page of your choice will appear instead of the default error page here.
-  
+## Configuration file directives
+  * 'server' : the configuration block that defines the settings for serving content on a specific port. (The directives below can be only inside server blocks)
+    * listen 'port' : it sets this port to listen to incoming connections.
+    * error_page 'statusCode' 'pathToErrorFile' : if an error with the status code 'statusCode' occurs, the page of your choice will appear instead of the default error page.
+    * location '/path/to/your/directory' : it defines how the server will handle requests for a specific url.
+    
