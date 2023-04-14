@@ -19,9 +19,10 @@ An http server implemented using C++98.
   ```bash
   git clone https://github.com/oessayeg/Webserver.git && cd Webserver
   ```
-  2. Compilation part : (If you have make the first two commands will execute, otherwise the other two will)
+  2. Compilation and execution part : (If you have make the first two commands will execute, otherwise the other two will)
   ```bash
   (make && ./webserv) || (c++ srcs/*.cpp && ./a.out)
   ```
   
 ## Testing
+ * You can test the server without touching the configuration file, with the default configuration you can test all its features directly without changing it :
