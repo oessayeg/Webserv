@@ -385,6 +385,7 @@ void Webserver::_runCgi(std::string &name, Client &client)
 {
 	char **args;
 	char **env;
+	int status;
 	int fd;
 
 	env = _prepareCgiEnv(client, name);
@@ -403,14 +404,21 @@ void Webserver::_runCgi(std::string &name, Client &client)
 		if(execve(args[0], args, env) < 0)
 			exit(EXIT_FAILURE);
 	}
-	wait(NULL);
-	Utils::deleteDoublePtr(args);
-	Utils::deleteDoublePtr(env);
-	_readFile("/tmp/temp", client, name);
-	close(fd);
-	unlink("/tmp/temp");
-	if (client.parsedRequest.getMethod() == "POST")
-		unlink(client.nameForCgi.c_str());
+
+	while (waitpid(-1, &status, WNOHANG) != -1) {
+        if (WIFEXITED(status) || WIFSIGNALED(status)) {
+            break;
+        }
+        usleep(10000);
+    }
+
+    _readFile("/tmp/temp", client, name);
+    close(fd);
+    unlink("/tmp/temp");
+    if (client.parsedRequest.getMethod() == "POST") {
+        unlink(client.nameForCgi.c_str());
+    }
+	
 }
 
 // This function is called in runCgi, it will get the content of a file and put
